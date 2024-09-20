@@ -1,0 +1,56 @@
+apply plugin: 'java'
+apply plugin: 'com.palantir.external-publish-intellij'
+apply plugin: 'org.jetbrains.grammarkit'
+
+intellij {
+    pluginName = "gradle-consistent-versions-idea-plugin"
+    updateSinceUntilBuild = true
+    version = "2024.1"
+    plugins = ['java', 'org.jetbrains.plugins.gradle']
+}
+
+patchPluginXml {
+    pluginDescription = "Language plugin for version.props allowing for auto-lock updating"
+    sinceBuild = '241' // TODO: test against this version of IntelliJ to ensure no regressions
+    untilBuild = ''
+    version = "1.0"
+}
+
+// Javadoc fails if there are no public classes to javadoc, so make it stop complaining.
+tasks.named("javadoc", Javadoc) {
+    failOnError = false
+}
+
+sourceSets.main.java.srcDirs 'build/generated/sources/intellij-parser/main/java'
+sourceSets.main.java.srcDirs 'build/generated/sources/intellij-lexer/main/java'
+
+dependencies {
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+    annotationProcessor 'org.immutables:value'
+    compileOnly 'org.immutables:value::annotations'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+grammarKit {
+    jflexRelease = "1.9.2"
+    grammarKitRelease = "2022.3.2"
+}
+
+generateParser {
+    sourceFile = file('src/main/java/com/palantir/gradle/versions/intellij/VersionProps.bnf')
+    targetRootOutputDir = file('build/generated/sources/intellij-parser/main/java')
+    pathToParser = 'com/palantir/gradle/versions/intellij/parser/VersionPropsParser'
+    pathToPsiRoot = 'com/palantir/gradle/versions/intellij/psi'
+    purgeOldFiles = true
+}
+
+generateLexer {
+    sourceFile = file('src/main/java/com/palantir/gradle/versions/intellij/VersionProps.flex')
+    targetOutputDir = file('build/generated/sources/intellij-lexer/main/java/com/palantir/gradle/versions/intellij')
+    targetClass = 'com.palantir.gradle.versions.intellij.VersionPropsLexer'
+    purgeOldFiles = true
+}
+
+tasks.named('compileJava').configure {
+    dependsOn tasks.named('generateParser'), tasks.named('generateLexer')
+}
