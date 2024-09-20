@@ -13,7 +13,6 @@ patchPluginXml {
     pluginDescription = "Language plugin for version.props allowing for auto-lock updating"
     sinceBuild = '241' // TODO: test against this version of IntelliJ to ensure no regressions
     untilBuild = ''
-    version = "1.0"
 }
 
 // Javadoc fails if there are no public classes to javadoc, so make it stop complaining.
