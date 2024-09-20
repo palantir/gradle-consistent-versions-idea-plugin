@@ -16,55 +16,64 @@
 package com.palantir.gradle.versions.intellij;
 
 import com.intellij.codeInsight.completion.CompletionType;
-import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
+import com.intellij.testFramework.UsefulTestCase;
+import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
+import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase5;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTestCase {
+public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTestCase5 {
+
+    @Override
+    protected final String getRelativePath() {
+        return "";
+    }
+
+    @Override
+    protected final String getTestDataPath() {
+        return "";
+    }
 
     @Test
-    public void test_version_completion() throws Exception {
-        setUp();
+    public void test_version_completion() {
+        JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
-        myFixture.configureByText("versions.props", "com.palantir.baseline:baseline-error-prone = <caret>");
-        myFixture.complete(CompletionType.BASIC);
-        List<String> lookupElementStrings = myFixture.getLookupElementStrings();
-        assertNotNull(lookupElementStrings);
-        assertContainsElements(lookupElementStrings, "0.66.0", "2.40.2");
-        tearDown();
+        fixture.configureByText("versions.props", "com.palantir.baseline:baseline-error-prone = <caret>");
+        fixture.complete(CompletionType.BASIC);
+        List<String> lookupElementStrings = fixture.getLookupElementStrings();
+        Assertions.assertNotNull(lookupElementStrings);
+        UsefulTestCase.assertContainsElements(lookupElementStrings, "0.66.0", "2.40.2");
     }
 
     @Test
     public void test_group_completion() throws Exception {
-        setUp();
+        JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
-        myFixture.configureByText("versions.props", "com.palantir.baseline.<caret>");
-        myFixture.complete(CompletionType.BASIC);
-        List<String> lookupElementStrings = myFixture.getLookupElementStrings();
-        assertNotNull(lookupElementStrings);
-        assertContainsElements(lookupElementStrings, "baseline-error-prone", "baseline-null-away");
-        tearDown();
+        fixture.configureByText("versions.props", "com.palantir.baseline.<caret>");
+        fixture.complete(CompletionType.BASIC);
+        List<String> lookupElementStrings = fixture.getLookupElementStrings();
+        Assertions.assertNotNull(lookupElementStrings);
+        UsefulTestCase.assertContainsElements(lookupElementStrings, "baseline-error-prone", "baseline-null-away");
     }
 
     @Test
     public void test_package_completion() throws Exception {
-        setUp();
+        JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
-        myFixture.configureByText("versions.props", "com.palantir.baseline:<caret>");
-        myFixture.complete(CompletionType.BASIC);
-        List<String> lookupElementStrings = myFixture.getLookupElementStrings();
-        assertNotNull(lookupElementStrings);
-        assertContainsElements(lookupElementStrings, "baseline-error-prone", "baseline-null-away");
-        tearDown();
+        fixture.configureByText("versions.props", "com.palantir.baseline:<caret>");
+        fixture.complete(CompletionType.BASIC);
+        List<String> lookupElementStrings = fixture.getLookupElementStrings();
+        Assertions.assertNotNull(lookupElementStrings);
+        UsefulTestCase.assertContainsElements(lookupElementStrings, "baseline-error-prone", "baseline-null-away");
     }
 
     @Test
     public void test_other_file_names() throws Exception {
-        setUp();
-        myFixture.configureByText("notVersions.props", "com.palantir.baseline:<caret>");
-        myFixture.complete(CompletionType.BASIC);
-        List<String> lookupElementStrings = myFixture.getLookupElementStrings();
-        assertEmpty(lookupElementStrings);
-        tearDown();
+        JavaCodeInsightTestFixture fixture = getFixture();
+        fixture.configureByText("notVersions.props", "com.palantir.baseline:<caret>");
+        fixture.complete(CompletionType.BASIC);
+        List<String> lookupElementStrings = fixture.getLookupElementStrings();
+        UsefulTestCase.assertEmpty(lookupElementStrings);
     }
 }
