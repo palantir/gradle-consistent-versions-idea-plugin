@@ -1,0 +1,26 @@
+<idea-plugin url="https://github.com/palantir/gradle-jdks">
+  <id>gradle-consistent-versions</id>
+  <name>gradle-consistent-versions</name>
+  <vendor url="https://github.com/palantir/gradle-jdks">
+    Palantir
+  </vendor>
+
+  <depends>com.intellij.modules.java</depends>
+  <depends>com.intellij.modules.lang</depends>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>org.jetbrains.plugins.gradle</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType name="VersionProps File" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsFileType" fieldName="INSTANCE"
+              language="VersionProps" fileNames="versions.props"/>
+    <lang.parserDefinition language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsParserDefinition"/>
+    <lang.syntaxHighlighterFactory language="VersionProps"
+                                   implementationClass="com.palantir.gradle.versions.intellij.VersionPropsSyntaxHighlighterFactory"/>
+    <completion.contributor language="VersionProps"
+                            implementationClass="com.palantir.gradle.versions.intellij.VersionCompletionContributor" order="last"/>
+    <completion.contributor language="VersionProps"
+                            implementationClass="com.palantir.gradle.versions.intellij.FolderCompletionContributor"/>
+    <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
+    <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsFileListener"/>
+  </extensions>
+</idea-plugin>
