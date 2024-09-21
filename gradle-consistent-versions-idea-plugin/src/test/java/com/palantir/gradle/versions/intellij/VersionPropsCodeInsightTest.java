@@ -15,6 +15,8 @@
  */
 package com.palantir.gradle.versions.intellij;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.testFramework.UsefulTestCase;
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
@@ -42,7 +44,7 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
         fixture.configureByText("versions.props", "com.palantir.baseline:baseline-error-prone = <caret>");
         fixture.complete(CompletionType.BASIC);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
-        Assertions.assertNotNull(lookupElementStrings);
+        assertThat(lookupElementStrings).isNotNull();
         UsefulTestCase.assertContainsElements(lookupElementStrings, "0.66.0", "2.40.2");
     }
 
@@ -53,7 +55,7 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
         fixture.configureByText("versions.props", "com.palantir.baseline.<caret>");
         fixture.complete(CompletionType.BASIC);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
-        Assertions.assertNotNull(lookupElementStrings);
+        assertThat(lookupElementStrings).isNotNull();
         UsefulTestCase.assertContainsElements(lookupElementStrings, "baseline-error-prone", "baseline-null-away");
     }
 
@@ -64,7 +66,7 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
         fixture.configureByText("versions.props", "com.palantir.baseline:<caret>");
         fixture.complete(CompletionType.BASIC);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
-        Assertions.assertNotNull(lookupElementStrings);
+        assertThat(lookupElementStrings).isNotNull();
         UsefulTestCase.assertContainsElements(lookupElementStrings, "baseline-error-prone", "baseline-null-away");
     }
 
