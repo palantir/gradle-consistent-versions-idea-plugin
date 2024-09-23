@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: sync with develop
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/9
