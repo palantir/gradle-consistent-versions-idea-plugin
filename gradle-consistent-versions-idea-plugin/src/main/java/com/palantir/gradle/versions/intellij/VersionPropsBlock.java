@@ -41,7 +41,7 @@ public class VersionPropsBlock extends AbstractBlock {
     }
 
     @Override
-    protected List<Block> buildChildren() {
+    protected final List<Block> buildChildren() {
         List<Block> blocks = new ArrayList<>();
         ASTNode child = myNode.getFirstChildNode();
         while (child != null) {
@@ -56,18 +56,18 @@ public class VersionPropsBlock extends AbstractBlock {
     }
 
     @Override
-    public Indent getIndent() {
+    public final Indent getIndent() {
         return Indent.getNoneIndent();
     }
 
     @Nullable
     @Override
-    public Spacing getSpacing(@Nullable Block child1, Block child2) {
+    public final Spacing getSpacing(@Nullable Block child1, Block child2) {
         return spacingBuilder.getSpacing(this, child1, child2);
     }
 
     @Override
-    public boolean isLeaf() {
+    public final boolean isLeaf() {
         return myNode.getFirstChildNode() == null;
     }
 }

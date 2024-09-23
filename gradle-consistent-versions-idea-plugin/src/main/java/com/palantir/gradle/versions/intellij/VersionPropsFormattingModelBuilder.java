@@ -42,7 +42,7 @@ public class VersionPropsFormattingModelBuilder implements FormattingModelBuilde
     }
 
     @Override
-    public FormattingModel createModel(FormattingContext formattingContext) {
+    public final FormattingModel createModel(FormattingContext formattingContext) {
         final CodeStyleSettings codeStyleSettings = formattingContext.getCodeStyleSettings();
         ASTNode root = formattingContext.getNode();
         Block block = new VersionPropsBlock(
