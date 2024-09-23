@@ -33,8 +33,7 @@ import com.intellij.psi.TokenType;
 
 CRLF=\R
 WHITE_SPACE=[\ \n\t\f]
-FIRST_VALUE_CHARACTER=[^ \n\f\\] | "\\"{CRLF} | "\\".
-VALUE_CHARACTER=[^\n\f\\] | "\\"{CRLF} | "\\".
+VALUE_CHARACTER=[^ \n\f\\] | "\\"{CRLF} | "\\".
 END_OF_LINE_COMMENT=("#"|"!")[^\r\n]*
 COLON=[:]
 EQUALS=[=]
@@ -67,7 +66,7 @@ GROUP_PART=[^.:=\ \n\t\f\\] | "\\ "
 
 <WAITING_VALUE> {WHITE_SPACE}+                              { yybegin(WAITING_VALUE); return TokenType.WHITE_SPACE; }
 
-<WAITING_VALUE> {FIRST_VALUE_CHARACTER}{VALUE_CHARACTER}*   { yybegin(YYINITIAL); return VersionPropsTypes.VERSION; }
+<WAITING_VALUE> {VALUE_CHARACTER}*                          { yybegin(YYINITIAL); return VersionPropsTypes.VERSION; }
 
 ({CRLF}|{WHITE_SPACE})+                                     { yybegin(YYINITIAL); return TokenType.WHITE_SPACE; }
 
