@@ -23,6 +23,7 @@ import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.patterns.PlatformPatterns;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
@@ -53,5 +54,10 @@ public class FolderCompletionContributor extends CompletionContributor {
                         .forEach(resultSet::addElement);
             }
         });
+    }
+
+    @Override
+    public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
+        return typeChar == '=';
     }
 }
