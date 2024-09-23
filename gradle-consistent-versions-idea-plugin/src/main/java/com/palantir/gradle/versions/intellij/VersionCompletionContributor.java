@@ -66,10 +66,10 @@ public class VersionCompletionContributor extends CompletionContributor {
                                         repositoryExplorer.getVersions(group, dependencyPackage).stream())
                                 .map(version -> version.isLatest()
                                         ? PrioritizedLookupElement.withPriority(
-                                        LookupElementBuilder.create(version)
-                                                .withTypeText("Latest", true)
-                                                .withLookupString("latest"),
-                                        Double.MAX_VALUE)
+                                                LookupElementBuilder.create(version)
+                                                        .withTypeText("Latest", true)
+                                                        .withLookupString("latest"),
+                                                Double.MAX_VALUE)
                                         : LookupElementBuilder.create(version))
                                 .forEach(resultSet::addElement);
                     }
