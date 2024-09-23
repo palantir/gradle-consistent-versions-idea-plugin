@@ -20,16 +20,23 @@ import com.intellij.execution.executors.DefaultRunExecutor;
 import com.intellij.openapi.components.ComponentManager;
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder;
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings;
+import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode;
+import com.intellij.openapi.externalSystem.task.TaskCallback;
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vfs.AsyncFileListener;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
+import com.intellij.psi.util.PsiTreeUtil;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.plugins.gradle.util.GradleConstants;
@@ -39,18 +46,13 @@ import org.slf4j.LoggerFactory;
 public final class VersionPropsFileListener implements AsyncFileListener {
     private static final Logger log = LoggerFactory.getLogger(VersionPropsFileListener.class);
 
-    public VersionPropsFileListener() {
-        log.debug("Got created");
-    }
-
     @Nullable
     @Override
     public ChangeApplier prepareChange(List<? extends VFileEvent> events) {
-        List<VirtualFile> versionPropsEvents = events.stream()
-                .filter(VFileEvent::isFromSave) // This is quite expensive and noisy so only run on save
-                .map(VFileEvent::getFile)
-                .filter(Objects::nonNull)
-                .filter(file -> "versions.props".equals(file.getName()))
+        List<VFileContentChangeEvent> versionPropsEvents = events.stream()
+                .filter(event -> event instanceof VFileContentChangeEvent)
+                .map(event -> (VFileContentChangeEvent) event)
+                .filter(event -> "versions.props".equals(event.getFile().getName()))
                 .toList();
 
         if (versionPropsEvents.isEmpty()) {
@@ -62,24 +64,80 @@ public final class VersionPropsFileListener implements AsyncFileListener {
                 .filter(Project::isInitialized)
                 .filter(Predicate.not(ComponentManager::isDisposed))
                 .filter(project -> versionPropsEvents.stream()
-                        .anyMatch(event -> event.getPath().startsWith(project.getBasePath())))
+                        .anyMatch(event -> event.getPath().startsWith(project.getBasePath()) && !isFileMalformed(project, event.getFile())))
                 .toList();
 
         return new ChangeApplier() {
             @Override
             public void afterVfsChange() {
+                String taskName = "writeVersionsLock";
                 projectsAffected.forEach(project -> {
-                    ExternalSystemTaskExecutionSettings settings = new ExternalSystemTaskExecutionSettings();
-                    settings.setExternalProjectPath(project.getBasePath());
-                    settings.setTaskNames(Collections.singletonList("writeVersionsLock"));
-                    settings.setExternalSystemIdString(GradleConstants.SYSTEM_ID.toString());
-
-                    ExternalSystemUtil.runTask(
-                            settings, DefaultRunExecutor.EXECUTOR_ID, project, GradleConstants.SYSTEM_ID);
-                    ExternalSystemUtil.refreshProject(
-                            project.getBasePath(), new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID).build());
+                    if (hasBuildSrc(project)) {
+                        runTaskThenRefresh(project, taskName);
+                    } else {
+                        refreshProjectWithTask(project, taskName);
+                    }
                 });
             }
         };
+    }
+
+    private boolean hasBuildSrc(Project project) {
+        return Files.exists(Paths.get(project.getBasePath(), "buildSrc"));
+    }
+
+    private void runTaskThenRefresh(Project project, String taskName) {
+        log.debug("Running task {} on project {}", taskName, project.getName());
+        TaskCallback callback = new TaskCallback() {
+            @Override
+            public void onSuccess() {
+                log.debug("Task {} successfully executed", taskName);
+                refreshProject(project);
+            }
+
+            @Override
+            public void onFailure() {
+                log.error("Task {} failed", taskName);
+            }
+        };
+        ExternalSystemTaskExecutionSettings settings = createExecutionSettings(project, taskName);
+        ExternalSystemUtil.runTask(
+                settings, DefaultRunExecutor.EXECUTOR_ID, project, GradleConstants.SYSTEM_ID, callback, ProgressExecutionMode.IN_BACKGROUND_ASYNC
+        );
+
+    }
+
+    private ExternalSystemTaskExecutionSettings createExecutionSettings(Project project, String taskName) {
+        ExternalSystemTaskExecutionSettings settings = new ExternalSystemTaskExecutionSettings();
+        settings.setExternalProjectPath(project.getBasePath());
+        settings.setTaskNames(Collections.singletonList(taskName));
+        settings.setExternalSystemIdString(GradleConstants.SYSTEM_ID.toString());
+        return settings;
+    }
+
+    private void refreshProjectWithTask(Project project, String taskName) {
+        log.debug("Refreshing project {} with task {}", project.getName(), taskName);
+        refreshProject(
+                project, new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
+                        .withArguments(taskName)
+        );
+    }
+
+    private void refreshProject(Project project) {
+        refreshProject(project, new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID));
+    }
+
+    private void refreshProject(Project project, ImportSpecBuilder importSpec) {
+        ExternalSystemUtil.refreshProject(project.getBasePath(), importSpec);
+    }
+
+    private static boolean isFileMalformed(Project project, VirtualFile file) {
+        PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
+
+        if (psiFile == null || !(psiFile.getFileType() instanceof VersionPropsFileType)) {
+            return true;
+        }
+
+        return PsiTreeUtil.hasErrorElements(psiFile);
     }
 }
