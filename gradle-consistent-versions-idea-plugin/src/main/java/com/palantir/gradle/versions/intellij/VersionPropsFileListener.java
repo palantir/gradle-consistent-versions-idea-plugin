@@ -64,7 +64,8 @@ public final class VersionPropsFileListener implements AsyncFileListener {
                 .filter(Project::isInitialized)
                 .filter(Predicate.not(ComponentManager::isDisposed))
                 .filter(project -> versionPropsEvents.stream()
-                        .anyMatch(event -> event.getPath().startsWith(project.getBasePath()) && !isFileMalformed(project, event.getFile())))
+                        .anyMatch(event -> event.getPath().startsWith(project.getBasePath())
+                                && !isFileMalformed(project, event.getFile())))
                 .toList();
 
         return new ChangeApplier() {
@@ -102,9 +103,12 @@ public final class VersionPropsFileListener implements AsyncFileListener {
         };
         ExternalSystemTaskExecutionSettings settings = createExecutionSettings(project, taskName);
         ExternalSystemUtil.runTask(
-                settings, DefaultRunExecutor.EXECUTOR_ID, project, GradleConstants.SYSTEM_ID, callback, ProgressExecutionMode.IN_BACKGROUND_ASYNC
-        );
-
+                settings,
+                DefaultRunExecutor.EXECUTOR_ID,
+                project,
+                GradleConstants.SYSTEM_ID,
+                callback,
+                ProgressExecutionMode.IN_BACKGROUND_ASYNC);
     }
 
     private ExternalSystemTaskExecutionSettings createExecutionSettings(Project project, String taskName) {
@@ -117,10 +121,7 @@ public final class VersionPropsFileListener implements AsyncFileListener {
 
     private void refreshProjectWithTask(Project project, String taskName) {
         log.debug("Refreshing project {} with task {}", project.getName(), taskName);
-        refreshProject(
-                project, new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
-                        .withArguments(taskName)
-        );
+        refreshProject(project, new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID).withArguments(taskName));
     }
 
     private void refreshProject(Project project) {
