@@ -58,6 +58,6 @@ public class FolderCompletionContributor extends CompletionContributor {
 
     @Override
     public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
-        return typeChar == '=';
+        return typeChar == ':';
     }
 }
