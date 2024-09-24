@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 public final class VersionPropsFileListener implements AsyncFileListener {
     private static final Logger log = LoggerFactory.getLogger(VersionPropsFileListener.class);
+    private static final String TASK_NAME = "writeVersionsLock";
 
     @Nullable
     @Override
@@ -71,12 +72,11 @@ public final class VersionPropsFileListener implements AsyncFileListener {
         return new ChangeApplier() {
             @Override
             public void afterVfsChange() {
-                String taskName = "writeVersionsLock";
                 projectsAffected.forEach(project -> {
                     if (hasBuildSrc(project)) {
-                        runTaskThenRefresh(project, taskName);
+                        runTaskThenRefresh(project);
                     } else {
-                        refreshProjectWithTask(project, taskName);
+                        refreshProjectWithTask(project);
                     }
                 });
             }
@@ -87,21 +87,21 @@ public final class VersionPropsFileListener implements AsyncFileListener {
         return Files.exists(Paths.get(project.getBasePath(), "buildSrc"));
     }
 
-    private void runTaskThenRefresh(Project project, String taskName) {
-        log.debug("Running task {} on project {}", taskName, project.getName());
+    private void runTaskThenRefresh(Project project) {
+        log.debug("Running task {} on project {}", VersionPropsFileListener.TASK_NAME, project.getName());
         TaskCallback callback = new TaskCallback() {
             @Override
             public void onSuccess() {
-                log.debug("Task {} successfully executed", taskName);
+                log.debug("Task {} successfully executed", VersionPropsFileListener.TASK_NAME);
                 refreshProject(project);
             }
 
             @Override
             public void onFailure() {
-                log.error("Task {} failed", taskName);
+                log.error("Task {} failed", VersionPropsFileListener.TASK_NAME);
             }
         };
-        ExternalSystemTaskExecutionSettings settings = createExecutionSettings(project, taskName);
+        ExternalSystemTaskExecutionSettings settings = createExecutionSettings(project);
         ExternalSystemUtil.runTask(
                 settings,
                 DefaultRunExecutor.EXECUTOR_ID,
@@ -111,17 +111,17 @@ public final class VersionPropsFileListener implements AsyncFileListener {
                 ProgressExecutionMode.IN_BACKGROUND_ASYNC);
     }
 
-    private ExternalSystemTaskExecutionSettings createExecutionSettings(Project project, String taskName) {
+    private ExternalSystemTaskExecutionSettings createExecutionSettings(Project project) {
         ExternalSystemTaskExecutionSettings settings = new ExternalSystemTaskExecutionSettings();
         settings.setExternalProjectPath(project.getBasePath());
-        settings.setTaskNames(Collections.singletonList(taskName));
+        settings.setTaskNames(Collections.singletonList(VersionPropsFileListener.TASK_NAME));
         settings.setExternalSystemIdString(GradleConstants.SYSTEM_ID.toString());
         return settings;
     }
 
-    private void refreshProjectWithTask(Project project, String taskName) {
-        log.debug("Refreshing project {} with task {}", project.getName(), taskName);
-        refreshProject(project, new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID).withArguments(taskName));
+    private void refreshProjectWithTask(Project project) {
+        log.debug("Refreshing project {} with task {}", project.getName(), VersionPropsFileListener.TASK_NAME);
+        refreshProject(project, new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID).withArguments(VersionPropsFileListener.TASK_NAME));
     }
 
     private void refreshProject(Project project) {
