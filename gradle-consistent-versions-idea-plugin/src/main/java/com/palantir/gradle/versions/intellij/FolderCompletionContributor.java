@@ -31,12 +31,14 @@ import java.util.List;
 public class FolderCompletionContributor extends CompletionContributor {
 
     public FolderCompletionContributor() {
-        extendCompletion(VersionPropsTypes.GROUP_PART);
+        cacheCompletion(VersionPropsTypes.GROUP_PART);
+        cacheCompletion(VersionPropsTypes.NAME_KEY);
 
-        extendCompletion(VersionPropsTypes.NAME_KEY);
+        remoteCompletion(VersionPropsTypes.GROUP_PART);
+        remoteCompletion(VersionPropsTypes.NAME_KEY);
     }
 
-    private void extendCompletion(IElementType elementType) {
+    private void remoteCompletion(IElementType elementType) {
         extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
             @Override
             protected void addCompletions(
@@ -48,10 +50,27 @@ public class FolderCompletionContributor extends CompletionContributor {
 
                 repositories.stream()
                         .map(RepositoryExplorer::new)
-                        .flatMap(repositoryExplorer -> repositoryExplorer.getFoldersFromGradleCache(group).stream())
-                        .map(LookupElementBuilder::create)
+                        .flatMap(repositoryExplorer -> repositoryExplorer.getFolders(group).stream())
+                        .map(folder -> LookupElementBuilder.create(folder).withTypeText("From Remote"))
                         .forEach(resultSet::addElement);
             }
         });
     }
+
+    private void cacheCompletion(IElementType elementType) {
+        extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
+            @Override
+            protected void addCompletions(
+                    CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
+
+                DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
+
+                GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
+                gradleCacheExplorer.getFolders(group).stream()
+                        .map(folder -> LookupElementBuilder.create(folder).withTypeText("Local Cache"))
+                        .forEach(resultSet::addElement);
+            }
+        });
+    }
+
 }
