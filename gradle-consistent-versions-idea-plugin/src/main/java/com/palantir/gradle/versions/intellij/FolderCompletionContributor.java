@@ -21,14 +21,20 @@ import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
-import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.codeInsight.lookup.LookupElement;
+import com.intellij.codeInsight.lookup.LookupElementPresentation;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public class FolderCompletionContributor extends CompletionContributor {
+
+    private Map<Folder, FolderLookupElement> lookupElements = new HashMap<>();
 
     public FolderCompletionContributor() {
         cacheCompletion(VersionPropsTypes.GROUP_PART);
@@ -50,9 +56,15 @@ public class FolderCompletionContributor extends CompletionContributor {
 
                 repositories.stream()
                         .map(RepositoryExplorer::new)
-                        .flatMap(repositoryExplorer -> repositoryExplorer.getFolders(group).stream())
-                        .map(folder -> LookupElementBuilder.create(folder).withTypeText("From Remote"))
-                        .forEach(resultSet::addElement);
+                        .flatMap(repositoryExplorer -> repositoryExplorer.getFolders(group).stream()).forEach(folder -> {
+                            FolderLookupElement lookupElement = lookupElements.get(folder);
+                            if (lookupElement != null) {
+                                lookupElement.setTypeText("");
+                            } else {
+                                lookupElement = new FolderLookupElement(folder.name(), "");
+                            }
+                            resultSet.addElement(lookupElement);
+                        });
             }
         });
     }
@@ -66,11 +78,40 @@ public class FolderCompletionContributor extends CompletionContributor {
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
                 GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
-                gradleCacheExplorer.getFolders(group).stream()
-                        .map(folder -> LookupElementBuilder.create(folder).withTypeText("Local Cache"))
-                        .forEach(resultSet::addElement);
+                gradleCacheExplorer.getFolders(group).forEach(folder -> {
+                    if (!lookupElements.containsKey(folder)) {
+                        FolderLookupElement lookupElement = new FolderLookupElement(folder.name(), "from cache");
+                        lookupElements.put(folder, lookupElement);
+                        resultSet.addElement(lookupElement);
+                    }
+                });
             }
         });
     }
 
+    private static class FolderLookupElement extends LookupElement {
+        private final String lookupString;
+        private String typeText;
+
+        FolderLookupElement(String lookupString, String typeText) {
+            this.lookupString = lookupString;
+            this.typeText = typeText;
+        }
+
+        @NotNull
+        @Override
+        public String getLookupString() {
+            return lookupString;
+        }
+
+        @Override
+        public void renderElement(@NotNull LookupElementPresentation presentation) {
+            presentation.setItemText(lookupString);
+            presentation.setTypeText(typeText);
+        }
+
+        public void setTypeText(String typeText) {
+            this.typeText = typeText;
+        }
+    }
 }
