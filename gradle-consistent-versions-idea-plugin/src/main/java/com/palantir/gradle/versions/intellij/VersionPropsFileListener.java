@@ -121,10 +121,7 @@ public final class VersionPropsFileListener implements AsyncFileListener {
 
     private void refreshProjectWithTask(Project project) {
         log.debug("Refreshing project {} with task {}", project.getName(), TASK_NAME);
-        refreshProject(
-                project,
-                new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
-                        .withArguments(TASK_NAME));
+        refreshProject(project, new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID).withArguments(TASK_NAME));
     }
 
     private void refreshProject(Project project) {
