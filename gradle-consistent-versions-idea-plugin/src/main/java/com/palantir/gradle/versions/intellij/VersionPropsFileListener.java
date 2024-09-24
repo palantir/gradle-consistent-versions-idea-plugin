@@ -88,17 +88,17 @@ public final class VersionPropsFileListener implements AsyncFileListener {
     }
 
     private void runTaskThenRefresh(Project project) {
-        log.debug("Running task {} on project {}", VersionPropsFileListener.TASK_NAME, project.getName());
+        log.debug("Running task {} on project {}", TASK_NAME, project.getName());
         TaskCallback callback = new TaskCallback() {
             @Override
             public void onSuccess() {
-                log.debug("Task {} successfully executed", VersionPropsFileListener.TASK_NAME);
+                log.debug("Task {} successfully executed", TASK_NAME);
                 refreshProject(project);
             }
 
             @Override
             public void onFailure() {
-                log.error("Task {} failed", VersionPropsFileListener.TASK_NAME);
+                log.error("Task {} failed", TASK_NAME);
             }
         };
         ExternalSystemTaskExecutionSettings settings = createExecutionSettings(project);
@@ -114,17 +114,17 @@ public final class VersionPropsFileListener implements AsyncFileListener {
     private ExternalSystemTaskExecutionSettings createExecutionSettings(Project project) {
         ExternalSystemTaskExecutionSettings settings = new ExternalSystemTaskExecutionSettings();
         settings.setExternalProjectPath(project.getBasePath());
-        settings.setTaskNames(Collections.singletonList(VersionPropsFileListener.TASK_NAME));
+        settings.setTaskNames(Collections.singletonList(TASK_NAME));
         settings.setExternalSystemIdString(GradleConstants.SYSTEM_ID.toString());
         return settings;
     }
 
     private void refreshProjectWithTask(Project project) {
-        log.debug("Refreshing project {} with task {}", project.getName(), VersionPropsFileListener.TASK_NAME);
+        log.debug("Refreshing project {} with task {}", project.getName(), TASK_NAME);
         refreshProject(
                 project,
                 new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
-                        .withArguments(VersionPropsFileListener.TASK_NAME));
+                        .withArguments(TASK_NAME));
     }
 
     private void refreshProject(Project project) {
