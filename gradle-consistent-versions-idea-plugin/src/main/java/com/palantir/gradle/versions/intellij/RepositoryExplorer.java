@@ -17,10 +17,14 @@
 package com.palantir.gradle.versions.intellij;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -47,7 +51,14 @@ public class RepositoryExplorer {
             return new ArrayList<>();
         }
 
-        return fetchFoldersFromUrl(content.get());
+        return fetchFoldersFromContent(content.get());
+    }
+
+    public final List<Folder> getFoldersFromGradleCache(DependencyGroup group) {
+        String gradleCachePath = System.getProperty("user.home") + "/.gradle/caches/modules-2/files-2.1";
+        Map<Folder, Object> tree = new HashMap<>();
+        buildGradleCacheTreeFromFolder(new File(gradleCachePath), tree);
+        return searchGradleCacheTree(tree, group.parts());
     }
 
     public final List<DependencyVersion> getVersions(DependencyGroup group, DependencyName dependencyPackage) {
@@ -59,7 +70,7 @@ public class RepositoryExplorer {
             return new ArrayList<>();
         }
 
-        return parseVersionsFromMetadata(content.get());
+        return parseVersionsFromContent(content.get());
     }
 
     private Optional<String> fetchContent(String urlString) {
@@ -72,7 +83,7 @@ public class RepositoryExplorer {
         }
     }
 
-    private List<Folder> fetchFoldersFromUrl(String contents) {
+    private List<Folder> fetchFoldersFromContent(String contents) {
         List<Folder> folders = new ArrayList<>();
 
         Document doc = Jsoup.parse(contents);
@@ -87,7 +98,7 @@ public class RepositoryExplorer {
         return folders;
     }
 
-    private List<DependencyVersion> parseVersionsFromMetadata(String content) {
+    private List<DependencyVersion> parseVersionsFromContent(String content) {
         List<DependencyVersion> versions = new ArrayList<>();
         try {
             XmlMapper xmlMapper = new XmlMapper();
@@ -102,5 +113,38 @@ public class RepositoryExplorer {
             log.debug("Failed to parse maven-metadata.xml", e);
         }
         return versions;
+    }
+
+    public static void buildGradleCacheTreeFromFolder(File folder, Map<Folder, Object> tree) {
+        if (folder.exists() && folder.isDirectory()) {
+            for (File subFolder : Objects.requireNonNull(folder.listFiles())) {
+                if (subFolder.isDirectory()) {
+                    String folderName = subFolder.getName();
+                    String[] parts = folderName.split("\\.");
+                    Map<Folder, Object> currentLevel = tree;
+                    for (String part : parts) {
+                        currentLevel  = (Map<Folder, Object>) currentLevel.computeIfAbsent(Folder.of(part), k -> new HashMap<Folder, Object>());
+                    }
+                    for (File subSubFolder : Objects.requireNonNull(subFolder.listFiles())) {
+                        if (subSubFolder.isDirectory()) {
+                            String subFolderName = subSubFolder.getName();
+                            currentLevel.put(Folder.of(subFolderName), new HashMap<Folder, Object>());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static List<Folder> searchGradleCacheTree(Map<Folder, Object> tree, List<String> parts) {
+        Map<Folder, Object> currentLevel = tree;
+        for (String part : parts) {
+            if (currentLevel.containsKey(Folder.of(part))) {
+                currentLevel = (Map<Folder, Object>) currentLevel.get(Folder.of(part));
+            } else {
+                return null;
+            }
+        }
+        return new ArrayList<>(currentLevel.keySet());
     }
 }

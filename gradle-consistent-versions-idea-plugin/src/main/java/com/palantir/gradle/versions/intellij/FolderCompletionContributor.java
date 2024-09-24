@@ -48,7 +48,7 @@ public class FolderCompletionContributor extends CompletionContributor {
 
                 repositories.stream()
                         .map(RepositoryExplorer::new)
-                        .flatMap(repositoryExplorer -> repositoryExplorer.getFolders(group).stream())
+                        .flatMap(repositoryExplorer -> repositoryExplorer.getFoldersFromGradleCache(group).stream())
                         .map(LookupElementBuilder::create)
                         .forEach(resultSet::addElement);
             }
