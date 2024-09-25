@@ -17,11 +17,15 @@
 package com.palantir.gradle.versions.intellij;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -33,12 +37,25 @@ public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
 
     private final String baseUrl;
+    private static final Cache<DependencyGroup, List<Folder>> folderCache = Caffeine.newBuilder()
+            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .maximumSize(100)
+            .build();
 
     public RepositoryExplorer(String baseUrl) {
         this.baseUrl = baseUrl;
     }
 
     public final List<Folder> getFolders(DependencyGroup group) {
+        List<Folder> folders = folderCache.get(group, key -> {
+            List<Folder> loadedFolders = loadFolders(key);
+            return loadedFolders.isEmpty() ? null : loadedFolders;
+        });
+
+        return folders != null ? folders : Collections.emptyList();
+    }
+
+    private List<Folder> loadFolders(DependencyGroup group) {
         String urlString = baseUrl + group.asUrlString();
         Optional<String> content = fetchContent(urlString);
 
