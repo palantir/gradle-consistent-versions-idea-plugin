@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 public class VersionCompletionContributor extends CompletionContributor {
 
     private static final Logger log = LoggerFactory.getLogger(VersionCompletionContributor.class);
+    private char previousChar = '\0';
 
     VersionCompletionContributor() {
         extend(
@@ -82,6 +83,8 @@ public class VersionCompletionContributor extends CompletionContributor {
 
     @Override
     public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
-        return typeChar == '=';
+        boolean shouldInvoke = (previousChar == '=' && typeChar == ' ');
+        previousChar = typeChar;
+        return shouldInvoke;
     }
 }
