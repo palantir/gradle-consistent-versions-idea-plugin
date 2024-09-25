@@ -22,6 +22,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +47,12 @@ public class RepositoryExplorer {
     }
 
     public final List<Folder> getFolders(DependencyGroup group) {
-        return folderCache.get(group, this::loadFolders);
+        List<Folder> folders = folderCache.get(group, key -> {
+            List<Folder> loadedFolders = loadFolders(key);
+            return loadedFolders.isEmpty() ? null : loadedFolders;
+        });
+
+        return folders != null ? folders : Collections.emptyList();
     }
 
     private List<Folder> loadFolders(DependencyGroup group) {
