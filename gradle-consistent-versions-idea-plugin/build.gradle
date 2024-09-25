@@ -25,6 +25,7 @@ sourceSets.main.java.srcDirs 'build/generated/sources/intellij-lexer/main/java'
 
 dependencies {
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
     annotationProcessor 'org.immutables:value'
     compileOnly 'org.immutables:value::annotations'
     testImplementation 'org.junit.jupiter:junit-jupiter'
