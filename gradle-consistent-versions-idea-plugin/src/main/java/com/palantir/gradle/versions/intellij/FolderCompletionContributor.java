@@ -21,8 +21,6 @@ import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
-import com.intellij.codeInsight.lookup.LookupElement;
-import com.intellij.codeInsight.lookup.LookupElementPresentation;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
@@ -30,18 +28,17 @@ import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
-    private Map<Folder, FolderLookupElement> lookupElements = new HashMap<>();
+    private final Map<Folder, FolderLookupElement> lookupElements = new HashMap<>();
 
     public FolderCompletionContributor() {
-        cacheCompletion(VersionPropsTypes.GROUP_PART);
-        cacheCompletion(VersionPropsTypes.NAME_KEY);
-
-        remoteCompletion(VersionPropsTypes.GROUP_PART);
-        remoteCompletion(VersionPropsTypes.NAME_KEY);
+        IElementType[] elementTypes = {VersionPropsTypes.GROUP_PART, VersionPropsTypes.NAME_KEY};
+        for (IElementType elementType : elementTypes) {
+            cacheCompletion(elementType);
+            remoteCompletion(elementType);
+        }
     }
 
     private void remoteCompletion(IElementType elementType) {
@@ -51,20 +48,12 @@ public class FolderCompletionContributor extends CompletionContributor {
                     CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
 
                 List<String> repositories = List.of("https://repo1.maven.org/maven2/");
-
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
                 repositories.stream()
                         .map(RepositoryExplorer::new)
-                        .flatMap(repositoryExplorer -> repositoryExplorer.getFolders(group).stream()).forEach(folder -> {
-                            FolderLookupElement lookupElement = lookupElements.get(folder);
-                            if (lookupElement != null) {
-                                lookupElement.setTypeText("");
-                            } else {
-                                lookupElement = new FolderLookupElement(folder.name(), "");
-                            }
-                            resultSet.addElement(lookupElement);
-                        });
+                        .flatMap(repositoryExplorer -> repositoryExplorer.getFolders(group).stream())
+                        .forEach(folder -> addOrUpdateElement(resultSet, folder));
             }
         });
     }
@@ -76,42 +65,28 @@ public class FolderCompletionContributor extends CompletionContributor {
                     CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
 
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
-
                 GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
-                gradleCacheExplorer.getFolders(group).forEach(folder -> {
-                    if (!lookupElements.containsKey(folder)) {
-                        FolderLookupElement lookupElement = new FolderLookupElement(folder.name(), "from cache");
-                        lookupElements.put(folder, lookupElement);
-                        resultSet.addElement(lookupElement);
-                    }
-                });
+
+                gradleCacheExplorer.getFolders(group)
+                        .forEach(folder -> lookupElements.computeIfAbsent(folder, f -> createCacheElement(resultSet, f)));
             }
         });
     }
 
-    private static class FolderLookupElement extends LookupElement {
-        private final String lookupString;
-        private String typeText;
-
-        FolderLookupElement(String lookupString, String typeText) {
-            this.lookupString = lookupString;
-            this.typeText = typeText;
+    private void addOrUpdateElement(CompletionResultSet resultSet, Folder folder) {
+        FolderLookupElement lookupElement = lookupElements.get(folder);
+        if (lookupElement != null) {
+            lookupElement.clearTypeText();
+        } else {
+            lookupElement = new FolderLookupElement(folder.name());
         }
+        resultSet.addElement(lookupElement);
+        resultSet.restartCompletionOnAnyPrefixChange();
+    }
 
-        @NotNull
-        @Override
-        public String getLookupString() {
-            return lookupString;
-        }
-
-        @Override
-        public void renderElement(@NotNull LookupElementPresentation presentation) {
-            presentation.setItemText(lookupString);
-            presentation.setTypeText(typeText);
-        }
-
-        public void setTypeText(String typeText) {
-            this.typeText = typeText;
-        }
+    private FolderLookupElement createCacheElement(CompletionResultSet resultSet, Folder folder) {
+        FolderLookupElement lookupElement = new FolderLookupElement(folder.name(), "from cache");
+        resultSet.addElement(lookupElement);
+        return lookupElement;
     }
 }
