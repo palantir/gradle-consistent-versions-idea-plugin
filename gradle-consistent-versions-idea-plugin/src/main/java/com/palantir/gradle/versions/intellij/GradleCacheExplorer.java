@@ -16,8 +16,10 @@
 
 package com.palantir.gradle.versions.intellij;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.base.Splitter;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -27,13 +29,12 @@ import java.util.concurrent.TimeUnit;
 
 public class GradleCacheExplorer {
 
-    private static final String GRADLE_CACHE_PATH = System.getProperty("user.home") + "/.gradle/caches/modules-2/files-2.1";
-    private static final Cache<String, Map<Folder, Object>> cache = Caffeine.newBuilder()
-            .expireAfterWrite(1, TimeUnit.HOURS)
-            .build();
+    private static final String GRADLE_CACHE_PATH =
+            System.getProperty("user.home") + "/.gradle/caches/modules-2/files-2.1";
+    private static final Cache<String, Map<Folder, Object>> cache =
+            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
-    public List<Folder> getFolders(DependencyGroup group) {
-        // Load the tree from the cache or build it if not present
+    public final List<Folder> getFolders(DependencyGroup group) {
         Map<Folder, Object> tree = cache.get(GRADLE_CACHE_PATH, key -> {
             Map<Folder, Object> newTree = new HashMap<>();
             buildGradleCacheTree(new File(GRADLE_CACHE_PATH), newTree);
@@ -52,8 +53,9 @@ public class GradleCacheExplorer {
             String folderName = subFolder.getName();
             Map<Folder, Object> currentLevel = tree;
 
-            for (String part : folderName.split("\\.")) {
-                currentLevel = (Map<Folder, Object>) currentLevel.computeIfAbsent(Folder.of(part), k -> new HashMap<>());
+            for (String part : Splitter.on('.').split(folderName)) {
+                currentLevel =
+                        (Map<Folder, Object>) currentLevel.computeIfAbsent(Folder.of(part), k -> new HashMap<>());
             }
 
             for (File subSubFolder : Objects.requireNonNull(subFolder.listFiles(File::isDirectory))) {
@@ -74,6 +76,6 @@ public class GradleCacheExplorer {
             }
         }
 
-        return new ArrayList<>(currentLevel.keySet());
+        return List.copyOf(currentLevel.keySet());
     }
 }

@@ -67,8 +67,10 @@ public class FolderCompletionContributor extends CompletionContributor {
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
                 GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
 
-                gradleCacheExplorer.getFolders(group)
-                        .forEach(folder -> lookupElements.computeIfAbsent(folder, f -> createCacheElement(resultSet, f)));
+                gradleCacheExplorer
+                        .getFolders(group)
+                        .forEach(folder ->
+                                lookupElements.computeIfAbsent(folder, f -> createCacheElement(resultSet, f)));
             }
         });
     }

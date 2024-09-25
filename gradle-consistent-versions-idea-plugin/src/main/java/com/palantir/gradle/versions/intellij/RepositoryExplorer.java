@@ -67,7 +67,6 @@ public class RepositoryExplorer {
         return fetchFoldersFromContent(content.get());
     }
 
-
     public final List<DependencyVersion> getVersions(DependencyGroup group, DependencyName dependencyPackage) {
         String urlString = baseUrl + group.asUrlString() + dependencyPackage.name() + "/maven-metadata.xml";
         Optional<String> content = fetchContent(urlString);
