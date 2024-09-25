@@ -36,14 +36,10 @@ public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
 
     private final String baseUrl;
-    private static final Cache<DependencyGroup, List<Folder>> folderCache;
-
-    static {
-        folderCache = Caffeine.newBuilder()
-                .expireAfterWrite(10, TimeUnit.MINUTES)
-                .maximumSize(100)
-                .build();
-    }
+    private static final Cache<DependencyGroup, List<Folder>> folderCache = Caffeine.newBuilder()
+            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .maximumSize(100)
+            .build();
 
     public RepositoryExplorer(String baseUrl) {
         this.baseUrl = baseUrl;
