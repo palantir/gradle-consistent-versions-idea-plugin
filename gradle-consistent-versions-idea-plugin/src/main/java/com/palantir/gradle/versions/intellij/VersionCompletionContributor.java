@@ -83,8 +83,6 @@ public class VersionCompletionContributor extends CompletionContributor {
 
     @Override
     public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
-        boolean shouldInvoke = (previousChar == '=' && typeChar == ' ');
-        previousChar = typeChar;
-        return shouldInvoke;
+        return typeChar == '=';
     }
 }
