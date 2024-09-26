@@ -18,18 +18,19 @@ package com.palantir.gradle.versions.intellij;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.intellij.codeInsight.completion.CompletionType;
-import com.intellij.openapi.command.WriteCommandAction;
-import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.TokenType;
+import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.testFramework.UsefulTestCase;
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase5;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTestCase5 {

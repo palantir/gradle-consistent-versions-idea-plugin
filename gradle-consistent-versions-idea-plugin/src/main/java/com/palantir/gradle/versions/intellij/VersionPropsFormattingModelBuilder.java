@@ -32,6 +32,8 @@ import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 public class VersionPropsFormattingModelBuilder implements FormattingModelBuilder {
     private static SpacingBuilder createSpaceBuilder(CodeStyleSettings settings) {
         return new SpacingBuilder(settings, VersionPropsLanguage.INSTANCE)
+                .around(VersionPropsTypes.DOT)
+                .none()
                 .around(VersionPropsTypes.COLON)
                 .none()
                 .around(VersionPropsTypes.EQUALS)
