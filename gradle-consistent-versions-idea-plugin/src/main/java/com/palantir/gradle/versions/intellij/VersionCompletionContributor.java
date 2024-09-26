@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 public class VersionCompletionContributor extends CompletionContributor {
 
     private static final Logger log = LoggerFactory.getLogger(VersionCompletionContributor.class);
-    private char previousChar = '\0';
 
     VersionCompletionContributor() {
         extend(
