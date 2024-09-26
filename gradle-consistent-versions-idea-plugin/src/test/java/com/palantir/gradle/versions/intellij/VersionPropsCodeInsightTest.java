@@ -92,20 +92,17 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
             PsiFile psiFile = fixture.getFile();
             Assertions.assertNotNull(psiFile);
 
-            // Get the first property element
             PsiElement propertyElement = psiFile.getFirstChild();
             Assertions.assertNotNull(propertyElement);
             Assertions.assertEquals(
                     VersionPropsTypes.PROPERTY, propertyElement.getNode().getElementType());
 
-            // Get the dependency group
             PsiElement dependencyGroupElement = propertyElement.getFirstChild();
             Assertions.assertNotNull(dependencyGroupElement);
             Assertions.assertEquals(
                     VersionPropsTypes.DEPENDENCY_GROUP,
                     dependencyGroupElement.getNode().getElementType());
 
-            // Verify the GROUP_PART elements within the dependency group
             PsiElement[] groupParts = PsiTreeUtil.getChildrenOfType(dependencyGroupElement, PsiElement.class);
             Assertions.assertNotNull(groupParts);
             Assertions.assertTrue(groupParts.length >= 5); // Should contain at least com, ., palantir, ., baseline
@@ -125,7 +122,6 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
                     VersionPropsTypes.GROUP_PART, groupParts[4].getNode().getElementType());
             Assertions.assertEquals("baseline", groupParts[4].getText());
 
-            // Get the colon separating the group and name
             PsiElement colonElement = dependencyGroupElement.getNextSibling();
             while (colonElement != null && colonElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
                 colonElement = colonElement.getNextSibling();
@@ -134,7 +130,6 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
             Assertions.assertEquals(
                     VersionPropsTypes.COLON, colonElement.getNode().getElementType());
 
-            // Get the dependency name
             PsiElement dependencyNameElement = colonElement.getNextSibling();
             while (dependencyNameElement != null
                     && dependencyNameElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
@@ -145,14 +140,12 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
                     VersionPropsTypes.DEPENDENCY_NAME,
                     dependencyNameElement.getNode().getElementType());
 
-            // Verify the NAME_KEY element within the dependency name
             PsiElement nameKeyElement = dependencyNameElement.getFirstChild();
             Assertions.assertNotNull(nameKeyElement);
             Assertions.assertEquals(
                     VersionPropsTypes.NAME_KEY, nameKeyElement.getNode().getElementType());
             Assertions.assertEquals("baseline-error-prone", nameKeyElement.getText());
 
-            // Get the equals sign separating the name and version
             PsiElement equalsElement = dependencyNameElement.getNextSibling();
             while (equalsElement != null && equalsElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
                 equalsElement = equalsElement.getNextSibling();
@@ -161,7 +154,6 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
             Assertions.assertEquals(
                     VersionPropsTypes.EQUALS, equalsElement.getNode().getElementType());
 
-            // Get the dependency version
             PsiElement dependencyVersionElement = equalsElement.getNextSibling();
             while (dependencyVersionElement != null
                     && dependencyVersionElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
@@ -172,7 +164,6 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
                     VersionPropsTypes.DEPENDENCY_VERSION,
                     dependencyVersionElement.getNode().getElementType());
 
-            // Verify the VERSION element within the dependency version
             PsiElement versionElement = dependencyVersionElement.getFirstChild();
             Assertions.assertNotNull(versionElement);
             Assertions.assertEquals(
