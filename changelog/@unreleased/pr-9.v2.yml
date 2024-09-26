@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: Prevent the \ character causing the version to wrap the next line
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/9
