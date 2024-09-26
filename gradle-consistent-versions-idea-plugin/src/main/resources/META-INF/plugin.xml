@@ -1,7 +1,7 @@
-<idea-plugin url="https://github.com/palantir/gradle-jdks">
+<idea-plugin url="https://github.com/palantir/gradle-consistent-versions-idea-plugin">
   <id>gradle-consistent-versions</id>
   <name>gradle-consistent-versions</name>
-  <vendor url="https://github.com/palantir/gradle-jdks">
+  <vendor url="https://github.com/palantir/gradle-consistent-versions-idea-plugin">
     Palantir
   </vendor>
 

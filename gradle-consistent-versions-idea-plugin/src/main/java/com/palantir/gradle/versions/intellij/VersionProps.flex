@@ -33,20 +33,18 @@ import com.intellij.psi.TokenType;
 
 CRLF=\R
 WHITE_SPACE=[\ \n\t\f]
-FIRST_VALUE_CHARACTER=[^ \n\f\\] | "\\"{CRLF} | "\\".
-VALUE_CHARACTER=[^\n\f\\] | "\\"{CRLF} | "\\".
-END_OF_LINE_COMMENT=("#"|"!")[^\r\n]*
+VALUE_CHARACTER=[^ \n\f]+
 COLON=[:]
 EQUALS=[=]
 DOT=[.]
-KEY_CHARACTER=[^:=\ \n\t\f\\] | "\\ "
-GROUP_PART=[^.:=\ \n\t\f\\] | "\\ "
+KEY_CHARACTER=[^:=\ \n\t\f]+
+GROUP_PART=[^.:=\ \n\t\f]+
+COMMENT=("#")[^\r\n]*
 
-%state WAITING_NAME, WAITING_VERSION, WAITING_VALUE
+%state WAITING_NAME, WAITING_VERSION, WAITING_VALUE, INVALID_VALUE
 
 %%
-
-<YYINITIAL> {END_OF_LINE_COMMENT}                           { yybegin(YYINITIAL); return VersionPropsTypes.COMMENT; }
+<YYINITIAL> {COMMENT}                                       { yybegin(YYINITIAL); return VersionPropsTypes.COMMENT; }
 
 <YYINITIAL> {GROUP_PART}+                                   { yybegin(YYINITIAL); return VersionPropsTypes.GROUP_PART; }
 <YYINITIAL> {DOT}                                           { yybegin(YYINITIAL); return VersionPropsTypes.DOT; }
@@ -67,7 +65,9 @@ GROUP_PART=[^.:=\ \n\t\f\\] | "\\ "
 
 <WAITING_VALUE> {WHITE_SPACE}+                              { yybegin(WAITING_VALUE); return TokenType.WHITE_SPACE; }
 
-<WAITING_VALUE> {FIRST_VALUE_CHARACTER}{VALUE_CHARACTER}*   { yybegin(YYINITIAL); return VersionPropsTypes.VERSION; }
+<WAITING_VALUE> {VALUE_CHARACTER}+                          { yybegin(INVALID_VALUE); return VersionPropsTypes.VERSION; }
+
+<INVALID_VALUE> [^\n]+                                      { return TokenType.BAD_CHARACTER; }
 
 ({CRLF}|{WHITE_SPACE})+                                     { yybegin(YYINITIAL); return TokenType.WHITE_SPACE; }
 

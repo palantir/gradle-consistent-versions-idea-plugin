@@ -1,0 +1,5 @@
+type: improvement
+improvement:
+  description: Smarter versions lock writing
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/10
