@@ -186,7 +186,7 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
         WriteCommandAction.writeCommandAction(fixture.getProject()).run(() -> CodeStyleManager.getInstance(
                         fixture.getProject())
                 .reformatText(fixture.getFile(), List.of(fixture.getFile().getTextRange())));
-        fixture.checkResult(
-                "groupPart1.groupPart2:packageName = version \ngroupPart1.groupPart2:packageName = version");
+        System.out.println(fixture.getFile().getText());
+        fixture.checkResult("groupPart1.groupPart2:packageName = version\ngroupPart1.groupPart2:packageName = version");
     }
 }
