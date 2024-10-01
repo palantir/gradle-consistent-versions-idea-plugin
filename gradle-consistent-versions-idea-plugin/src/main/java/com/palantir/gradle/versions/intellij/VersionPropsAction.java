@@ -21,6 +21,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 
@@ -36,10 +37,12 @@ public class VersionPropsAction extends AnAction {
 
         DataContext dataContext = e.getDataContext();
         Editor editor = dataContext.getData(CommonDataKeys.EDITOR);
-        if (editor != null) {
+        Project project = e.getProject();
+
+        if (editor != null && project != null) {
             VirtualFile file = editor.getVirtualFile();
             if (file != null) {
-                VersionPropsToolbar.getInstance().hideToolbarForFile(file.getPath());
+                VersionPropsToolbar.getInstance().hideToolbarForFile(file.getPath(), project, dataContext);
             }
         }
     }
