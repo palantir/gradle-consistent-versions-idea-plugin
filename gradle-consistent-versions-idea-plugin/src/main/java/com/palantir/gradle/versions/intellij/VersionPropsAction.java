@@ -18,7 +18,11 @@ package com.palantir.gradle.versions.intellij;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vfs.VirtualFile;
 
 public class VersionPropsAction extends AnAction {
 
@@ -29,5 +33,14 @@ public class VersionPropsAction extends AnAction {
     @Override
     public void actionPerformed(AnActionEvent e) {
         Messages.showMessageDialog("Hello", "Information", Messages.getInformationIcon());
+
+        DataContext dataContext = e.getDataContext();
+        Editor editor = dataContext.getData(CommonDataKeys.EDITOR);
+        if (editor != null) {
+            VirtualFile file = editor.getVirtualFile();
+            if (file != null) {
+                VersionPropsToolbar.getInstance().hideToolbarForFile(file.getPath());
+            }
+        }
     }
 }
