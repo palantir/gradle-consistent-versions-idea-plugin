@@ -6,16 +6,12 @@ import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.editor.toolbar.floating.FloatingToolbarComponent;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import org.jetbrains.annotations.NotNull;
 
 public class VersionPropsDocumentListener implements DocumentListener {
     private final FileEditor fileEditor;
     private final Editor editor;
     private final Map<String, String> originalContent;
-    private final Set<String> changedFiles = new HashSet<>();
     private final Map<String, FloatingToolbarComponent> filesToolbarComponents;
     private static final String FILE_NAME = "versions.props";
 
@@ -31,12 +27,12 @@ public class VersionPropsDocumentListener implements DocumentListener {
     }
 
     @Override
-    public void beforeDocumentChange(@NotNull DocumentEvent event) {
+    public void beforeDocumentChange(DocumentEvent event) {
         // No action needed before the document change
     }
 
     @Override
-    public void documentChanged(@NotNull DocumentEvent event) {
+    public void documentChanged(DocumentEvent event) {
         VirtualFile file = fileEditor.getFile();
         if (file != null && FILE_NAME.equals(file.getName())) {
             String currentContent = editor.getDocument().getText();
@@ -50,7 +46,6 @@ public class VersionPropsDocumentListener implements DocumentListener {
     }
 
     private void updateFileChanged(String filePath) {
-        changedFiles.add(filePath);
         FloatingToolbarComponent toolbarComponent = filesToolbarComponents.get(filePath);
         if (toolbarComponent != null) {
             toolbarComponent.scheduleShow();
@@ -58,7 +53,6 @@ public class VersionPropsDocumentListener implements DocumentListener {
     }
 
     private void updateFileUnchanged(String filePath) {
-        changedFiles.remove(filePath);
         FloatingToolbarComponent toolbarComponent = filesToolbarComponents.get(filePath);
         if (toolbarComponent != null) {
             toolbarComponent.scheduleHide();

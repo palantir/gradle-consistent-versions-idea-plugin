@@ -46,12 +46,12 @@ public class VersionPropsToolbar extends AbstractFloatingToolbarProvider {
         projectFilesToolbarComponents.computeIfAbsent(project, k -> new HashMap<>());
         projectOriginalContent.computeIfAbsent(project, k -> new HashMap<>());
 
-        registerOnChangeHandlers(dataContext, fileEditor, parentDisposable, project);
+        registerDocumentListener(dataContext, fileEditor, parentDisposable, project);
 
         projectFilesToolbarComponents.get(project).put(fileEditor.getFile().getPath(), component);
     }
 
-    private void registerOnChangeHandlers(
+    private void registerDocumentListener(
             DataContext dataContext, FileEditor fileEditor, Disposable parentDisposable, Project project) {
         Editor editor = dataContext.getData(CommonDataKeys.EDITOR);
         if (editor != null) {
@@ -72,7 +72,7 @@ public class VersionPropsToolbar extends AbstractFloatingToolbarProvider {
         }
     }
 
-    public final void hideToolbarForFile(String filePath, Project project, DataContext dataContext) {
+    public final void hideToolbarForFile(String filePath, Project project, Editor editor) {
         FloatingToolbarComponent toolbarComponent = projectFilesToolbarComponents
                 .getOrDefault(project, new HashMap<>())
                 .get(filePath);
@@ -80,11 +80,19 @@ public class VersionPropsToolbar extends AbstractFloatingToolbarProvider {
             toolbarComponent.scheduleHide();
         }
 
-        Editor editor = dataContext.getData(CommonDataKeys.EDITOR);
         if (editor != null) {
             projectOriginalContent
                     .get(project)
                     .put(filePath, editor.getDocument().getText());
         }
+    }
+
+    // getter methods used for tests
+    public final Map<Project, Map<String, FloatingToolbarComponent>> getProjectFilesToolbarComponents() {
+        return projectFilesToolbarComponents;
+    }
+
+    public final Map<Project, Map<String, String>> getProjectOriginalContent() {
+        return projectOriginalContent;
     }
 }

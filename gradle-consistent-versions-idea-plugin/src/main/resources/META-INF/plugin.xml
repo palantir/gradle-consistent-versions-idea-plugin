@@ -12,7 +12,8 @@
 
   <actions>
     <group id="VersionPropsActionGroup">
-      <action class="com.palantir.gradle.versions.intellij.VersionPropsAction" id="VersionPropsAction" text="Floating button" description="Testing"/>
+      <action class="com.palantir.gradle.versions.intellij.VersionPropsWriteAction" id="VersionPropsWriteAction" text="Write Versions Lock" description="Write versions lock" icon="com.intellij.icons.ExpUiIcons.General.Refresh"/>
+      <action class="com.palantir.gradle.versions.intellij.VersionPropsCloseAction" id="VersionPropsCloseAction" text="Close" description="Close" icon="com.intellij.icons.ExpUiIcons.General.Close"/>
     </group>
   </actions>
 
@@ -23,12 +24,10 @@
     <lang.syntaxHighlighterFactory language="VersionProps"
                                    implementationClass="com.palantir.gradle.versions.intellij.VersionPropsSyntaxHighlighterFactory"/>
     <completion.contributor language="VersionProps"
-                            implementationClass="com.palantir.gradle.versions.intellij.VersionCompletionContributor" order="last"/>
+                            implementationClass="com.palantir.gradle.versions.intellij.VersionCompletionContributor"/>
     <completion.contributor language="VersionProps"
                             implementationClass="com.palantir.gradle.versions.intellij.FolderCompletionContributor"/>
     <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
-    <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsFileListener"/>
-    <editorFloatingToolbarProvider implementation="com.palantir.gradle.versions.intellij.VersionPropsToolbar" order="first"/>
-
+    <editorFloatingToolbarProvider implementation="com.palantir.gradle.versions.intellij.VersionPropsToolbar"/>
   </extensions>
 </idea-plugin>

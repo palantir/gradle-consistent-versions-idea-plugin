@@ -17,70 +17,51 @@
 package com.palantir.gradle.versions.intellij;
 
 import com.intellij.execution.executors.DefaultRunExecutor;
-import com.intellij.openapi.components.ComponentManager;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder;
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings;
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode;
 import com.intellij.openapi.externalSystem.task.TaskCallback;
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.vfs.AsyncFileListener;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent;
-import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.util.PsiTreeUtil;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-import java.util.function.Predicate;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.plugins.gradle.util.GradleConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class VersionPropsFileListener implements AsyncFileListener {
-    private static final Logger log = LoggerFactory.getLogger(VersionPropsFileListener.class);
+public class VersionPropsWriteAction extends AnAction {
+    private static final Logger log = LoggerFactory.getLogger(VersionPropsWriteAction.class);
     private static final String TASK_NAME = "writeVersionsLock";
 
-    @Nullable
+    public VersionPropsWriteAction() {
+        super("Write Versions Lock");
+    }
+
     @Override
-    public ChangeApplier prepareChange(List<? extends VFileEvent> events) {
-        List<VFileContentChangeEvent> versionPropsEvents = events.stream()
-                .filter(event -> event instanceof VFileContentChangeEvent)
-                .map(event -> (VFileContentChangeEvent) event)
-                .filter(event -> "versions.props".equals(event.getFile().getName()))
-                .toList();
+    public void actionPerformed(AnActionEvent e) {
+        DataContext dataContext = e.getDataContext();
+        Editor editor = dataContext.getData(CommonDataKeys.EDITOR);
+        Project project = e.getProject();
 
-        if (versionPropsEvents.isEmpty()) {
-            return null;
-        }
-
-        List<Project> projectsAffected = Arrays.stream(
-                        ProjectManager.getInstance().getOpenProjects())
-                .filter(Project::isInitialized)
-                .filter(Predicate.not(ComponentManager::isDisposed))
-                .filter(project -> versionPropsEvents.stream()
-                        .anyMatch(event -> event.getPath().startsWith(project.getBasePath())
-                                && !isFileMalformed(project, event.getFile())))
-                .toList();
-
-        return new ChangeApplier() {
-            @Override
-            public void afterVfsChange() {
-                projectsAffected.forEach(project -> {
-                    if (hasBuildSrc(project)) {
-                        runTaskThenRefresh(project);
-                    } else {
-                        refreshProjectWithTask(project);
-                    }
-                });
+        if (editor != null && project != null) {
+            if (hasBuildSrc(project)) {
+                runTaskThenRefresh(project);
+            } else {
+                refreshProjectWithTask(project);
             }
-        };
+
+            VirtualFile file = editor.getVirtualFile();
+            if (file != null) {
+                VersionPropsToolbar.getInstance().hideToolbarForFile(file.getPath(), project, editor);
+            }
+        }
     }
 
     private boolean hasBuildSrc(Project project) {
@@ -130,15 +111,5 @@ public final class VersionPropsFileListener implements AsyncFileListener {
 
     private void refreshProject(Project project, ImportSpecBuilder importSpec) {
         ExternalSystemUtil.refreshProject(project.getBasePath(), importSpec);
-    }
-
-    private static boolean isFileMalformed(Project project, VirtualFile file) {
-        PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
-
-        if (psiFile == null || !(psiFile.getFileType() instanceof VersionPropsFileType)) {
-            return true;
-        }
-
-        return PsiTreeUtil.hasErrorElements(psiFile);
     }
 }

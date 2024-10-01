@@ -22,19 +22,16 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 
-public class VersionPropsAction extends AnAction {
+public class VersionPropsCloseAction extends AnAction {
 
-    public VersionPropsAction() {
-        super("Click me");
+    public VersionPropsCloseAction() {
+        super("Close");
     }
 
     @Override
     public void actionPerformed(AnActionEvent e) {
-        Messages.showMessageDialog("Hello", "Information", Messages.getInformationIcon());
-
         DataContext dataContext = e.getDataContext();
         Editor editor = dataContext.getData(CommonDataKeys.EDITOR);
         Project project = e.getProject();
@@ -42,7 +39,7 @@ public class VersionPropsAction extends AnAction {
         if (editor != null && project != null) {
             VirtualFile file = editor.getVirtualFile();
             if (file != null) {
-                VersionPropsToolbar.getInstance().hideToolbarForFile(file.getPath(), project, dataContext);
+                VersionPropsToolbar.getInstance().hideToolbarForFile(file.getPath(), project, editor);
             }
         }
     }
