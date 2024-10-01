@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: fix missing import
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/22
