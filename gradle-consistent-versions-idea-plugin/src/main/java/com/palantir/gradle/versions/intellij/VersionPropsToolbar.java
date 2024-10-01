@@ -16,25 +16,46 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.intellij.openapi.actionSystem.ActionGroup;
-import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.editor.toolbar.floating.FloatingToolbarProvider;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.toolbar.floating.AbstractFloatingToolbarProvider;
+import com.intellij.openapi.editor.toolbar.floating.FloatingToolbarComponent;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Optional;
 
-public class VersionPropsToolbar implements FloatingToolbarProvider {
+public class VersionPropsToolbar extends AbstractFloatingToolbarProvider {
+    private static final String FILE_NAME = "versions.props";
 
-    @Override
-    public boolean isApplicable(DataContext dataContext) {
-        return true;
-    }
-
-    @Override
-    public ActionGroup getActionGroup() {
-        return (ActionGroup) ActionManager.getInstance().getAction("MyFloatingToolbarActionGroup");
+    public VersionPropsToolbar() {
+        super("VersionPropsActionGroup");
     }
 
     @Override
     public boolean getAutoHideable() {
         return false;
+    }
+
+    @Override
+    public void register(DataContext dataContext, FloatingToolbarComponent component, Disposable parentDisposable) {
+        //        look at
+        // https://github.com/yunyizhi/clion-platformio-plus/blob/18cab368c63f516a9b12af00450d4f28cbd07b13/src/main/java/org/btik/platformioplus/ini/reload/PlatformioIniFloatingToolbarProvider.java
+        super.register(dataContext, component, parentDisposable);
+
+        Project project = dataContext.getData(CommonDataKeys.PROJECT);
+        if (project == null) {
+            return;
+        }
+    }
+
+    @Override
+    public boolean isApplicable(DataContext dataContext) {
+        return Optional.ofNullable(dataContext.getData(CommonDataKeys.EDITOR))
+                .map(Editor::getVirtualFile)
+                .map(VirtualFile::getName)
+                .map(FILE_NAME::equals)
+                .orElse(false);
     }
 }

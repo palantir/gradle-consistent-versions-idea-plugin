@@ -11,9 +11,8 @@
   <depends>org.jetbrains.plugins.gradle</depends>
 
   <actions>
-    <group id="MyFloatingToolbarActionGroup" popup="true">
-      <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-      <action class="com.palantir.gradle.versions.intellij.VersionPropsAction" id="MyFloatingToolbarAction" text="Floating button"/>
+    <group id="VersionPropsActionGroup">
+      <action class="com.palantir.gradle.versions.intellij.VersionPropsAction" id="VersionPropsAction" text="Floating button" description="Testing"/>
     </group>
   </actions>
 
@@ -28,8 +27,8 @@
     <completion.contributor language="VersionProps"
                             implementationClass="com.palantir.gradle.versions.intellij.FolderCompletionContributor"/>
     <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
-<!--    <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsFileListener"/>-->
-<!--    <editorFloatingToolbarProvider implementation="com.palantir.gradle.versions.intellij.VersionPropsToolbar" />-->
+    <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsFileListener"/>
+    <editorFloatingToolbarProvider implementation="com.palantir.gradle.versions.intellij.VersionPropsToolbar" order="first"/>
 
   </extensions>
 </idea-plugin>

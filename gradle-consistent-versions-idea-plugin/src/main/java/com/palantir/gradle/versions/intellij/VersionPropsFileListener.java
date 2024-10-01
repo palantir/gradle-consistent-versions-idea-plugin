@@ -47,7 +47,6 @@ public final class VersionPropsFileListener implements AsyncFileListener {
     private static final Logger log = LoggerFactory.getLogger(VersionPropsFileListener.class);
     private static final String TASK_NAME = "writeVersionsLock";
 
-
     @Nullable
     @Override
     public ChangeApplier prepareChange(List<? extends VFileEvent> events) {

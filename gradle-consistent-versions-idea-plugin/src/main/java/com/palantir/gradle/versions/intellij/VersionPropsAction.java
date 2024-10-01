@@ -18,6 +18,7 @@ package com.palantir.gradle.versions.intellij;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.ui.Messages;
 
 public class VersionPropsAction extends AnAction {
 
@@ -27,6 +28,6 @@ public class VersionPropsAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
-        System.out.println("hello");
+        Messages.showMessageDialog("Hello", "Information", Messages.getInformationIcon());
     }
 }
