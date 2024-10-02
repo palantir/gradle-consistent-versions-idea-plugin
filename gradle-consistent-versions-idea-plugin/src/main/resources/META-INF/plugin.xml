@@ -29,5 +29,7 @@
                             implementationClass="com.palantir.gradle.versions.intellij.FolderCompletionContributor"/>
     <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
     <editorFloatingToolbarProvider implementation="com.palantir.gradle.versions.intellij.VersionPropsToolbar"/>
+    <applicationConfigurable instance="com.palantir.gradle.versions.intellij.VersionPropsSettingsConfigurable" displayName="Gradle Consistent Versions Plugin Settings" parentId="tools"/>
+    <applicationService serviceImplementation="com.palantir.gradle.versions.intellij.VersionPropsSettingsState"/>
   </extensions>
 </idea-plugin>
