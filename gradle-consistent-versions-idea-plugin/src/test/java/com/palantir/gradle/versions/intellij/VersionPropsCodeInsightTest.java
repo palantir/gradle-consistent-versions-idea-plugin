@@ -28,7 +28,6 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase5;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTestCase5 {
@@ -92,85 +91,70 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
 
         ApplicationManager.getApplication().runReadAction(() -> {
             PsiFile psiFile = fixture.getFile();
-            Assertions.assertNotNull(psiFile);
+            assertThat(psiFile).isNotNull();
 
             PsiElement propertyElement = psiFile.getFirstChild();
-            Assertions.assertNotNull(propertyElement);
-            Assertions.assertEquals(
-                    VersionPropsTypes.PROPERTY, propertyElement.getNode().getElementType());
+            assertThat(propertyElement).isNotNull();
+            assertThat(propertyElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.PROPERTY);
 
             PsiElement dependencyGroupElement = propertyElement.getFirstChild();
-            Assertions.assertNotNull(dependencyGroupElement);
-            Assertions.assertEquals(
-                    VersionPropsTypes.DEPENDENCY_GROUP,
-                    dependencyGroupElement.getNode().getElementType());
+            assertThat(dependencyGroupElement).isNotNull();
+            assertThat(dependencyGroupElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.DEPENDENCY_GROUP);
 
             PsiElement[] groupParts = PsiTreeUtil.getChildrenOfType(dependencyGroupElement, PsiElement.class);
-            Assertions.assertNotNull(groupParts);
-            Assertions.assertTrue(groupParts.length >= 5); // Should contain at least com, ., palantir, ., baseline
-            Assertions.assertEquals(
-                    VersionPropsTypes.GROUP_PART, groupParts[0].getNode().getElementType());
-            Assertions.assertEquals("com", groupParts[0].getText());
-            Assertions.assertEquals(
-                    VersionPropsTypes.DOT, groupParts[1].getNode().getElementType());
-            Assertions.assertEquals(".", groupParts[1].getText());
-            Assertions.assertEquals(
-                    VersionPropsTypes.GROUP_PART, groupParts[2].getNode().getElementType());
-            Assertions.assertEquals("palantir", groupParts[2].getText());
-            Assertions.assertEquals(
-                    VersionPropsTypes.DOT, groupParts[3].getNode().getElementType());
-            Assertions.assertEquals(".", groupParts[3].getText());
-            Assertions.assertEquals(
-                    VersionPropsTypes.GROUP_PART, groupParts[4].getNode().getElementType());
-            Assertions.assertEquals("baseline", groupParts[4].getText());
+            assertThat(groupParts).isNotNull();
+            assertThat(groupParts.length >= 5).isTrue(); // Should contain at least com, ., palantir, ., baseline
+            assertThat(groupParts[0].getNode().getElementType()).isEqualTo(VersionPropsTypes.GROUP_PART);
+            assertThat(groupParts[0].getText()).isEqualTo("com");
+            assertThat(groupParts[1].getNode().getElementType()).isEqualTo(VersionPropsTypes.DOT);
+            assertThat(groupParts[1].getText()).isEqualTo(".");
+            assertThat(groupParts[2].getNode().getElementType()).isEqualTo(VersionPropsTypes.GROUP_PART);
+            assertThat(groupParts[2].getText()).isEqualTo("palantir");
+            assertThat(groupParts[3].getNode().getElementType()).isEqualTo(VersionPropsTypes.DOT);
+            assertThat(groupParts[3].getText()).isEqualTo(".");
+            assertThat(groupParts[4].getNode().getElementType()).isEqualTo(VersionPropsTypes.GROUP_PART);
+            assertThat(groupParts[4].getText()).isEqualTo("baseline");
 
             PsiElement colonElement = dependencyGroupElement.getNextSibling();
             while (colonElement != null && colonElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
                 colonElement = colonElement.getNextSibling();
             }
-            Assertions.assertNotNull(colonElement);
-            Assertions.assertEquals(
-                    VersionPropsTypes.COLON, colonElement.getNode().getElementType());
+            assertThat(colonElement).isNotNull();
+            assertThat(colonElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.COLON);
 
             PsiElement dependencyNameElement = colonElement.getNextSibling();
             while (dependencyNameElement != null
                     && dependencyNameElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
                 dependencyNameElement = dependencyNameElement.getNextSibling();
             }
-            Assertions.assertNotNull(dependencyNameElement);
-            Assertions.assertEquals(
-                    VersionPropsTypes.DEPENDENCY_NAME,
-                    dependencyNameElement.getNode().getElementType());
+            assertThat(dependencyNameElement).isNotNull();
+            assertThat(dependencyNameElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.DEPENDENCY_NAME);
 
             PsiElement nameKeyElement = dependencyNameElement.getFirstChild();
-            Assertions.assertNotNull(nameKeyElement);
-            Assertions.assertEquals(
-                    VersionPropsTypes.NAME_KEY, nameKeyElement.getNode().getElementType());
-            Assertions.assertEquals("baseline-error-prone", nameKeyElement.getText());
+            assertThat(nameKeyElement).isNotNull();
+            assertThat(nameKeyElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.NAME_KEY);
+            assertThat(nameKeyElement.getText()).isEqualTo("baseline-error-prone");
 
             PsiElement equalsElement = dependencyNameElement.getNextSibling();
             while (equalsElement != null && equalsElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
                 equalsElement = equalsElement.getNextSibling();
             }
-            Assertions.assertNotNull(equalsElement);
-            Assertions.assertEquals(
-                    VersionPropsTypes.EQUALS, equalsElement.getNode().getElementType());
+            assertThat(equalsElement).isNotNull();
+            assertThat(equalsElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.EQUALS);
 
             PsiElement dependencyVersionElement = equalsElement.getNextSibling();
             while (dependencyVersionElement != null
                     && dependencyVersionElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
                 dependencyVersionElement = dependencyVersionElement.getNextSibling();
             }
-            Assertions.assertNotNull(dependencyVersionElement);
-            Assertions.assertEquals(
-                    VersionPropsTypes.DEPENDENCY_VERSION,
-                    dependencyVersionElement.getNode().getElementType());
+            assertThat(dependencyVersionElement).isNotNull();
+            assertThat(dependencyVersionElement.getNode().getElementType())
+                    .isEqualTo(VersionPropsTypes.DEPENDENCY_VERSION);
 
             PsiElement versionElement = dependencyVersionElement.getFirstChild();
-            Assertions.assertNotNull(versionElement);
-            Assertions.assertEquals(
-                    VersionPropsTypes.VERSION, versionElement.getNode().getElementType());
-            Assertions.assertEquals("2.40.2", versionElement.getText());
+            assertThat(versionElement).isNotNull();
+            assertThat(versionElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.VERSION);
+            assertThat(versionElement.getText()).isEqualTo("2.40.2");
         });
     }
 }
