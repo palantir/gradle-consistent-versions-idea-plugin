@@ -32,6 +32,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.Optional;
 import org.jetbrains.plugins.gradle.util.GradleConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,7 @@ public class VersionPropsWriteAction extends AnAction {
 
             VirtualFile file = editor.getVirtualFile();
             if (file != null) {
-                VersionPropsToolbar.getInstance().hideToolbarForFile(file.getPath(), project, editor);
+                VersionPropsToolbar.getInstance().hideToolbarForFile(file.getPath(), project, Optional.of(editor));
             }
         }
     }

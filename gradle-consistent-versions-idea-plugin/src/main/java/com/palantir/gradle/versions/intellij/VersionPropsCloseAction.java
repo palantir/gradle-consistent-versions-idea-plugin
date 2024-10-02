@@ -23,6 +23,7 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Optional;
 
 public class VersionPropsCloseAction extends AnAction {
 
@@ -39,7 +40,7 @@ public class VersionPropsCloseAction extends AnAction {
         if (editor != null && project != null) {
             VirtualFile file = editor.getVirtualFile();
             if (file != null) {
-                VersionPropsToolbar.getInstance().hideToolbarForFile(file.getPath(), project, editor);
+                VersionPropsToolbar.getInstance().hideToolbarForFile(file.getPath(), project, Optional.empty());
             }
         }
     }

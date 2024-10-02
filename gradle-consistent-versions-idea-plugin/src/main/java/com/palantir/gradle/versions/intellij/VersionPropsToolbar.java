@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class VersionPropsToolbar extends AbstractFloatingToolbarProvider {
     private static VersionPropsToolbar instance;
@@ -72,7 +73,7 @@ public class VersionPropsToolbar extends AbstractFloatingToolbarProvider {
         }
     }
 
-    public final void hideToolbarForFile(String filePath, Project project, Editor editor) {
+    public final void hideToolbarForFile(String filePath, Project project, Optional<Editor> editor) {
         FloatingToolbarComponent toolbarComponent = projectFilesToolbarComponents
                 .getOrDefault(project, new HashMap<>())
                 .get(filePath);
@@ -80,11 +81,9 @@ public class VersionPropsToolbar extends AbstractFloatingToolbarProvider {
             toolbarComponent.scheduleHide();
         }
 
-        if (editor != null) {
-            projectOriginalContent
-                    .get(project)
-                    .put(filePath, editor.getDocument().getText());
-        }
+        editor.ifPresent(value -> projectOriginalContent
+                .get(project)
+                .put(filePath, value.getDocument().getText()));
     }
 
     // getter methods used for tests
