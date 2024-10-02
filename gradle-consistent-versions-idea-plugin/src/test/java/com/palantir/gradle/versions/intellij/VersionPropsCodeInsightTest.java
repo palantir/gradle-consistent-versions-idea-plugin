@@ -28,7 +28,6 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase5;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTestCase5 {
@@ -149,7 +148,8 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
                 dependencyVersionElement = dependencyVersionElement.getNextSibling();
             }
             assertThat(dependencyVersionElement).isNotNull();
-            assertThat(dependencyVersionElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.DEPENDENCY_VERSION);
+            assertThat(dependencyVersionElement.getNode().getElementType())
+                    .isEqualTo(VersionPropsTypes.DEPENDENCY_VERSION);
 
             PsiElement versionElement = dependencyVersionElement.getFirstChild();
             assertThat(versionElement).isNotNull();
