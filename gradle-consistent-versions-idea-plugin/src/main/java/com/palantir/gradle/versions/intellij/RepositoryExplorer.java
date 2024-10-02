@@ -111,8 +111,9 @@ public class RepositoryExplorer {
 
             Metadata metadata = xmlMapper.readValue(content, Metadata.class);
             if (metadata.versioning() != null && metadata.versioning().versions() != null) {
+                String latest = metadata.versioning().latest();
                 for (String version : metadata.versioning().versions()) {
-                    versions.add(DependencyVersion.of(version));
+                    versions.add(DependencyVersion.of(version, latest.equals(version)));
                 }
             }
         } catch (Exception e) {

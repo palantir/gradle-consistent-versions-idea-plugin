@@ -20,9 +20,11 @@ import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
+import com.intellij.codeInsight.completion.PrioritizedLookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.patterns.PlatformPatterns;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
@@ -62,7 +64,13 @@ public class VersionCompletionContributor extends CompletionContributor {
                                 .map(RepositoryExplorer::new)
                                 .flatMap(repositoryExplorer ->
                                         repositoryExplorer.getVersions(group, dependencyPackage).stream())
-                                .map(LookupElementBuilder::create)
+                                .map(version -> version.isLatest()
+                                        ? PrioritizedLookupElement.withPriority(
+                                                LookupElementBuilder.create(version)
+                                                        .withTypeText("Latest", true)
+                                                        .withLookupString("latest"),
+                                                Double.MAX_VALUE)
+                                        : LookupElementBuilder.create(version))
                                 .forEach(resultSet::addElement);
                     }
                 });
@@ -70,5 +78,10 @@ public class VersionCompletionContributor extends CompletionContributor {
 
     private VersionPropsProperty findParentProperty(VersionPropsDependencyVersion versionElement) {
         return versionElement == null ? null : PsiTreeUtil.getParentOfType(versionElement, VersionPropsProperty.class);
+    }
+
+    @Override
+    public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
+        return typeChar == '=';
     }
 }
