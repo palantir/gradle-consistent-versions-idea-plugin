@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.versions.intellij;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -27,6 +28,7 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableMetadata.class)
 @JsonSerialize(as = ImmutableMetadata.class)
 @JsonRootName("metadata")
+@JsonIgnoreProperties(ignoreUnknown = true)
 interface Metadata {
     @Value.Parameter
     @JacksonXmlElementWrapper(useWrapping = false)
