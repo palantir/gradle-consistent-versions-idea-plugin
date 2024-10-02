@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.versions.intellij;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -25,6 +26,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonDeserialize(as = ImmutableVersioning.class)
 @JsonSerialize(as = ImmutableVersioning.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 interface Versioning {
     @Value.Parameter
     @JacksonXmlElementWrapper(useWrapping = false)

@@ -116,7 +116,7 @@ public class RepositoryExplorer {
                 }
             }
         } catch (Exception e) {
-            log.debug("Failed to parse maven-metadata.xml", e);
+            log.error("Failed to parse maven-metadata.xml", e);
         }
         return versions;
     }
