@@ -23,6 +23,7 @@ import com.intellij.psi.TokenType;
 
 %%
 
+// Define the lexer class
 %class VersionPropsLexer
 %implements FlexLexer
 %unicode
@@ -31,11 +32,13 @@ import com.intellij.psi.TokenType;
 %eof{ return; }
 %eof}
 
-%state WAITING_NAME, WAITING_VERSION, WAITING_VALUE, INVALID_VALUE
+// Define lexer states
+%state WAITING_NAME, WAITING_VERSION, WAITING_VALUE, WAITING_COMMENT, INVALID_VALUE
 
+// Define token patterns
 CRLF=\R
 WHITE_SPACE=[\ \n\t\f]
-VALUE=[^ \n\f]+
+VALUE=[^ \n\f#]+
 COLON=[:]
 EQUALS=[=]
 DOT=[.]
@@ -59,7 +62,10 @@ COMMENT=("#")[^\r\n]*
 <WAITING_VERSION> {WHITE_SPACE}+                 { return TokenType.WHITE_SPACE; }
 
 <WAITING_VALUE> {WHITE_SPACE}+                   { return TokenType.WHITE_SPACE; }
-<WAITING_VALUE> {VALUE}                          { yybegin(INVALID_VALUE); return VersionPropsTypes.VERSION; }
+<WAITING_VALUE> {VALUE}                          { yybegin(WAITING_COMMENT); return VersionPropsTypes.VERSION; }
+
+<WAITING_COMMENT> {WHITE_SPACE}*{COMMENT}        { yybegin(INVALID_VALUE); return VersionPropsTypes.COMMENT; }
+<WAITING_COMMENT> [^\n]+                         { return TokenType.BAD_CHARACTER; }
 
 <INVALID_VALUE> [^\n]+                           { return TokenType.BAD_CHARACTER; }
 
