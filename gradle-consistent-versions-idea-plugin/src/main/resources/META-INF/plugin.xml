@@ -11,6 +11,8 @@
   <depends>org.jetbrains.plugins.gradle</depends>
 
   <extensions defaultExtensionNs="com.intellij">
+    <projectService serviceImplementation="com.palantir.gradle.versions.intellij.VersionPropsSettings"/>
+    <projectConfigurable instance="com.palantir.gradle.versions.intellij.VersionPropsSettingsPage" displayName="Gradle Consistent Versions" parentId="tools"/>
     <fileType name="VersionProps File" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsFileType" fieldName="INSTANCE"
               language="VersionProps" fileNames="versions.props"/>
     <lang.parserDefinition language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsParserDefinition"/>
