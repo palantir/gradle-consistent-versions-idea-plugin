@@ -28,10 +28,10 @@ import org.jetbrains.annotations.Nullable;
 public final class VersionPropsSettingsPage implements Configurable {
     private JCheckBox enabledCheckbox;
 
-    private final VersionPropsSettings settings;
+    private final VersionPropsProjectSettings settings;
 
     public VersionPropsSettingsPage(Project project) {
-        settings = VersionPropsSettings.getInstance(project);
+        settings = VersionPropsProjectSettings.getInstance(project);
     }
 
     @Nls

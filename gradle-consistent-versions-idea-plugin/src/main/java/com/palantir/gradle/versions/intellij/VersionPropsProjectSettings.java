@@ -20,15 +20,13 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
-import java.util.ArrayList;
-import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 @com.intellij.openapi.components.State(
-        name = "GradleConsistentVersionsSettings",
-        storages = {@Storage("gradle-consistent-versions-plugin-settings.xml")})
+        name = "ProjectSettings",
+        storages = {@Storage("gcv-plugin-settings.xml")})
 @Service(Service.Level.PROJECT)
-public final class VersionPropsSettings implements PersistentStateComponent<VersionPropsSettings.State> {
+public final class VersionPropsProjectSettings implements PersistentStateComponent<VersionPropsProjectSettings.State> {
 
     public enum EnabledState {
         UNKNOWN,
@@ -37,8 +35,9 @@ public final class VersionPropsSettings implements PersistentStateComponent<Vers
     }
 
     public static final class State {
+        // Using an enum like this ensure that the file is created in .idea allowing for end users to configure it for
+        // all users
         private EnabledState enabled = EnabledState.UNKNOWN;
-        private List<String> mavenRepositories = new ArrayList<>();
 
         public void setEnabled(@Nullable String enabledStr) {
             if (enabledStr == null) {
@@ -56,19 +55,6 @@ public final class VersionPropsSettings implements PersistentStateComponent<Vers
                 case DISABLED -> "false";
                 default -> null;
             };
-        }
-
-        @Override
-        public String toString() {
-            return "State{" + "enabled=" + enabled + ", mavenRepositories=" + mavenRepositories + '}';
-        }
-
-        public List<String> getMavenRepositories() {
-            return mavenRepositories;
-        }
-
-        public void setMavenRepositories(List<String> mavenRepositories) {
-            this.mavenRepositories = mavenRepositories;
         }
     }
 
@@ -97,15 +83,7 @@ public final class VersionPropsSettings implements PersistentStateComponent<Vers
         state.enabled = enabled;
     }
 
-    public List<String> getMavenRepositories() {
-        return state.getMavenRepositories();
-    }
-
-    public void setMavenRepositories(List<String> mavenRepositories) {
-        state.setMavenRepositories(mavenRepositories);
-    }
-
-    public static VersionPropsSettings getInstance(Project project) {
-        return project.getService(VersionPropsSettings.class);
+    public static VersionPropsProjectSettings getInstance(Project project) {
+        return project.getService(VersionPropsProjectSettings.class);
     }
 }
