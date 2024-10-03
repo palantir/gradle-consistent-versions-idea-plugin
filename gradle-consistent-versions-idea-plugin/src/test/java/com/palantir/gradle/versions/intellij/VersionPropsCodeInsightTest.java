@@ -103,7 +103,8 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
 
             PsiElement[] groupParts = PsiTreeUtil.getChildrenOfType(dependencyGroupElement, PsiElement.class);
             assertThat(groupParts).isNotNull();
-            assertThat(groupParts.length >= 5).isTrue(); // Should contain at least com, ., palantir, ., baseline
+            assertThat(groupParts.length)
+                    .isGreaterThanOrEqualTo(5); // Should contain at least com, ., palantir, ., baseline
             assertThat(groupParts[0].getNode().getElementType()).isEqualTo(VersionPropsTypes.GROUP_PART);
             assertThat(groupParts[0].getText()).isEqualTo("com");
             assertThat(groupParts[1].getNode().getElementType()).isEqualTo(VersionPropsTypes.DOT);
