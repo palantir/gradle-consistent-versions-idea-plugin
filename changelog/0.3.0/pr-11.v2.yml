@@ -1,0 +1,5 @@
+type: improvement
+improvement:
+  description: Mark and pin the latest version during autocomplete suggestion
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/11

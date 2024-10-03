@@ -21,7 +21,9 @@ import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
+import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.patterns.PlatformPatterns;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
@@ -48,6 +50,7 @@ public class FolderCompletionContributor extends CompletionContributor {
                     CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
 
                 List<String> repositories = List.of("https://repo1.maven.org/maven2/");
+
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
                 repositories.stream()
@@ -90,5 +93,10 @@ public class FolderCompletionContributor extends CompletionContributor {
         FolderLookupElement lookupElement = new FolderLookupElement(folder.name(), "from cache");
         resultSet.addElement(lookupElement);
         return lookupElement;
+    }
+
+    @Override
+    public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
+        return typeChar == ':';
     }
 }
