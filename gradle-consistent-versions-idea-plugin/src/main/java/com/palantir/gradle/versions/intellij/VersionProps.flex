@@ -42,20 +42,20 @@ VALUE=[^ \n\f#]+
 COLON=[:]
 EQUALS=[=]
 DOT=[.]
-KEY_CHARACTER=[^:=\ \n\t\f]+
+KEY=[^:=\ \n\t\f]+
 GROUP_PART=[^.:=\ \n\t\f]+
 COMMENT=("#")[^\r\n]*
 
 %%
 
-<YYINITIAL> {COMMENT}                            { yybegin(YYINITIAL); return VersionPropsTypes.COMMENT; }
+<YYINITIAL> {WHITE_SPACE}*{COMMENT}                            { yybegin(YYINITIAL); return VersionPropsTypes.COMMENT; }
 <YYINITIAL> {GROUP_PART}                         { yybegin(YYINITIAL); return VersionPropsTypes.GROUP_PART; }
 <YYINITIAL> {DOT}                                { yybegin(YYINITIAL); return VersionPropsTypes.DOT; }
 <YYINITIAL> {WHITE_SPACE}*{DOT}{WHITE_SPACE}*    { yybegin(INVALID_VALUE); return TokenType.BAD_CHARACTER; }
 <YYINITIAL> {COLON}                              { yybegin(WAITING_NAME); return VersionPropsTypes.COLON; }
 <YYINITIAL> {WHITE_SPACE}*{COLON}{WHITE_SPACE}*  { yybegin(INVALID_VALUE); return TokenType.BAD_CHARACTER; }
 
-<WAITING_NAME> {KEY_CHARACTER}                   { yybegin(WAITING_VERSION); return VersionPropsTypes.NAME_KEY; }
+<WAITING_NAME> {KEY}                             { yybegin(WAITING_VERSION); return VersionPropsTypes.NAME_KEY; }
 <WAITING_NAME> {WHITE_SPACE}+                    { return TokenType.WHITE_SPACE; }
 
 <WAITING_VERSION> {EQUALS}                       { yybegin(WAITING_VALUE); return VersionPropsTypes.EQUALS; }
@@ -67,8 +67,6 @@ COMMENT=("#")[^\r\n]*
 <WAITING_COMMENT> {WHITE_SPACE}*{COMMENT}        { yybegin(INVALID_VALUE); return VersionPropsTypes.COMMENT; }
 <WAITING_COMMENT> [^\n]+                         { return TokenType.BAD_CHARACTER; }
 
-<INVALID_VALUE> [^\n]+                           { return TokenType.BAD_CHARACTER; }
-
-({CRLF}|{WHITE_SPACE})+                          { yybegin(YYINITIAL); return TokenType.WHITE_SPACE; }
+{CRLF}+                                          { yybegin(YYINITIAL); return TokenType.WHITE_SPACE; }
 
 [^]                                              { return TokenType.BAD_CHARACTER; }
