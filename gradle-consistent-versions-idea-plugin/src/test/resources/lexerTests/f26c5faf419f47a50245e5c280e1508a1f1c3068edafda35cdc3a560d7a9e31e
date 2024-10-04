@@ -1,0 +1,15 @@
+VersionPropsTokenType.GROUP_PART has
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART end
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART of
+DEPENDENCY_GROUP has.end.of
+VersionPropsTokenType.COLON :
+VersionPropsTokenType.NAME_KEY line
+DEPENDENCY_NAME line
+VersionPropsTokenType.EQUALS =
+VersionPropsTokenType.VERSION comments
+DEPENDENCY_VERSION comments
+PROPERTY has.end.of:line=comments
+VersionPropsTokenType.COMMENT #here is the comment
+FILE has.end.of:line=comments#here is the comment

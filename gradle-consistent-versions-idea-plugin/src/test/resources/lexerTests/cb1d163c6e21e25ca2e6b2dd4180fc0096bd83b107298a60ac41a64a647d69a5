@@ -1,0 +1,14 @@
+BAD_CHARACTER  
+ERROR_ELEMENT  
+VersionPropsTokenType.GROUP_PART has
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART extra
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART space
+VersionPropsTokenType.COLON :
+VersionPropsTokenType.NAME_KEY bad_token
+WHITE_SPACE  
+VersionPropsTokenType.EQUALS =
+WHITE_SPACE  
+VersionPropsTokenType.VERSION 1
+FILE  has.extra.space:bad_token = 1

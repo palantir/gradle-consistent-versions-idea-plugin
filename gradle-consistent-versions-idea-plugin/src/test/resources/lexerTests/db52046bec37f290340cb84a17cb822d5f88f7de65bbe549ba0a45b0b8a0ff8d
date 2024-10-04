@@ -1,0 +1,14 @@
+VersionPropsTokenType.GROUP_PART a
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART normal
+DEPENDENCY_GROUP a.normal
+VersionPropsTokenType.COLON :
+VersionPropsTokenType.NAME_KEY example
+DEPENDENCY_NAME example
+WHITE_SPACE  
+VersionPropsTokenType.EQUALS =
+WHITE_SPACE  
+VersionPropsTokenType.VERSION 1
+DEPENDENCY_VERSION 1
+PROPERTY a.normal:example = 1
+FILE a.normal:example = 1

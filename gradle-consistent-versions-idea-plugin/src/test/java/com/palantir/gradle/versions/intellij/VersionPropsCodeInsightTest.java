@@ -18,17 +18,10 @@ package com.palantir.gradle.versions.intellij;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.intellij.codeInsight.completion.CompletionType;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiRecursiveElementVisitor;
 import com.intellij.testFramework.UsefulTestCase;
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase5;
-import java.io.BufferedReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTestCase5 {
@@ -83,53 +76,5 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
         fixture.complete(CompletionType.BASIC);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         UsefulTestCase.assertEmpty(lookupElementStrings);
-    }
-
-    @Test
-    public void test_psi_tree_structure() throws Exception {
-        JavaCodeInsightTestFixture fixture = getFixture();
-        fixture.configureByText(
-                "versions.props",
-                // language=VersionProps
-                """
-                # A comment
-                 has.extra.space:bad_token = 1
-                has . space . around:dots = 1
-                has.spaces.around : colon = 1
-                has.no.spaces.around:equals=1
-                has.loads.of.spaces:around   =   equals
-                 # Another comment
-                has.end.of:line=comments # here is the comment
-                has.end.of:line=comments#here is the comment
-                odd/.characters@?'.in!:all\\/ = the_pl4ces.,?
-                a.normal:example = 1
-                random.characters:after = version blah blah
-                """
-                        .stripIndent());
-
-        String expectedTokens = loadExpectedTokens();
-
-        PsiFile psiFile = fixture.getFile();
-        String tokenString = convertPsiToString(psiFile);
-        assertThat(tokenString).isEqualTo(expectedTokens);
-    }
-
-    private String convertPsiToString(PsiFile psiFile) {
-        StringBuilder tokenStringBuilder = new StringBuilder();
-        psiFile.accept(new PsiRecursiveElementVisitor() {
-            @Override
-            public void visitElement(PsiElement element) {
-                super.visitElement(element);
-                tokenStringBuilder.append(element.getNode().getElementType()).append("\n");
-            }
-        });
-        return tokenStringBuilder.toString().trim();
-    }
-
-    private String loadExpectedTokens() throws Exception {
-        try (BufferedReader reader = Files.newBufferedReader(
-                Paths.get(getClass().getResource("/expectedTokens.txt").toURI()))) {
-            return reader.lines().collect(Collectors.joining("\n"));
-        }
     }
 }

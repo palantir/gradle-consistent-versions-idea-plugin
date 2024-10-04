@@ -1,0 +1,16 @@
+VersionPropsTokenType.GROUP_PART random
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART characters
+DEPENDENCY_GROUP random.characters
+VersionPropsTokenType.COLON :
+VersionPropsTokenType.NAME_KEY after
+DEPENDENCY_NAME after
+WHITE_SPACE  
+VersionPropsTokenType.EQUALS =
+WHITE_SPACE  
+VersionPropsTokenType.VERSION version
+DEPENDENCY_VERSION version
+PROPERTY random.characters:after = version
+BAD_CHARACTER  blah blah
+ERROR_ELEMENT  blah blah
+FILE random.characters:after = version blah blah

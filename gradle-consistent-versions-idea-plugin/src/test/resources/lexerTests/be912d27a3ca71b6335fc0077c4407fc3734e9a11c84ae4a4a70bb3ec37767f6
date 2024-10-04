@@ -1,0 +1,16 @@
+VersionPropsTokenType.GROUP_PART has
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART no
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART spaces
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART around
+DEPENDENCY_GROUP has.no.spaces.around
+VersionPropsTokenType.COLON :
+VersionPropsTokenType.NAME_KEY equals
+DEPENDENCY_NAME equals
+VersionPropsTokenType.EQUALS =
+VersionPropsTokenType.VERSION 1
+DEPENDENCY_VERSION 1
+PROPERTY has.no.spaces.around:equals=1
+FILE has.no.spaces.around:equals=1
