@@ -31,6 +31,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -91,7 +92,7 @@ class VersionPropsToolbarTest {
         fileContentMap.put("test-path", "original");
         toolbar.getProjectOriginalContent().put(project, fileContentMap);
 
-        toolbar.hideToolbarForFile("test-path", project, editor);
+        toolbar.hideToolbarForFile("test-path", project, Optional.of(editor));
 
         Mockito.verify(component).scheduleHide();
         assertThat(toolbar.getProjectOriginalContent().get(project).get("test-path"))

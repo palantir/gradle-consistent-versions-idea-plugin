@@ -32,10 +32,10 @@ public class VersionPropsCloseAction extends AnAction {
     }
 
     @Override
-    public void actionPerformed(AnActionEvent e) {
-        DataContext dataContext = e.getDataContext();
+    public final void actionPerformed(AnActionEvent event) {
+        DataContext dataContext = event.getDataContext();
         Editor editor = dataContext.getData(CommonDataKeys.EDITOR);
-        Project project = e.getProject();
+        Project project = event.getProject();
 
         if (editor != null && project != null) {
             VirtualFile file = editor.getVirtualFile();
