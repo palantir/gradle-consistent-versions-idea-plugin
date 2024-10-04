@@ -1,5 +1,5 @@
 type: improvement
 improvement:
-  description: Finlayw/use gradle cache
+  description: Use Gradle cache to source versions.props completions for better performance
   links:
   - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/23
