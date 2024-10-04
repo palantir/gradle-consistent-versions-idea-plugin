@@ -18,7 +18,10 @@
   </actions>
 
   <extensions defaultExtensionNs="com.intellij">
-    <projectConfigurable instance="com.palantir.gradle.versions.intellij.VersionPropsSettingsPage" displayName="Gradle Consistent Versions" id="VersionPropsSettingsPage"/>
+
+    <projectConfigurable instance="com.palantir.gradle.versions.intellij.VersionPropsProjectSettingsPage" displayName="GCV Plugin Settings" id="VersionPropsSettings"/>
+    <applicationConfigurable instance="com.palantir.gradle.versions.intellij.VersionPropsAppSettingsPage" displayName="GCV Application Settings (Experimental)" parentId="VersionPropsSettings"/>
+
     <fileType name="VersionProps File" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsFileType" fieldName="INSTANCE"
               language="VersionProps" fileNames="versions.props"/>
     <lang.parserDefinition language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsParserDefinition"/>
@@ -29,7 +32,7 @@
     <completion.contributor language="VersionProps"
                             implementationClass="com.palantir.gradle.versions.intellij.FolderCompletionContributor"/>
     <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
-    <editorFloatingToolbarProvider implementation="com.palantir.gradle.versions.intellij.VersionPropsToolbar"/>
+    <editorFloatingToolbarProvider implementation="com.palantir.gradle.versions.intellij.VersionPropsToolbar" order="first"/>
     <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsFileListener"/>
   </extensions>
 </idea-plugin>

@@ -25,12 +25,12 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
-public final class VersionPropsSettingsPage implements Configurable {
+public final class VersionPropsProjectSettingsPage implements Configurable {
     private JCheckBox enabledCheckbox;
 
     private final VersionPropsProjectSettings settings;
 
-    public VersionPropsSettingsPage(Project project) {
+    public VersionPropsProjectSettingsPage(Project project) {
         settings = VersionPropsProjectSettings.getInstance(project);
     }
 

@@ -60,37 +60,12 @@ public final class VersionPropsFileListener implements AsyncFileListener {
             public void afterVfsChange() {
                 projectsAffected.forEach(project -> {
                     VersionPropsProjectSettings settings = VersionPropsProjectSettings.getInstance(project);
-                    if (!settings.isEnabled()) {
+                    VersionPropsAppSettings appSettings = VersionPropsAppSettings.getInstance();
+                    if (!settings.isEnabled() || !appSettings.isEnabled()) {
                         return;
                     }
-
-                    if (hasBuildSrc(project)) {
-                        runTaskThenRefresh(project);
-                    } else {
-                        refreshProjectWithTask(project);
-                    }
+                    ProjectRefreshUtils.runWriteVersionsLock(project);
                 });
-            }
-        };
-    }
-
-    private boolean hasBuildSrc(Project project) {
-        return Files.exists(Paths.get(project.getBasePath(), "buildSrc"));
-    }
-
-    private void runTaskThenRefresh(Project project) {
-        log.debug("Running task {} on project {}", TASK_NAME, project.getName());
-        TaskCallback callback = new TaskCallback() {
-            @Override
-            public void onSuccess() {
-                log.debug("Task {} successfully executed", TASK_NAME);
-                refreshProject(project);
-            }
-
-            @Override
-            public void onFailure() {
-                log.error("Task {} failed", TASK_NAME);
-                projectsAffected.forEach(ProjectRefreshUtils::runWriteVersionsLock);
             }
         };
     }

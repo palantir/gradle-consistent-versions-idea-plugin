@@ -22,6 +22,11 @@ import com.intellij.openapi.editor.toolbar.floating.FloatingToolbarComponent;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import javax.swing.SwingUtilities;
 
 public class VersionPropsDocumentListener implements DocumentListener {
     private final FileEditor fileEditor;
@@ -29,6 +34,7 @@ public class VersionPropsDocumentListener implements DocumentListener {
     private final Map<String, String> originalContent;
     private final Map<String, FloatingToolbarComponent> filesToolbarComponents;
     private static final String FILE_NAME = "versions.props";
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     public VersionPropsDocumentListener(
             FileEditor fileEditor,
@@ -42,22 +48,33 @@ public class VersionPropsDocumentListener implements DocumentListener {
     }
 
     @Override
-    public void beforeDocumentChange(DocumentEvent event) {
-        // No action needed before the document change
-    }
+    public void beforeDocumentChange(DocumentEvent event) {}
 
     @Override
     public final void documentChanged(DocumentEvent event) {
         VirtualFile file = fileEditor.getFile();
         if (file != null && FILE_NAME.equals(file.getName())) {
+            VersionPropsProjectSettings projectSettings =
+                    VersionPropsProjectSettings.getInstance(Objects.requireNonNull(editor.getProject()));
+            VersionPropsAppSettings appSettings = VersionPropsAppSettings.getInstance();
+            if (!projectSettings.isEnabled() || appSettings.isEnabled()) {
+                scheduleUpdate(() -> updateFileUnchanged(file.getPath()));
+                return;
+            }
+
             String currentContent = editor.getDocument().getText();
 
+            // This requires debouncing to so that the toolbar actually shows up
             if (!originalContent.get(file.getPath()).equals(currentContent)) {
-                updateFileChanged(file.getPath());
+                scheduleUpdate(() -> updateFileChanged(file.getPath()));
             } else {
-                updateFileUnchanged(file.getPath());
+                scheduleUpdate(() -> updateFileUnchanged(file.getPath()));
             }
         }
+    }
+
+    private void scheduleUpdate(Runnable updateTask) {
+        scheduler.schedule(() -> SwingUtilities.invokeLater(updateTask), 300, TimeUnit.MILLISECONDS);
     }
 
     private void updateFileChanged(String filePath) {
