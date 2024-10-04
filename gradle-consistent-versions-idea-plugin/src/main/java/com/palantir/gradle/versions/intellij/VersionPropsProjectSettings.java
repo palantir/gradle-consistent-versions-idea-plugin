@@ -18,43 +18,26 @@ package com.palantir.gradle.versions.intellij;
 
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
+import com.intellij.openapi.components.Service.Level;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nullable;
 
+@Service(Level.PROJECT)
 @com.intellij.openapi.components.State(
         name = "ProjectSettings",
         storages = {@Storage("gcv-plugin-settings.xml")})
-@Service(Service.Level.PROJECT)
 public final class VersionPropsProjectSettings implements PersistentStateComponent<VersionPropsProjectSettings.State> {
 
-    public enum EnabledState {
-        UNKNOWN,
-        ENABLED,
-        DISABLED
-    }
-
     public static final class State {
-        // Using an enum like this ensure that the file is created in .idea allowing for end users to configure it for
-        // all users
-        private EnabledState enabled = EnabledState.UNKNOWN;
+        private boolean enabled = true;
 
-        public void setEnabled(@Nullable String enabledStr) {
-            if (enabledStr == null) {
-                enabled = EnabledState.UNKNOWN;
-            } else if (Boolean.valueOf(enabledStr)) {
-                enabled = EnabledState.ENABLED;
-            } else {
-                enabled = EnabledState.DISABLED;
-            }
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
 
-        public String getEnabled() {
-            return switch (enabled) {
-                case ENABLED -> "true";
-                case DISABLED -> "false";
-                default -> null;
-            };
+        public boolean getEnabled() {
+            return this.enabled;
         }
     }
 
@@ -72,14 +55,10 @@ public final class VersionPropsProjectSettings implements PersistentStateCompone
     }
 
     public boolean isEnabled() {
-        return state.enabled.equals(EnabledState.ENABLED);
+        return state.enabled;
     }
 
     public void setEnabled(boolean enabled) {
-        setEnabled(enabled ? EnabledState.ENABLED : EnabledState.DISABLED);
-    }
-
-    public void setEnabled(EnabledState enabled) {
         state.enabled = enabled;
     }
 
