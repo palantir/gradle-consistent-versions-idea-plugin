@@ -103,6 +103,7 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
                 has.end.of:line=comments#here is the comment
                 odd/.characters@?'.in!:all\\/ = the_pl4ces.,?
                 a.normal:example = 1
+                random.characters:after = version blah blah
                 """
                         .stripIndent());
 
