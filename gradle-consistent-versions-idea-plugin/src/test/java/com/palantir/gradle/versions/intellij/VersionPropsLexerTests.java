@@ -38,9 +38,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
 public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5 {
 
@@ -56,8 +54,9 @@ public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5
         return "";
     }
 
-    private static Stream<Set<String>> provideTestCases() {
-        return Stream.of(Set.of(
+    @Test
+    public void test_psi_tree_structure() throws Exception {
+        Set<String> testCases = Set.of(
                 "a.normal:example = 1",
                 "random.characters:after = version blah blah",
                 "has.end.of:line=comments#here is the comment",
@@ -69,22 +68,18 @@ public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5
                 "has.spaces.around : colon = 1",
                 "has.no.spaces.around:equals=1",
                 "has.loads.of.spaces:around   =   equals",
-                "    # comment after spaces"));
-    }
+                "    # comment after spaces");
 
-    @ParameterizedTest
-    @MethodSource("provideTestCases")
-    public void test_psi_tree_structure(Set<String> input) throws Exception {
         JavaCodeInsightTestFixture fixture = getFixture();
         Optional<String> inCi = Optional.ofNullable(System.getenv("CI"));
 
         // If we are running on remote check all the expected test files are checked in else clean the test directory
         if (inCi.equals(Optional.of("true"))) {
-            check_tests_match_input(input);
+            check_tests_match_input(testCases);
         } else {
             deleteOldTests(Paths.get(basePath));
         }
-        input.forEach(inputItem -> {
+        testCases.forEach(inputItem -> {
             fixture.configureByText("versions.props", inputItem);
             ApplicationManager.getApplication().runReadAction(() -> {
                 PsiFile psiFile = fixture.getFile();
