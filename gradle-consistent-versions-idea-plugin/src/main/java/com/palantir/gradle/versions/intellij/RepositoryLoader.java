@@ -34,6 +34,7 @@ import org.immutables.value.Value;
 public final class RepositoryLoader {
     private static final ObjectMapper XML_MAPPER = new XmlMapper().registerModule(new GuavaModule());
     private static final String MAVEN_REPOSITORIES_FILE_NAME = ".idea/gcv-maven-repositories.xml";
+    private static final String DEFAULT = "https://repo.maven.apache.org/maven2/";
 
     private RepositoryLoader() {
         // Utility class; prevent instantiation
@@ -44,6 +45,9 @@ public final class RepositoryLoader {
         File mavenRepoFile = new File(project.getBasePath(), MAVEN_REPOSITORIES_FILE_NAME);
 
         if (!mavenRepoFile.exists()) {
+            // Add maven central as a default so if they don't have a gcv-maven-repositories.xml yet they still get
+            // completion
+            urls.add(DEFAULT);
             return urls;
         }
 
