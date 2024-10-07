@@ -105,7 +105,6 @@ public class RepositoryFileCache {
     }
 
     private String modifyPackage(String repoUrl, String packageName) {
-        System.out.println(packageName);
         String urlString = repoUrl + packageName.replaceAll("\\.", "/") + "/maven-metadata.xml";
         try {
             URL url = new URL(urlString);

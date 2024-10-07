@@ -28,6 +28,7 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.List;
+import java.util.Objects;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
@@ -53,6 +54,7 @@ public class FolderCompletionContributor extends CompletionContributor {
 
                 repositories.stream()
                         .flatMap(repo -> FILE_CACHE.suggestions(repo, group).stream())
+                        .filter(Objects::nonNull)
                         .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion)))
                         .forEach(resultSet::addElement);
             }
