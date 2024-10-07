@@ -53,7 +53,7 @@ public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5
     }
 
     @BeforeAll
-    public static void setup() throws IOException {
+    public static void before() throws IOException {
         Optional<String> inCi = Optional.ofNullable(System.getenv("CI"));
 
         if (!inCi.equals(Optional.of("true"))) {
