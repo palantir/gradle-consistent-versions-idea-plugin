@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import org.immutables.value.Value;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -37,7 +38,7 @@ public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
 
     private final String baseUrl;
-    private static final Cache<DependencyGroup, List<Folder>> folderCache = Caffeine.newBuilder()
+    private static final Cache<CacheKey, List<Folder>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .maximumSize(100)
             .build();
@@ -47,8 +48,9 @@ public class RepositoryExplorer {
     }
 
     public final List<Folder> getFolders(DependencyGroup group) {
-        List<Folder> folders = folderCache.get(group, key -> {
-            List<Folder> loadedFolders = loadFolders(key);
+        CacheKey cacheKey = CacheKey.of(baseUrl, group);
+        List<Folder> folders = folderCache.get(cacheKey, key -> {
+            List<Folder> loadedFolders = loadFolders(key.group());
             return loadedFolders.isEmpty() ? null : loadedFolders;
         });
 
@@ -120,5 +122,16 @@ public class RepositoryExplorer {
             log.error("Failed to parse maven-metadata.xml", e);
         }
         return versions;
+    }
+
+    @Value.Immutable
+    interface CacheKey {
+        String baseUrl();
+
+        DependencyGroup group();
+
+        static CacheKey of(String baseUrl, DependencyGroup group) {
+            return ImmutableCacheKey.builder().baseUrl(baseUrl).group(group).build();
+        }
     }
 }
