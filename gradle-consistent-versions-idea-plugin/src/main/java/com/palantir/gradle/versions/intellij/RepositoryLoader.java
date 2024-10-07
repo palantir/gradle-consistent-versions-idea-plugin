@@ -16,8 +16,6 @@
 
 package com.palantir.gradle.versions.intellij;
 
-package com.palantir.gradle.versions.intellij;
-
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
