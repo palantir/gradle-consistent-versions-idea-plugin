@@ -27,8 +27,9 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.immutables.value.Value;
 
 public final class RepositoryLoader {
@@ -40,14 +41,14 @@ public final class RepositoryLoader {
         // Utility class; prevent instantiation
     }
 
-    public static List<String> loadRepositories(Project project) {
-        List<String> urls = new ArrayList<>();
+    public static Set<String> loadRepositories(Project project) {
+        Set<String> urls = new HashSet<>();
         File mavenRepoFile = new File(project.getBasePath(), MAVEN_REPOSITORIES_FILE_NAME);
 
+        // Add a default so that if nothing is found auto complete still works
+        urls.add(DEFAULT);
+
         if (!mavenRepoFile.exists()) {
-            // Add maven central as a default so if they don't have a gcv-maven-repositories.xml yet they still get
-            // completion
-            urls.add(DEFAULT);
             return urls;
         }
 
