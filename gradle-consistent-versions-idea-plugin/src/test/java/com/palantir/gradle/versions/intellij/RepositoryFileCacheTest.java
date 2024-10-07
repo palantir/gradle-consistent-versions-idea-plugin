@@ -32,7 +32,7 @@ public class RepositoryFileCacheTest {
     }
 
     @Test
-    public void can_add_and_get_suggestions() {
+    public void can_add_and_get_suggestions() throws InterruptedException {
         String repoUrl = "https://repo1.maven.org/maven2/";
         Set<String> packages = new HashSet<>();
         packages.add("com.palantir");
@@ -40,18 +40,24 @@ public class RepositoryFileCacheTest {
 
         cache.syncCache(repoUrl, packages);
 
+        // sleep as adding to the cache can take some time
+        Thread.sleep(2000);
+
         Set<String> cachedPackages = cache.suggestions(repoUrl, DependencyGroup.fromString("com"));
         Assertions.assertThat(cachedPackages).contains("palantir");
         Assertions.assertThat(cachedPackages).contains("fasterxml");
     }
 
     @Test
-    public void correctly_modify_full_packages() {
+    public void correctly_modify_full_packages() throws InterruptedException {
         String repoUrl = "https://repo1.maven.org/maven2/";
         Set<String> packages = new HashSet<>();
         packages.add("com.palantir.baseline.baseline-error-prone");
 
         cache.syncCache(repoUrl, packages);
+
+        // sleep as adding to the cache can take some time
+        Thread.sleep(2000);
 
         Set<String> cachedPackages = cache.suggestions(repoUrl, DependencyGroup.fromString("com"));
         Assertions.assertThat(cachedPackages).contains("palantir.baseline:baseline-error-prone");
