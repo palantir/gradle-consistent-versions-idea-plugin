@@ -16,15 +16,15 @@
 
 package com.palantir.gradle.versions.intellij;
 
+import com.google.common.hash.Hashing;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,7 +46,7 @@ public class RepositoryFileCache {
     private final ExecutorService executorService = Executors.newFixedThreadPool(20);
 
     public final void syncCache(String repoUrl, Set<String> packages) {
-        CompletableFuture.runAsync(
+        CompletableFuture<Void> unused = CompletableFuture.runAsync(
                 () -> {
                     Set<String> existingPackages = cache.get(repoUrl);
 
@@ -65,7 +65,8 @@ public class RepositoryFileCache {
                     // Process new packages asynchronously and update cache immediately
                     Set<String> finalExistingPackages = existingPackages;
                     diffPackages.forEach(pkg -> {
-                        CompletableFuture.supplyAsync(() -> modifyPackage(repoUrl, pkg), executorService)
+                        CompletableFuture<Void> diffUnused = CompletableFuture.supplyAsync(
+                                        () -> modifyPackage(repoUrl, pkg), executorService)
                                 .thenAccept(newPackage -> {
                                     synchronized (finalExistingPackages) {
                                         if (finalExistingPackages.add(newPackage)) {
@@ -131,7 +132,7 @@ public class RepositoryFileCache {
             if (Files.exists(cacheFilePath)) {
                 return new HashSet<>(Files.readAllLines(cacheFilePath));
             }
-        } catch (IOException | NoSuchAlgorithmException e) {
+        } catch (IOException e) {
             log.error("Failed to load cache from file", e);
         }
         return null;
@@ -148,22 +149,12 @@ public class RepositoryFileCache {
 
             Files.write(cacheFilePath, packages, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-        } catch (IOException | NoSuchAlgorithmException e) {
+        } catch (IOException e) {
             log.error("Failed to write cache to file", e);
         }
     }
 
-    private String hashRepoUrl(String repoUrl) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hash = digest.digest(repoUrl.getBytes());
-        StringBuilder hexString = new StringBuilder(2 * hash.length);
-        for (byte b : hash) {
-            String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) {
-                hexString.append('0');
-            }
-            hexString.append(hex);
-        }
-        return hexString.toString();
+    private String hashRepoUrl(String repoUrl) {
+        return Hashing.sha256().hashString(repoUrl, StandardCharsets.UTF_8).toString();
     }
 }
