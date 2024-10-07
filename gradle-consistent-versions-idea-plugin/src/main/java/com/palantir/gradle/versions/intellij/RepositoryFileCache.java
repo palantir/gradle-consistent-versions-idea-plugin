@@ -39,19 +39,36 @@ public class RepositoryFileCache {
 
     public final void syncCache(String repoUrl, Set<String> packages) {
         Set<String> existingPackages = cache.get(repoUrl);
-        boolean hasChanges = false;
 
         if (existingPackages == null) {
-            existingPackages = new HashSet<>(packages);
-            cache.put(repoUrl, existingPackages);
-            hasChanges = true;
-        } else {
-            hasChanges = existingPackages.addAll(packages);
+            existingPackages = loadCacheFromFile(repoUrl);
+            if (existingPackages != null) {
+                cache.put(repoUrl, existingPackages);
+            } else {
+                existingPackages = new HashSet<>();
+            }
         }
 
+        boolean hasChanges = existingPackages.addAll(packages);
+
         if (hasChanges) {
+            cache.put(repoUrl, existingPackages);
             writeCacheToFile(repoUrl, existingPackages);
         }
+    }
+
+    private Set<String> loadCacheFromFile(String repoUrl) {
+        try {
+            String hashedFileName = hashRepoUrl(repoUrl);
+            Path cacheFilePath = Paths.get(CACHE_PATH, hashedFileName);
+
+            if (Files.exists(cacheFilePath)) {
+                return new HashSet<>(Files.readAllLines(cacheFilePath));
+            }
+        } catch (IOException | NoSuchAlgorithmException e) {
+            log.error("Failed to load cache from file", e);
+        }
+        return null;
     }
 
     private void writeCacheToFile(String repoUrl, Set<String> packages) {

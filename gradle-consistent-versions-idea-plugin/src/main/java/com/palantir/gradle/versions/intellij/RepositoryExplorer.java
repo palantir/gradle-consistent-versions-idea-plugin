@@ -21,10 +21,10 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -35,9 +35,9 @@ import org.slf4j.LoggerFactory;
 
 public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
-
+    private static final RepositoryFileCache FILE_CACHE = new RepositoryFileCache();
     private final String baseUrl;
-    private static final Cache<DependencyGroup, List<Folder>> folderCache = Caffeine.newBuilder()
+    private static final Cache<DependencyGroup, Set<Folder>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .maximumSize(100)
             .build();
@@ -46,34 +46,45 @@ public class RepositoryExplorer {
         this.baseUrl = baseUrl;
     }
 
-    public final List<Folder> getFolders(DependencyGroup group) {
-        List<Folder> folders = folderCache.get(group, key -> {
-            List<Folder> loadedFolders = loadFolders(key);
+    public final Set<Folder> getFolders(DependencyGroup group) {
+        Set<Folder> folders = folderCache.get(group, key -> {
+            Set<Folder> loadedFolders = loadFolders(key);
             return loadedFolders.isEmpty() ? null : loadedFolders;
         });
 
-        return folders != null ? folders : Collections.emptyList();
+        return folders != null ? folders : Collections.emptySet();
     }
 
-    private List<Folder> loadFolders(DependencyGroup group) {
+    private Set<Folder> loadFolders(DependencyGroup group) {
         String urlString = baseUrl + group.asUrlString();
         Optional<String> content = fetchContent(urlString);
 
         if (content.isEmpty()) {
             log.debug("Page does not exist");
-            return new ArrayList<>();
+            return new HashSet<>();
         }
 
-        return fetchFoldersFromUrl(content.get());
+        Set<Folder> folders = fetchFoldersFromUrl(content.get());
+        String groupString = String.join(".", group.parts());
+        if (!groupString.isEmpty()) {
+            groupString = groupString + ".";
+        }
+        Set<String> packageParts = new HashSet<>();
+        for (Folder folder : folders) {
+            packageParts.add(groupString + folder.name());
+        }
+        FILE_CACHE.syncCache(baseUrl, packageParts);
+
+        return folders;
     }
 
-    public final List<DependencyVersion> getVersions(DependencyGroup group, DependencyName dependencyPackage) {
+    public final Set<DependencyVersion> getVersions(DependencyGroup group, DependencyName dependencyPackage) {
         String urlString = baseUrl + group.asUrlString() + dependencyPackage.name() + "/maven-metadata.xml";
         Optional<String> content = fetchContent(urlString);
 
         if (content.isEmpty()) {
             log.debug("Empty metadata content received");
-            return new ArrayList<>();
+            return new HashSet<>();
         }
 
         return parseVersionsFromMetadata(content.get());
@@ -89,8 +100,8 @@ public class RepositoryExplorer {
         }
     }
 
-    private List<Folder> fetchFoldersFromUrl(String contents) {
-        List<Folder> folders = new ArrayList<>();
+    private Set<Folder> fetchFoldersFromUrl(String contents) {
+        Set<Folder> folders = new HashSet<>();
 
         Document doc = Jsoup.parse(contents);
         Elements links = doc.select("a[href]");
@@ -104,8 +115,8 @@ public class RepositoryExplorer {
         return folders;
     }
 
-    private List<DependencyVersion> parseVersionsFromMetadata(String content) {
-        List<DependencyVersion> versions = new ArrayList<>();
+    private Set<DependencyVersion> parseVersionsFromMetadata(String content) {
+        Set<DependencyVersion> versions = new HashSet<>();
         try {
             XmlMapper xmlMapper = new XmlMapper();
 
