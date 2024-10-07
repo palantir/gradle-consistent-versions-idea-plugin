@@ -27,13 +27,9 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class FolderCompletionContributor extends CompletionContributor {
-
-    private final Map<Folder, FolderLookupElement> lookupElements = new HashMap<>();
 
     public FolderCompletionContributor() {
         IElementType[] elementTypes = {VersionPropsTypes.GROUP_PART, VersionPropsTypes.NAME_KEY};
@@ -77,23 +73,6 @@ public class FolderCompletionContributor extends CompletionContributor {
                         .forEach(resultSet::addElement);
             }
         });
-    }
-
-    private void addOrUpdateElement(CompletionResultSet resultSet, Folder folder) {
-        FolderLookupElement lookupElement = lookupElements.get(folder);
-        if (lookupElement != null) {
-            lookupElement.clearTypeText();
-        } else {
-            lookupElement = new FolderLookupElement(folder.name());
-        }
-        resultSet.addElement(lookupElement);
-        resultSet.restartCompletionOnAnyPrefixChange();
-    }
-
-    private FolderLookupElement createCacheElement(CompletionResultSet resultSet, Folder folder) {
-        FolderLookupElement lookupElement = new FolderLookupElement(folder.name(), "from cache");
-        resultSet.addElement(lookupElement);
-        return lookupElement;
     }
 
     @Override
