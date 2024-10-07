@@ -1,3 +1,4 @@
+random.characters:after = version blah blah
 VersionPropsTokenType.GROUP_PART random
 VersionPropsTokenType.DOT .
 VersionPropsTokenType.GROUP_PART characters

@@ -1,3 +1,4 @@
+has.loads.of.spaces:around   =   equals
 VersionPropsTokenType.GROUP_PART has
 VersionPropsTokenType.DOT .
 VersionPropsTokenType.GROUP_PART loads

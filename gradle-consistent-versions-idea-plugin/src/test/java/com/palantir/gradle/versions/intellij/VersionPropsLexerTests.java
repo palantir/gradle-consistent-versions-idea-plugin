@@ -18,6 +18,7 @@ package com.palantir.gradle.versions.intellij;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.hash.Hashing;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -32,8 +33,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeAll;
@@ -105,7 +104,7 @@ public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5
 
             if (inCi.equals(Optional.of("true"))) {
                 String expectedTokens = loadExpectedTokens(input);
-                assertThat(tokenString).isEqualTo(expectedTokens);
+                assertThat(input + "\n" + tokenString).isEqualTo(expectedTokens);
             } else {
                 saveActualTokens(input, tokenString);
             }
@@ -136,9 +135,9 @@ public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5
         }
     }
 
-    private void saveActualTokens(String fileName, String token) {
-        try (BufferedWriter writer = Files.newBufferedWriter(getOutputFilePath(fileName), StandardCharsets.UTF_8)) {
-            writer.write(token);
+    private void saveActualTokens(String input, String token) {
+        try (BufferedWriter writer = Files.newBufferedWriter(getOutputFilePath(input), StandardCharsets.UTF_8)) {
+            writer.write(input + "\n" + token);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -152,16 +151,6 @@ public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5
     }
 
     private static String hashToFolderName(String input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hashBytes) {
-                hexString.append(String.format("%02x", b));
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 algorithm not found", e);
-        }
+        return Hashing.sha256().hashString(input, StandardCharsets.UTF_8).toString();
     }
 }

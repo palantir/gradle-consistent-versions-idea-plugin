@@ -1,3 +1,4 @@
+has . space . around:dots = 1
 VersionPropsTokenType.GROUP_PART has
 BAD_CHARACTER  . 
 ERROR_ELEMENT  . 

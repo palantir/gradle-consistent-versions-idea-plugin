@@ -1,3 +1,4 @@
+has.no.spaces.around:equals=1
 VersionPropsTokenType.GROUP_PART has
 VersionPropsTokenType.DOT .
 VersionPropsTokenType.GROUP_PART no

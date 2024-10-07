@@ -1,3 +1,4 @@
+ has.extra.space:bad_token = 1
 BAD_CHARACTER  
 ERROR_ELEMENT  
 VersionPropsTokenType.GROUP_PART has
