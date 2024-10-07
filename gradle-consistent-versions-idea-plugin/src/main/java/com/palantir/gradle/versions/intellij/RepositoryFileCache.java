@@ -17,6 +17,8 @@
 package com.palantir.gradle.versions.intellij;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,6 +29,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,24 +43,85 @@ public class RepositoryFileCache {
 
     private static final Map<String, Set<String>> cache = new HashMap<>();
 
-    public final void syncCache(String repoUrl, Set<String> packages) {
-        Set<String> existingPackages = cache.get(repoUrl);
+    private final ExecutorService executorService = Executors.newFixedThreadPool(20);
 
-        if (existingPackages == null) {
-            existingPackages = loadCacheFromFile(repoUrl);
-            if (existingPackages != null) {
-                cache.put(repoUrl, existingPackages);
+    public final void syncCache(String repoUrl, Set<String> packages) {
+        CompletableFuture.runAsync(
+                () -> {
+                    Set<String> existingPackages = cache.get(repoUrl);
+
+                    if (existingPackages == null) {
+                        existingPackages = loadCacheFromFile(repoUrl);
+                        if (existingPackages != null) {
+                            cache.put(repoUrl, existingPackages);
+                        } else {
+                            existingPackages = new HashSet<>();
+                        }
+                    }
+
+                    Set<String> diffPackages = new HashSet<>(packages);
+                    diffPackages.removeAll(existingPackages);
+
+                    // Process new packages asynchronously and update cache immediately
+                    Set<String> finalExistingPackages = existingPackages;
+                    diffPackages.forEach(pkg -> {
+                        CompletableFuture.supplyAsync(() -> modifyPackage(repoUrl, pkg), executorService)
+                                .thenAccept(newPackage -> {
+                                    synchronized (finalExistingPackages) {
+                                        if (finalExistingPackages.add(newPackage)) {
+                                            cache.put(repoUrl, finalExistingPackages);
+                                            writeCacheToFile(repoUrl, finalExistingPackages);
+                                        }
+                                    }
+                                });
+                    });
+                },
+                executorService);
+    }
+
+    public final Set<String> suggestions(String repoUrl, DependencyGroup group) {
+        Set<String> allSuggestions = cache.get(repoUrl);
+        String groupString = String.join(".", group.parts());
+
+        if (allSuggestions == null) {
+            allSuggestions = loadCacheFromFile(repoUrl);
+            if (allSuggestions != null) {
+                cache.put(repoUrl, allSuggestions);
             } else {
-                existingPackages = new HashSet<>();
+                return new HashSet<>();
             }
         }
 
-        boolean hasChanges = existingPackages.addAll(packages);
+        return allSuggestions.stream()
+                .filter(suggestion -> suggestion.startsWith(groupString))
+                .map(suggestion -> {
+                    String result = suggestion.substring(groupString.length());
+                    if (result.startsWith(".") || result.startsWith(":")) {
+                        return result.substring(1);
+                    }
+                    return result;
+                })
+                .collect(Collectors.toSet());
+    }
 
-        if (hasChanges) {
-            cache.put(repoUrl, existingPackages);
-            writeCacheToFile(repoUrl, existingPackages);
+    private String modifyPackage(String repoUrl, String packageName) {
+        System.out.println(packageName);
+        String urlString = repoUrl + packageName.replaceAll("\\.", "/") + "/maven-metadata.xml";
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(3000);
+
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                return packageName.replaceAll("\\.(?=[^.]*$)", ":");
+            }
+        } catch (IOException e) {
+            log.error("Failed to get maven-metadata", e);
         }
+        return packageName;
     }
 
     private Set<String> loadCacheFromFile(String repoUrl) {

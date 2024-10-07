@@ -31,13 +31,35 @@ import java.util.List;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
-    public FolderCompletionContributor() {
-        extendCompletion(VersionPropsTypes.GROUP_PART);
+    private static final RepositoryFileCache FILE_CACHE = new RepositoryFileCache();
 
-        extendCompletion(VersionPropsTypes.NAME_KEY);
+    public FolderCompletionContributor() {
+        IElementType[] elementTypes = {VersionPropsTypes.GROUP_PART, VersionPropsTypes.NAME_KEY};
+        for (IElementType elementType : elementTypes) {
+            cacheCompletion(elementType);
+            remoteCompletion(elementType);
+        }
     }
 
-    private void extendCompletion(IElementType elementType) {
+    private void cacheCompletion(IElementType elementType) {
+        extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
+            @Override
+            protected void addCompletions(
+                    CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
+
+                List<String> repositories = List.of("https://repo1.maven.org/maven2/");
+
+                DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
+
+                repositories.stream()
+                        .flatMap(repo -> FILE_CACHE.suggestions(repo, group).stream())
+                        .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion)))
+                        .forEach(resultSet::addElement);
+            }
+        });
+    }
+
+    private void remoteCompletion(IElementType elementType) {
         extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
             @Override
             protected void addCompletions(
