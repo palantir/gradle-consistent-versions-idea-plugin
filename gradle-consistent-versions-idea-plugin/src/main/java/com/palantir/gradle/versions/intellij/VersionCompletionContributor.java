@@ -23,6 +23,7 @@ import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.completion.PrioritizedLookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.project.Project;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -30,7 +31,6 @@ import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,9 +58,9 @@ public class VersionCompletionContributor extends CompletionContributor {
                         DependencyName dependencyPackage =
                                 DependencyName.of(property.getDependencyName().getText());
 
-                        List<String> repositories = List.of("https://repo1.maven.org/maven2/");
+                        Project project = parameters.getOriginalFile().getProject();
 
-                        repositories.stream()
+                        RepositoryLoader.loadRepositories(project).stream()
                                 .map(RepositoryExplorer::new)
                                 .flatMap(repositoryExplorer ->
                                         repositoryExplorer.getVersions(group, dependencyPackage).stream())

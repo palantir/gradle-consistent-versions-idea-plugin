@@ -22,12 +22,12 @@ import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.openapi.project.Project;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
-import java.util.List;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
@@ -43,13 +43,11 @@ public class FolderCompletionContributor extends CompletionContributor {
             protected void addCompletions(
                     CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
 
-                List<String> repositories = List.of("https://repo1.maven.org/maven2/");
-
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
-                RepositoryLoader.loadRepositories()
+                Project project = parameters.getOriginalFile().getProject();
 
-                repositories.stream()
+                RepositoryLoader.loadRepositories(project).stream()
                         .map(RepositoryExplorer::new)
                         .flatMap(repositoryExplorer -> repositoryExplorer.getFolders(group).stream())
                         .map(LookupElementBuilder::create)
