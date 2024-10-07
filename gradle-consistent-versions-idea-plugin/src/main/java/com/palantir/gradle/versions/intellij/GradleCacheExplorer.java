@@ -18,64 +18,63 @@ package com.palantir.gradle.versions.intellij;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.base.Splitter;
 import java.io.File;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class GradleCacheExplorer {
 
     private static final String GRADLE_CACHE_PATH =
             System.getProperty("user.home") + "/.gradle/caches/modules-2/files-2.1";
-    private static final Cache<String, Map<Folder, Object>> cache =
+    private static final Cache<String, Set<String>> cache =
             Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
-    public final List<Folder> getFolders(DependencyGroup group) {
-        Map<Folder, Object> tree = cache.get(GRADLE_CACHE_PATH, key -> {
-            Map<Folder, Object> newTree = new HashMap<>();
-            buildGradleCacheTree(new File(GRADLE_CACHE_PATH), newTree);
-            return newTree;
-        });
-
-        return searchGradleCacheTree(tree, group.parts());
+    public final Set<String> getCompletions(DependencyGroup group) {
+        Set<String> cacheSet = cache.get(GRADLE_CACHE_PATH, key -> buildCacheSet(new File(GRADLE_CACHE_PATH)));
+        return searchCacheSet(cacheSet, String.join(".", group.parts()));
     }
 
-    private static void buildGradleCacheTree(File folder, Map<Folder, Object> tree) {
+    private static Set<String> searchCacheSet(Set<String> input, String pattern) {
+        if (pattern.isEmpty()) {
+            return input;
+        }
+        Set<String> resultSet = new HashSet<>();
+        for (String str : input) {
+            if (str.startsWith(pattern)) {
+                resultSet.add(str.substring(pattern.length() + 1));
+            }
+        }
+        return resultSet;
+    }
+
+    private static Set<String> buildCacheSet(File folder) {
+        Set<String> cacheSet = new HashSet<>();
         if (!folder.exists() || !folder.isDirectory()) {
-            return;
+            return cacheSet;
         }
 
-        for (File subFolder : Objects.requireNonNull(folder.listFiles(File::isDirectory))) {
-            String folderName = subFolder.getName();
-            Map<Folder, Object> currentLevel = tree;
-
-            for (String part : Splitter.on('.').split(folderName)) {
-                currentLevel =
-                        (Map<Folder, Object>) currentLevel.computeIfAbsent(Folder.of(part), k -> new HashMap<>());
-            }
-
-            for (File subSubFolder : Objects.requireNonNull(subFolder.listFiles(File::isDirectory))) {
-                currentLevel.put(Folder.of(subSubFolder.getName()), new HashMap<>());
-            }
-        }
+        addFoldersToSet(folder, "", cacheSet);
+        return cacheSet;
     }
 
-    private static List<Folder> searchGradleCacheTree(Map<Folder, Object> tree, List<String> parts) {
-        Map<Folder, Object> currentLevel = tree;
-
-        for (String part : parts) {
-            Folder folder = Folder.of(part);
-            if (currentLevel.containsKey(folder)) {
-                currentLevel = (Map<Folder, Object>) currentLevel.get(folder);
-            } else {
-                return Collections.emptyList();
+    private static void addFoldersToSet(File folder, String parentPath, Set<String> cacheSet) {
+        File[] files = folder.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    String folderPath = parentPath.isEmpty() ? file.getName() : parentPath + "." + file.getName();
+                    File[] subFiles = file.listFiles();
+                    if (subFiles != null) {
+                        for (File subFile : subFiles) {
+                            if (subFile.isDirectory()) {
+                                String subFolderPath = folderPath + ":" + subFile.getName();
+                                cacheSet.add(subFolderPath);
+                            }
+                        }
+                    }
+                }
             }
         }
-
-        return List.copyOf(currentLevel.keySet());
     }
 }
