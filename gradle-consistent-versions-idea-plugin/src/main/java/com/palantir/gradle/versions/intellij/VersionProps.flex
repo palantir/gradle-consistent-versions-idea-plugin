@@ -23,52 +23,50 @@ import com.intellij.psi.TokenType;
 
 %%
 
+// Define the lexer class
 %class VersionPropsLexer
 %implements FlexLexer
 %unicode
 %function advance
 %type IElementType
-%eof{  return;
+%eof{ return; }
 %eof}
 
+// Define lexer states
+%state WAITING_NAME, WAITING_VERSION, WAITING_VALUE, WAITING_COMMENT, INVALID_VALUE
+
+// Define token patterns
 CRLF=\R
 WHITE_SPACE=[\ \n\t\f]
-VALUE_CHARACTER=[^ \n\f]+
+VALUE=[^ \n\f#]+
 COLON=[:]
 EQUALS=[=]
 DOT=[.]
-KEY_CHARACTER=[^:=\ \n\t\f]+
+KEY=[^:=\ \n\t\f]+
 GROUP_PART=[^.:=\ \n\t\f]+
 COMMENT=("#")[^\r\n]*
 
-%state WAITING_NAME, WAITING_VERSION, WAITING_VALUE, INVALID_VALUE
-
 %%
-<YYINITIAL> {COMMENT}                                       { yybegin(YYINITIAL); return VersionPropsTypes.COMMENT; }
 
-<YYINITIAL> {GROUP_PART}+                                   { yybegin(YYINITIAL); return VersionPropsTypes.GROUP_PART; }
-<YYINITIAL> {DOT}                                           { yybegin(YYINITIAL); return VersionPropsTypes.DOT; }
+<YYINITIAL> {WHITE_SPACE}*{COMMENT}                            { yybegin(YYINITIAL); return VersionPropsTypes.COMMENT; }
+<YYINITIAL> {GROUP_PART}                         { yybegin(YYINITIAL); return VersionPropsTypes.GROUP_PART; }
+<YYINITIAL> {DOT}                                { yybegin(YYINITIAL); return VersionPropsTypes.DOT; }
+<YYINITIAL> {WHITE_SPACE}*{DOT}{WHITE_SPACE}*    { yybegin(INVALID_VALUE); return TokenType.BAD_CHARACTER; }
+<YYINITIAL> {COLON}                              { yybegin(WAITING_NAME); return VersionPropsTypes.COLON; }
+<YYINITIAL> {WHITE_SPACE}*{COLON}{WHITE_SPACE}*  { yybegin(INVALID_VALUE); return TokenType.BAD_CHARACTER; }
 
-<YYINITIAL> {COLON}                                         { yybegin(WAITING_NAME); return VersionPropsTypes.COLON; }
+<WAITING_NAME> {KEY}                             { yybegin(WAITING_VERSION); return VersionPropsTypes.NAME_KEY; }
+<WAITING_NAME> {WHITE_SPACE}+                    { return TokenType.WHITE_SPACE; }
 
-<WAITING_NAME> {KEY_CHARACTER}+                             { yybegin(WAITING_VERSION); return VersionPropsTypes.NAME_KEY; }
+<WAITING_VERSION> {EQUALS}                       { yybegin(WAITING_VALUE); return VersionPropsTypes.EQUALS; }
+<WAITING_VERSION> {WHITE_SPACE}+                 { return TokenType.WHITE_SPACE; }
 
-<WAITING_NAME> {WHITE_SPACE}+                               { yybegin(WAITING_NAME); return TokenType.WHITE_SPACE; }
+<WAITING_VALUE> {WHITE_SPACE}+                   { return TokenType.WHITE_SPACE; }
+<WAITING_VALUE> {VALUE}                          { yybegin(WAITING_COMMENT); return VersionPropsTypes.VERSION; }
 
-<WAITING_NAME> {CRLF}({CRLF}|{WHITE_SPACE})+                { yybegin(YYINITIAL); return TokenType.WHITE_SPACE; }
+<WAITING_COMMENT> {WHITE_SPACE}*{COMMENT}        { yybegin(INVALID_VALUE); return VersionPropsTypes.COMMENT; }
+<WAITING_COMMENT> [^\n]+                         { return TokenType.BAD_CHARACTER; }
 
-<WAITING_VERSION> {EQUALS}                                  { yybegin(WAITING_VALUE); return VersionPropsTypes.EQUALS; }
+{CRLF}+                                          { yybegin(YYINITIAL); return TokenType.WHITE_SPACE; }
 
-<WAITING_VERSION> {WHITE_SPACE}+                            { yybegin(WAITING_VERSION); return TokenType.WHITE_SPACE; }
-
-<WAITING_VERSION> {CRLF}({CRLF}|{WHITE_SPACE})+             { yybegin(YYINITIAL); return TokenType.WHITE_SPACE; }
-
-<WAITING_VALUE> {WHITE_SPACE}+                              { yybegin(WAITING_VALUE); return TokenType.WHITE_SPACE; }
-
-<WAITING_VALUE> {VALUE_CHARACTER}+                          { yybegin(INVALID_VALUE); return VersionPropsTypes.VERSION; }
-
-<INVALID_VALUE> [^\n]+                                      { return TokenType.BAD_CHARACTER; }
-
-({CRLF}|{WHITE_SPACE})+                                     { yybegin(YYINITIAL); return TokenType.WHITE_SPACE; }
-
-[^]                                                         { return TokenType.BAD_CHARACTER; }
+[^]                                              { return TokenType.BAD_CHARACTER; }

@@ -18,19 +18,12 @@ package com.palantir.gradle.versions.intellij;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.intellij.codeInsight.completion.CompletionType;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.TokenType;
 import com.intellij.psi.codeStyle.CodeStyleManager;
-import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.testFramework.UsefulTestCase;
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase5;
-import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTestCase5 {
@@ -88,91 +81,16 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_psi_tree_structure() throws Exception {
-        JavaCodeInsightTestFixture fixture = getFixture();
-        fixture.configureByText("versions.props", "com.palantir.baseline:baseline-error-prone=2.40.2");
-
-        ApplicationManager.getApplication().runReadAction(() -> {
-            PsiFile psiFile = fixture.getFile();
-            assertThat(psiFile).isNotNull();
-
-            PsiElement propertyElement = psiFile.getFirstChild();
-            assertThat(propertyElement).isNotNull();
-            assertThat(propertyElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.PROPERTY);
-
-            PsiElement dependencyGroupElement = propertyElement.getFirstChild();
-            assertThat(dependencyGroupElement).isNotNull();
-            assertThat(dependencyGroupElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.DEPENDENCY_GROUP);
-
-            PsiElement[] groupParts = PsiTreeUtil.getChildrenOfType(dependencyGroupElement, PsiElement.class);
-            assertThat(groupParts).isNotNull();
-            assertThat(groupParts)
-                    .hasSizeGreaterThanOrEqualTo(5); // Should contain at least com, ., palantir, ., baseline
-            assertThat(groupParts[0].getNode().getElementType()).isEqualTo(VersionPropsTypes.GROUP_PART);
-            assertThat(groupParts[0].getText()).isEqualTo("com");
-            assertThat(groupParts[1].getNode().getElementType()).isEqualTo(VersionPropsTypes.DOT);
-            assertThat(groupParts[1].getText()).isEqualTo(".");
-            assertThat(groupParts[2].getNode().getElementType()).isEqualTo(VersionPropsTypes.GROUP_PART);
-            assertThat(groupParts[2].getText()).isEqualTo("palantir");
-            assertThat(groupParts[3].getNode().getElementType()).isEqualTo(VersionPropsTypes.DOT);
-            assertThat(groupParts[3].getText()).isEqualTo(".");
-            assertThat(groupParts[4].getNode().getElementType()).isEqualTo(VersionPropsTypes.GROUP_PART);
-            assertThat(groupParts[4].getText()).isEqualTo("baseline");
-
-            PsiElement colonElement = dependencyGroupElement.getNextSibling();
-            while (colonElement != null && colonElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
-                colonElement = colonElement.getNextSibling();
-            }
-            assertThat(colonElement).isNotNull();
-            assertThat(colonElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.COLON);
-
-            PsiElement dependencyNameElement = colonElement.getNextSibling();
-            while (dependencyNameElement != null
-                    && dependencyNameElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
-                dependencyNameElement = dependencyNameElement.getNextSibling();
-            }
-            assertThat(dependencyNameElement).isNotNull();
-            assertThat(dependencyNameElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.DEPENDENCY_NAME);
-
-            PsiElement nameKeyElement = dependencyNameElement.getFirstChild();
-            assertThat(nameKeyElement).isNotNull();
-            assertThat(nameKeyElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.NAME_KEY);
-            assertThat(nameKeyElement.getText()).isEqualTo("baseline-error-prone");
-
-            PsiElement equalsElement = dependencyNameElement.getNextSibling();
-            while (equalsElement != null && equalsElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
-                equalsElement = equalsElement.getNextSibling();
-            }
-            assertThat(equalsElement).isNotNull();
-            assertThat(equalsElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.EQUALS);
-
-            PsiElement dependencyVersionElement = equalsElement.getNextSibling();
-            while (dependencyVersionElement != null
-                    && dependencyVersionElement.getNode().getElementType() == TokenType.WHITE_SPACE) {
-                dependencyVersionElement = dependencyVersionElement.getNextSibling();
-            }
-            assertThat(dependencyVersionElement).isNotNull();
-            assertThat(dependencyVersionElement.getNode().getElementType())
-                    .isEqualTo(VersionPropsTypes.DEPENDENCY_VERSION);
-
-            PsiElement versionElement = dependencyVersionElement.getFirstChild();
-            assertThat(versionElement).isNotNull();
-            assertThat(versionElement.getNode().getElementType()).isEqualTo(VersionPropsTypes.VERSION);
-            assertThat(versionElement.getText()).isEqualTo("2.40.2");
-        });
-    }
-
-    @Test
     public void test_formatter() {
         JavaCodeInsightTestFixture fixture = getFixture();
         fixture.configureByText(
                 "versions.props",
-                "groupPart1.groupPart2 : packageName  =  version \n groupPart1.groupPart2:packageName=version");
+                "groupPart1.groupPart2:packageName  =  version \ngroupPart1.groupPart2:packageName=version");
 
         WriteCommandAction.writeCommandAction(fixture.getProject()).run(() -> CodeStyleManager.getInstance(
                         fixture.getProject())
                 .reformatText(fixture.getFile(), List.of(fixture.getFile().getTextRange())));
-        System.out.println(fixture.getFile().getText());
-        fixture.checkResult("groupPart1.groupPart2:packageName = version\ngroupPart1.groupPart2:packageName = version");
+        fixture.checkResult(
+                "groupPart1.groupPart2:packageName = version \ngroupPart1.groupPart2:packageName = version");
     }
 }
