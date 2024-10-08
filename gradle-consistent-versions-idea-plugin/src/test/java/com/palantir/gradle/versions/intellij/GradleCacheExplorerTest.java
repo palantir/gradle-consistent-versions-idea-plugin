@@ -16,20 +16,19 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class GradleCacheExplorerTest {
 
@@ -43,44 +42,55 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_gets_valid_urls_only() {
-        assertTrue(explorer.isValidResourceUrl(
-                "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom"));
-        assertTrue(
-                explorer.isValidResourceUrl("https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar"));
-        assertFalse(explorer.isValidResourceUrl("https://example.com/com/example/artifact/1.0/artifact-1.0.pom"));
-        assertFalse(explorer.isValidResourceUrl(
-                "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.txt"));
+        assertThat(explorer.isValidResourceUrl(
+                        "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom"))
+                .as("because the URL is from a known valid repository and ends with .pom")
+                .isTrue();
+
+        assertThat(explorer.isValidResourceUrl("https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar"))
+                .as("because the URL is from a known valid repository and ends with .jar")
+                .isTrue();
+
+        assertThat(explorer.isValidResourceUrl("https://example.com/com/example/artifact/1.0/artifact-1.0.pom"))
+                .as("because the URL is not from a known valid repository")
+                .isFalse();
+
+        assertThat(explorer.isValidResourceUrl(
+                        "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.txt"))
+                .as("because the URL ends with an invalid extension")
+                .isFalse();
     }
 
     @Test
-    void test_gets_all_strings_from_bin() throws IOException {
-        File tempFile = File.createTempFile("test", ".bin");
-        tempFile.deleteOnExit();
+    void test_gets_all_strings_from_bin(@TempDir File tempDir) throws IOException {
+        File tempFile = new File(tempDir, "test.bin");
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile, StandardCharsets.UTF_8))) {
             writer.write("hello.jar\nworld.pom\nanother.jar\b\f");
         }
 
-        Set<String> result = explorer.extractStringsFromBinFile(tempFile);
-        Set<String> expected = new HashSet<>(List.of("hello.jar", "world.pom", "another.jar"));
+        Stream<String> result = explorer.extractStringsFromBinFile(tempFile.toPath());
+        List<String> resultList = result.collect(Collectors.toList());
 
-        assertEquals(expected, result);
+        assertThat(resultList)
+                .as("because the file contains these specific strings")
+                .containsOnly("hello.jar", "world.pom", "another.jar");
     }
 
     @Test
-    void test_is_printable_char() {
-        assertTrue(explorer.isPrintableChar('A'));
-        assertTrue(explorer.isPrintableChar(' '));
-        assertFalse(explorer.isPrintableChar('\n'));
-        assertFalse(explorer.isPrintableChar((char) 127));
-    }
+    void test_extract_group_artifact_from_url_correctly() {
+        assertThat(explorer.extractGroupAndArtifactFromUrl(
+                                "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom")
+                        .get())
+                .as("because the URL should be parsed into group and artifact")
+                .isEqualTo("com.example:artifact");
 
-    @Test
-    void test_url_sanitise_correctly() {
-        assertEquals(
-                "com.example:artifact",
-                explorer.sanitiseUrl("https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom"));
-        assertEquals(
-                "com.example:artifact",
-                explorer.sanitiseUrl("https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar"));
+        assertThat(explorer.extractGroupAndArtifactFromUrl(
+                                "https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar")
+                        .get())
+                .as("because the URL should be parsed into group and artifact")
+                .isEqualTo("com.example:artifact");
+        assertThat(explorer.extractGroupAndArtifactFromUrl("garbage"))
+                .as("because the URL should be parsed into group and artifact")
+                .isEmpty();
     }
 }

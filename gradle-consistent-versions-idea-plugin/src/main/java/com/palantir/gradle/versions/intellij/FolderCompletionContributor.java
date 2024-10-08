@@ -31,12 +31,14 @@ import java.util.List;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
+    private static final GradleCacheExplorer gradleCacheExplorer =
+            new GradleCacheExplorer(List.of("https://repo.maven.apache.org/maven2/"));
+
     public FolderCompletionContributor() {
-        IElementType[] elementTypes = {VersionPropsTypes.GROUP_PART, VersionPropsTypes.NAME_KEY};
-        for (IElementType elementType : elementTypes) {
-            cacheCompletion(elementType);
-            remoteCompletion(elementType);
-        }
+        cacheCompletion(VersionPropsTypes.GROUP_PART);
+        cacheCompletion(VersionPropsTypes.NAME_KEY);
+        remoteCompletion(VersionPropsTypes.GROUP_PART);
+        remoteCompletion(VersionPropsTypes.NAME_KEY);
     }
 
     private void remoteCompletion(IElementType elementType) {
@@ -64,10 +66,7 @@ public class FolderCompletionContributor extends CompletionContributor {
             protected void addCompletions(
                     CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
 
-                List<String> repositories = List.of("https://repo.maven.apache.org/maven2/");
-
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
-                GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer(repositories);
 
                 gradleCacheExplorer.getCompletions(group).stream()
                         .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion))

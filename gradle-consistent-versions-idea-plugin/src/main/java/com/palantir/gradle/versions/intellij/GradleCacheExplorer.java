@@ -22,16 +22,21 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,48 +57,48 @@ public class GradleCacheExplorer {
         String parsedInput = String.join(".", input.parts());
         ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
         if (indicator == null) {
-            return new HashSet<>();
+            return Collections.emptySet();
         }
 
         try {
-            Future<Set<String>> future =
-                    ApplicationManager.getApplication().executeOnPooledThread(extractStrings(indicator));
+            Callable<Set<String>> task = () -> extractStrings(indicator);
+            Future<Set<String>> future = ApplicationManager.getApplication().executeOnPooledThread(task);
             Set<String> results =
                     com.intellij.openapi.application.ex.ApplicationUtil.runWithCheckCanceled(future::get, indicator);
 
+            if (parsedInput.isEmpty()) {
+                return results;
+            }
+
             return results.stream()
                     .filter(result -> result.startsWith(parsedInput))
-                    .map(result -> parsedInput.isEmpty() ? result : result.substring(parsedInput.length() + 1))
+                    .map(result -> result.substring(parsedInput.length() + 1))
                     .collect(Collectors.toSet());
-        } catch (RuntimeException e) {
+        } catch (CancellationException e) {
             log.debug("Operation was cancelled", e);
         } catch (Exception e) {
             log.warn("Failed to get completions", e);
         }
-        return new HashSet<>();
+        return Collections.emptySet();
     }
 
-    private Callable<Set<String>> extractStrings(ProgressIndicator indicator) {
-        return () -> cache.get("metadata", key -> {
-            Set<String> stringsSet = new HashSet<>();
-            File gradleCacheFolder = new File(GRADLE_CACHE_PATH);
-            File[] metadataFolders = gradleCacheFolder.listFiles((dir, name) -> name.startsWith("metadata-"));
-
-            if (metadataFolders != null) {
-                for (File metadataFolder : metadataFolders) {
-                    if (indicator.isCanceled()) {
-                        throw new RuntimeException("Operation cancelled");
-                    }
-                    File binFile = new File(metadataFolder, "resource-at-url.bin");
-                    if (binFile.exists()) {
-                        extractStringsFromBinFile(binFile).stream()
-                                .filter(this::isValidResourceUrl)
-                                .map(this::sanitiseUrl)
-                                .forEach(stringsSet::add);
-                    }
-                }
+    private Set<String> extractStrings(ProgressIndicator indicator) {
+        return cache.get("metadata", key -> {
+            try (Stream<Path> metadataFolders = Files.list(Paths.get(GRADLE_CACHE_PATH))
+                    .filter(path -> path.getFileName().toString().startsWith("metadata-"))) {
+                return metadataFolders
+                        .filter(metadataFolder -> !indicator.isCanceled())
+                        .map(metadataFolder -> metadataFolder.resolve("resource-at-url.bin"))
+                        .filter(Files::exists)
+                        .flatMap(this::extractStringsFromBinFile)
+                        .filter(this::isValidResourceUrl)
+                        .map(this::extractGroupAndArtifactFromUrl)
+                        .flatMap(Optional::stream)
+                        .collect(Collectors.toSet());
+            } catch (IOException e) {
+                log.error("Failed to list metadata folders", e);
+                return Collections.emptySet();
             }
-            return stringsSet;
         });
     }
 
@@ -101,55 +106,68 @@ public class GradleCacheExplorer {
         return projectUrls.stream().anyMatch(url::startsWith) && (url.endsWith(".pom") || url.endsWith(".jar"));
     }
 
-    final Set<String> extractStringsFromBinFile(File binFile) {
+    final Stream<String> extractStringsFromBinFile(Path binFile) {
         Set<String> result = new HashSet<>();
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(binFile))) {
+        try (BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(binFile))) {
             StringBuilder currentString = new StringBuilder();
             int byteValue;
 
             while ((byteValue = bis.read()) != -1) {
                 char charValue = (char) byteValue;
-                if (isPrintableChar(charValue)) {
+                if (!Character.isISOControl(charValue)) {
                     currentString.append(charValue);
-                } else {
-                    if (currentString.length() >= 4) {
-                        result.add(currentString.toString());
-                    }
+                    continue;
+                }
+                if (!currentString.isEmpty()) {
+                    result.add(currentString.toString());
                     currentString.setLength(0);
                 }
             }
 
-            if (currentString.length() >= 4) {
+            if (!currentString.isEmpty()) {
                 result.add(currentString.toString());
             }
         } catch (IOException e) {
             log.error("Failed to extract strings from bin file", e);
         }
-
-        return result;
+        return result.stream();
     }
 
-    final boolean isPrintableChar(char ch) {
-        return ch >= 32 && ch <= 126; // Printable ASCII range
-    }
+    /**
+     * Extracts the group and artifact identifiers from a given URL.
+     *
+     * <p>The method removes the base project URL from the input if it matches any in a predefined list,
+     * then converts the remaining path to the format "group:artifact".
+     *
+     * <p>Example: For the URL "http://example.com/org/example/project/1.0/project-1.0.jar"
+     * and "http://example.com/" in the list of projectUrls, it returns "org.example.project:project".
+     *
+     * @param url the URL to process
+     * @return an {@link Optional} containing a string in the format "group:artifact" if extraction is successful,
+     *         or {@link Optional#empty()} if no matching project URL is found or the URL does not have the expected structure.
+     */
+    public Optional<String> extractGroupAndArtifactFromUrl(String url) {
+        Optional<String> optionalFinalUrl = projectUrls.stream()
+                .filter(url::startsWith)
+                .findFirst()
+                .map(projectUrl -> url.substring(projectUrl.length()));
 
-    final String sanitiseUrl(String url) {
-        String finalUrl = url;
-        for (String projectUrl : projectUrls) {
-            if (finalUrl.startsWith(projectUrl)) {
-                finalUrl = finalUrl.substring(projectUrl.length());
-                break;
-            }
+        if (optionalFinalUrl.isEmpty()) {
+            return Optional.empty();
         }
+
+        String finalUrl = optionalFinalUrl.get();
 
         int lastSlashIndex = finalUrl.lastIndexOf('/');
         int secondLastSlashIndex = finalUrl.lastIndexOf('/', lastSlashIndex - 1);
 
-        if (secondLastSlashIndex != -1) {
-            finalUrl = finalUrl.substring(0, secondLastSlashIndex).replace('/', '.');
-            finalUrl = finalUrl.replaceFirst("\\.([^.]*)$", ":$1");
+        if (secondLastSlashIndex == -1) {
+            return Optional.empty();
         }
 
-        return finalUrl;
+        finalUrl = finalUrl.substring(0, secondLastSlashIndex).replace('/', '.');
+        finalUrl = finalUrl.replaceFirst("\\.([^.]*)$", ":$1");
+
+        return Optional.of(finalUrl);
     }
 }
