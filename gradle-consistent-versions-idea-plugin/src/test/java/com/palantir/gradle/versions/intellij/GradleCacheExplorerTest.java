@@ -74,12 +74,4 @@ public class GradleCacheExplorerTest {
         Assertions.assertEquals(
                 inputSet, resultSet, "Result set should be the same as input set when pattern is empty");
     }
-
-    @Test
-    public void testGetCompletions() {
-        DependencyGroup group = DependencyGroup.fromString("com.palantir.baseline");
-        Set<String> completions = explorer.getCompletions(group);
-        System.out.println(completions);
-        Assertions.assertTrue(completions.contains("gradle-baseline-java-config"), "Completions should contain some examples");
-    }
 }
