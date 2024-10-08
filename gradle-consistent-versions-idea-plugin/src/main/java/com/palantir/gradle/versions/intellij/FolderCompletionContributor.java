@@ -69,7 +69,7 @@ public class FolderCompletionContributor extends CompletionContributor {
 
                 gradleCacheExplorer.getCompletions(group).stream()
                         .map(suggestion ->
-                                LookupElementBuilder.create(suggestion).withTypeText("from cache", true))
+                                LookupElementBuilder.create(suggestion).withTypeText("gradle cache", true))
                         .forEach(resultSet::addElement);
             }
         });
