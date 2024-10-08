@@ -22,8 +22,13 @@ import org.immutables.value.Value;
 public abstract class DependencyVersion {
     protected abstract String version();
 
-    public static ImmutableDependencyVersion of(String version) {
-        return ImmutableDependencyVersion.builder().version(version).build();
+    protected abstract Boolean isLatest();
+
+    public static ImmutableDependencyVersion of(String version, Boolean isLatest) {
+        return ImmutableDependencyVersion.builder()
+                .version(version)
+                .isLatest(isLatest)
+                .build();
     }
 
     @Override
