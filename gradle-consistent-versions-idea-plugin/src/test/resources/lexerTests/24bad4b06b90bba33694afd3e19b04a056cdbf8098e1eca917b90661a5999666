@@ -1,0 +1,19 @@
+has.loads.of.spaces:around   =   equals
+VersionPropsTokenType.GROUP_PART has
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART loads
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART of
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART spaces
+DEPENDENCY_GROUP has.loads.of.spaces
+VersionPropsTokenType.COLON :
+VersionPropsTokenType.NAME_KEY around
+DEPENDENCY_NAME around
+WHITE_SPACE    
+VersionPropsTokenType.EQUALS =
+WHITE_SPACE    
+VersionPropsTokenType.VERSION equals
+DEPENDENCY_VERSION equals
+PROPERTY has.loads.of.spaces:around   =   equals
+FILE has.loads.of.spaces:around   =   equals

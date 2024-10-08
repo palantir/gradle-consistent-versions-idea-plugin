@@ -73,6 +73,11 @@ public final class VersionPropsFileListener implements AsyncFileListener {
             @Override
             public void afterVfsChange() {
                 projectsAffected.forEach(project -> {
+                    VersionPropsProjectSettings settings = VersionPropsProjectSettings.getInstance(project);
+                    if (!settings.isEnabled()) {
+                        return;
+                    }
+
                     if (hasBuildSrc(project)) {
                         runTaskThenRefresh(project);
                     } else {

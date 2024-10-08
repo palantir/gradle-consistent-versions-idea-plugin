@@ -1,0 +1,18 @@
+has.spaces.around : colon = 1
+VersionPropsTokenType.GROUP_PART has
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART spaces
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART around
+BAD_CHARACTER  : 
+ERROR_ELEMENT  : 
+BAD_CHARACTER c
+BAD_CHARACTER o
+BAD_CHARACTER l
+BAD_CHARACTER o
+BAD_CHARACTER n
+BAD_CHARACTER  
+BAD_CHARACTER =
+BAD_CHARACTER  
+BAD_CHARACTER 1
+FILE has.spaces.around : colon = 1
