@@ -79,6 +79,7 @@ public class GradleCacheExplorerTest {
     public void testGetCompletions() {
         DependencyGroup group = DependencyGroup.fromString("com.palantir.baseline");
         Set<String> completions = explorer.getCompletions(group);
-        Assertions.assertNotNull(completions, "Completions should not be null");
+        System.out.println(completions);
+        Assertions.assertTrue(completions.contains("gradle-baseline-java-config"), "Completions should contain some examples");
     }
 }
