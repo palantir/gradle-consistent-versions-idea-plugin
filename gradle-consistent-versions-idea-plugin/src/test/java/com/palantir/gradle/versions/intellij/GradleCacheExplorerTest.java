@@ -75,7 +75,7 @@ class GradleCacheExplorerTest {
     }
 
     @Test
-    void testSanitiseUrl() {
+    void test_url_sanitise_correctly() {
         assertEquals(
                 "com.example:artifact",
                 explorer.sanitiseUrl("https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom"));
