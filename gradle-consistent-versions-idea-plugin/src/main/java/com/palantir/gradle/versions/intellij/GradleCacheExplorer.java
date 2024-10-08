@@ -147,27 +147,17 @@ public class GradleCacheExplorer {
      *         or {@link Optional#empty()} if no matching project URL is found or the URL does not have the expected structure.
      */
     public Optional<String> extractGroupAndArtifactFromUrl(String url) {
-        Optional<String> optionalFinalUrl = projectUrls.stream()
-                .filter(url::startsWith)
-                .findFirst()
-                .map(projectUrl -> url.substring(projectUrl.length()));
+        return projectUrls.stream().filter(url::startsWith).findFirst().map(projectUrl -> {
+            String finalUrl = url.substring(projectUrl.length());
+            int lastSlashIndex = finalUrl.lastIndexOf('/');
+            int secondLastSlashIndex = finalUrl.lastIndexOf('/', lastSlashIndex - 1);
 
-        if (optionalFinalUrl.isEmpty()) {
-            return Optional.empty();
-        }
+            if (lastSlashIndex == -1 || secondLastSlashIndex == -1) {
+                return null;
+            }
 
-        String finalUrl = optionalFinalUrl.get();
-
-        int lastSlashIndex = finalUrl.lastIndexOf('/');
-        int secondLastSlashIndex = finalUrl.lastIndexOf('/', lastSlashIndex - 1);
-
-        if (secondLastSlashIndex == -1) {
-            return Optional.empty();
-        }
-
-        finalUrl = finalUrl.substring(0, secondLastSlashIndex).replace('/', '.');
-        finalUrl = finalUrl.replaceFirst("\\.([^.]*)$", ":$1");
-
-        return Optional.of(finalUrl);
+            finalUrl = finalUrl.substring(0, secondLastSlashIndex).replace('/', '.');
+            return finalUrl.replaceFirst("\\.([^.]*)$", ":$1");
+        });
     }
 }

@@ -89,7 +89,7 @@ class GradleCacheExplorerTest {
                         .get())
                 .as("because the URL should be parsed into group and artifact")
                 .isEqualTo("com.example:artifact");
-        assertThat(explorer.extractGroupAndArtifactFromUrl("garbage"))
+        assertThat(explorer.extractGroupAndArtifactFromUrl("https://jcenter.bintray.com/garbage"))
                 .as("because the URL should be parsed into group and artifact")
                 .isEmpty();
     }
