@@ -35,7 +35,7 @@ public class GradleCacheExplorer {
         return searchCacheSet(cacheSet, String.join(".", group.parts()));
     }
 
-    private static Set<String> searchCacheSet(Set<String> input, String pattern) {
+    static Set<String> searchCacheSet(Set<String> input, String pattern) {
         if (pattern.isEmpty()) {
             return input;
         }
@@ -48,12 +48,11 @@ public class GradleCacheExplorer {
         return resultSet;
     }
 
-    private static Set<String> buildCacheSet(File folder) {
+    static Set<String> buildCacheSet(File folder) {
         Set<String> cacheSet = new HashSet<>();
         if (!folder.exists() || !folder.isDirectory()) {
             return cacheSet;
         }
-
         addFoldersToSet(folder, "", cacheSet);
         return cacheSet;
     }
