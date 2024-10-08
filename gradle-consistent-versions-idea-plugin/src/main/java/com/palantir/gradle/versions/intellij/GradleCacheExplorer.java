@@ -18,62 +18,137 @@ package com.palantir.gradle.versions.intellij;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GradleCacheExplorer {
 
-    private static final String GRADLE_CACHE_PATH =
-            System.getProperty("user.home") + "/.gradle/caches/modules-2/files-2.1";
+    private static final Logger log = LoggerFactory.getLogger(GradleCacheExplorer.class);
+    private static final String GRADLE_CACHE_PATH = System.getProperty("user.home") + "/.gradle/caches/modules-2/";
     private static final Cache<String, Set<String>> cache =
             Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
-    public final Set<String> getCompletions(DependencyGroup group) {
-        Set<String> cacheSet = cache.get(GRADLE_CACHE_PATH, key -> buildCacheSet(new File(GRADLE_CACHE_PATH)));
-        return searchCacheSet(cacheSet, String.join(".", group.parts()));
+    private final List<String> projectUrls;
+
+    public GradleCacheExplorer(List<String> projectUrls) {
+        this.projectUrls = projectUrls;
     }
 
-    static Set<String> searchCacheSet(Set<String> input, String pattern) {
-        if (pattern.isEmpty()) {
-            return input;
+    public final Set<String> getCompletions(DependencyGroup input) {
+        String parsedInput = String.join(".", input.parts());
+        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+        if (indicator == null) {
+            return new HashSet<>();
         }
-        Set<String> resultSet = new HashSet<>();
-        for (String str : input) {
-            if (str.startsWith(pattern)) {
-                resultSet.add(str.substring(pattern.length() + 1));
-            }
+
+        try {
+            Future<Set<String>> future =
+                    ApplicationManager.getApplication().executeOnPooledThread(extractStrings(indicator));
+            Set<String> results =
+                    com.intellij.openapi.application.ex.ApplicationUtil.runWithCheckCanceled(future::get, indicator);
+
+            return results.stream()
+                    .filter(result -> result.startsWith(parsedInput))
+                    .map(result -> parsedInput.isEmpty() ? result : result.substring(parsedInput.length() + 1))
+                    .collect(Collectors.toSet());
+        } catch (RuntimeException e) {
+            log.debug("Operation was cancelled", e);
+        } catch (Exception e) {
+            log.warn("Failed to get completions", e);
         }
-        return resultSet;
+        return new HashSet<>();
     }
 
-    static Set<String> buildCacheSet(File folder) {
-        Set<String> cacheSet = new HashSet<>();
-        if (!folder.exists() || !folder.isDirectory()) {
-            return cacheSet;
-        }
-        addFoldersToSet(folder, "", cacheSet);
-        return cacheSet;
-    }
+    private Callable<Set<String>> extractStrings(ProgressIndicator indicator) {
+        return () -> cache.get("metadata", key -> {
+            Set<String> stringsSet = new HashSet<>();
+            File gradleCacheFolder = new File(GRADLE_CACHE_PATH);
+            File[] metadataFolders = gradleCacheFolder.listFiles((dir, name) -> name.startsWith("metadata-"));
 
-    private static void addFoldersToSet(File folder, String parentPath, Set<String> cacheSet) {
-        File[] files = folder.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    String folderPath = parentPath.isEmpty() ? file.getName() : parentPath + "." + file.getName();
-                    File[] subFiles = file.listFiles();
-                    if (subFiles != null) {
-                        for (File subFile : subFiles) {
-                            if (subFile.isDirectory()) {
-                                String subFolderPath = folderPath + ":" + subFile.getName();
-                                cacheSet.add(subFolderPath);
-                            }
-                        }
+            if (metadataFolders != null) {
+                for (File metadataFolder : metadataFolders) {
+                    if (indicator.isCanceled()) {
+                        throw new RuntimeException("Operation cancelled");
+                    }
+                    File binFile = new File(metadataFolder, "resource-at-url.bin");
+                    if (binFile.exists()) {
+                        extractStringsFromBinFile(binFile).stream()
+                                .filter(this::isValidResourceUrl)
+                                .map(this::sanitiseUrl)
+                                .forEach(stringsSet::add);
                     }
                 }
             }
+            return stringsSet;
+        });
+    }
+
+    final boolean isValidResourceUrl(String url) {
+        return projectUrls.stream().anyMatch(url::startsWith) && (url.endsWith(".pom") || url.endsWith(".jar"));
+    }
+
+    final Set<String> extractStringsFromBinFile(File binFile) {
+        Set<String> result = new HashSet<>();
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(binFile))) {
+            StringBuilder currentString = new StringBuilder();
+            int byteValue;
+
+            while ((byteValue = bis.read()) != -1) {
+                char charValue = (char) byteValue;
+                if (isPrintableChar(charValue)) {
+                    currentString.append(charValue);
+                } else {
+                    if (currentString.length() >= 4) {
+                        result.add(currentString.toString());
+                    }
+                    currentString.setLength(0);
+                }
+            }
+
+            if (currentString.length() >= 4) {
+                result.add(currentString.toString());
+            }
+        } catch (IOException e) {
+            log.error("Failed to extract strings from bin file", e);
         }
+
+        return result;
+    }
+
+    final boolean isPrintableChar(char ch) {
+        return ch >= 32 && ch <= 126; // Printable ASCII range
+    }
+
+    final String sanitiseUrl(String url) {
+        for (String projectUrl : projectUrls) {
+            if (url.startsWith(projectUrl)) {
+                url = url.substring(projectUrl.length());
+                break;
+            }
+        }
+
+        int lastSlashIndex = url.lastIndexOf('/');
+        int secondLastSlashIndex = url.lastIndexOf('/', lastSlashIndex - 1);
+
+        if (secondLastSlashIndex != -1) {
+            url = url.substring(0, secondLastSlashIndex).replace('/', '.');
+            url = url.replaceFirst("\\.([^.]*)$", ":$1");
+        }
+
+        return url;
     }
 }

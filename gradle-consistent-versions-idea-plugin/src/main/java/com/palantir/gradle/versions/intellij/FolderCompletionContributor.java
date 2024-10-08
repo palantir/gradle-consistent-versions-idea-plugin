@@ -45,7 +45,7 @@ public class FolderCompletionContributor extends CompletionContributor {
             protected void addCompletions(
                     CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
 
-                List<String> repositories = List.of("https://repo1.maven.org/maven2/");
+                List<String> repositories = List.of("https://repo.maven.apache.org/maven2/");
 
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
@@ -64,12 +64,14 @@ public class FolderCompletionContributor extends CompletionContributor {
             protected void addCompletions(
                     CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
 
+                List<String> repositories = List.of("https://repo.maven.apache.org/maven2/");
+
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
-                GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
+                GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer(repositories);
 
                 gradleCacheExplorer.getCompletions(group).stream()
-                        .map(suggestion ->
-                                LookupElementBuilder.create(suggestion).withTypeText("gradle cache", true))
+                        .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion))
+                                .withTypeText("gradle cache", true))
                         .forEach(resultSet::addElement);
             }
         });
