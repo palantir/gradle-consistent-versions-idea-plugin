@@ -134,21 +134,22 @@ public class GradleCacheExplorer {
     }
 
     final String sanitiseUrl(String url) {
+        String finalUrl = url;
         for (String projectUrl : projectUrls) {
-            if (url.startsWith(projectUrl)) {
-                url = url.substring(projectUrl.length());
+            if (finalUrl.startsWith(projectUrl)) {
+                finalUrl = finalUrl.substring(projectUrl.length());
                 break;
             }
         }
 
-        int lastSlashIndex = url.lastIndexOf('/');
-        int secondLastSlashIndex = url.lastIndexOf('/', lastSlashIndex - 1);
+        int lastSlashIndex = finalUrl.lastIndexOf('/');
+        int secondLastSlashIndex = finalUrl.lastIndexOf('/', lastSlashIndex - 1);
 
         if (secondLastSlashIndex != -1) {
-            url = url.substring(0, secondLastSlashIndex).replace('/', '.');
-            url = url.replaceFirst("\\.([^.]*)$", ":$1");
+            finalUrl = finalUrl.substring(0, secondLastSlashIndex).replace('/', '.');
+            finalUrl = finalUrl.replaceFirst("\\.([^.]*)$", ":$1");
         }
 
-        return url;
+        return finalUrl;
     }
 }

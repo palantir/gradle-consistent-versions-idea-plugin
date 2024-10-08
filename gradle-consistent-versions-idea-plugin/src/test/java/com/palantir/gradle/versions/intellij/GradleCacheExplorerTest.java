@@ -36,7 +36,7 @@ class GradleCacheExplorerTest {
     private GradleCacheExplorer explorer;
 
     @BeforeEach
-    void setUp() {
+    void beforeEach() {
         List<String> projectUrls = List.of("https://repo.maven.apache.org/maven2/", "https://jcenter.bintray.com/");
         explorer = new GradleCacheExplorer(projectUrls);
     }
@@ -83,4 +83,4 @@ class GradleCacheExplorerTest {
                 "com.example:artifact",
                 explorer.sanitiseUrl("https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar"));
     }
-    }
+}
