@@ -34,10 +34,6 @@ import org.slf4j.LoggerFactory;
 public final class ContentsUtil {
     private static final Logger log = LoggerFactory.getLogger(ContentsUtil.class);
 
-    private ContentsUtil() {
-        // Utility class; prevent instantiation
-    }
-
     public static Optional<String> fetchPageContents(URL pageUrl) {
         ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
 
@@ -86,4 +82,6 @@ public final class ContentsUtil {
             return result.toString();
         };
     }
+
+    private ContentsUtil() {}
 }

@@ -41,10 +41,6 @@ public final class RepositoryLoader {
     private static final String MAVEN_REPOSITORIES_FILE_NAME = ".idea/gcv-maven-repositories.xml";
     private static final String DEFAULT = "https://repo.maven.apache.org/maven2/";
 
-    private RepositoryLoader() {
-        // Utility class; prevent instantiation
-    }
-
     public static Set<String> loadRepositories(Project project) {
         File mavenRepoFile = new File(project.getBasePath(), MAVEN_REPOSITORIES_FILE_NAME);
 
@@ -85,4 +81,6 @@ public final class RepositoryLoader {
         @JacksonXmlProperty(localName = "repository")
         List<RepositoryConfig> repositories();
     }
+
+    private RepositoryLoader() {}
 }
