@@ -1,0 +1,5 @@
+type: improvement
+improvement:
+  description: Read gradle cache bin files to get suggestions
+  links:
+    - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/35
