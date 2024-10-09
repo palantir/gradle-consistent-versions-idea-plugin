@@ -43,7 +43,7 @@ public class CommentAnnotator implements Annotator {
             Pattern.compile("dependency-upgrader:ON", Pattern.CASE_INSENSITIVE);
 
     @Override
-    public void annotate(PsiElement element, AnnotationHolder holder) {
+    public final void annotate(PsiElement element, AnnotationHolder holder) {
         if (element instanceof PsiComment) {
             String commentText = element.getText();
             annotatePattern(commentText, DEPENDENCY_UPGRADER_OFF_PATTERN, element, holder, RED_BOLD);
