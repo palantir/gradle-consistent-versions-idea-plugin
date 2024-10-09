@@ -46,28 +46,26 @@ public class CommentAnnotator implements Annotator {
     public void annotate(PsiElement element, AnnotationHolder holder) {
         if (element instanceof PsiComment) {
             String commentText = element.getText();
+            annotatePattern(commentText, DEPENDENCY_UPGRADER_OFF_PATTERN, element, holder, RED_BOLD);
+            annotatePattern(commentText, DEPENDENCY_UPGRADER_ON_PATTERN, element, holder, GREEN_BOLD);
+        }
+    }
 
-            Matcher offMatcher = DEPENDENCY_UPGRADER_OFF_PATTERN.matcher(commentText);
-            if (offMatcher.find()) {
-                int startOffset = element.getTextRange().getStartOffset() + offMatcher.start();
-                int endOffset = startOffset + offMatcher.group().length();
-                TextRange textRange = new TextRange(startOffset, endOffset);
-                holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
-                        .range(textRange)
-                        .textAttributes(RED_BOLD)
-                        .create();
-            } else {
-                Matcher onMatcher = DEPENDENCY_UPGRADER_ON_PATTERN.matcher(commentText);
-                if (onMatcher.find()) {
-                    int startOffset = element.getTextRange().getStartOffset() + onMatcher.start();
-                    int endOffset = startOffset + onMatcher.group().length();
-                    TextRange textRange = new TextRange(startOffset, endOffset);
-                    holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
-                            .range(textRange)
-                            .textAttributes(GREEN_BOLD)
-                            .create();
-                }
-            }
+    private void annotatePattern(
+            String text,
+            Pattern pattern,
+            PsiElement element,
+            AnnotationHolder holder,
+            TextAttributesKey attributesKey) {
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            int startOffset = element.getTextRange().getStartOffset() + matcher.start();
+            int endOffset = startOffset + matcher.group().length();
+            TextRange textRange = new TextRange(startOffset, endOffset);
+            holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
+                    .range(textRange)
+                    .textAttributes(attributesKey)
+                    .create();
         }
     }
 }
