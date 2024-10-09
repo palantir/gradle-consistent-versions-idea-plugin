@@ -23,5 +23,6 @@
                             implementationClass="com.palantir.gradle.versions.intellij.FolderCompletionContributor"/>
     <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
     <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsFileListener"/>
+    <annotator language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.CommentAnnotator" />
   </extensions>
 </idea-plugin>
