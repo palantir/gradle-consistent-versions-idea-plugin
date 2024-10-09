@@ -18,20 +18,19 @@ package com.palantir.gradle.versions.intellij;
 
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.openapi.project.Project;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
-public final class VersionPropsSettingsPage implements Configurable {
+public final class VersionPropsAppSettingsPage implements Configurable {
     private JCheckBox enabledCheckbox;
 
-    private final VersionPropsProjectSettings settings;
+    private final VersionPropsAppSettings settings;
 
-    public VersionPropsSettingsPage(Project project) {
-        settings = VersionPropsProjectSettings.getInstance(project);
+    public VersionPropsAppSettingsPage() {
+        settings = VersionPropsAppSettings.getInstance();
     }
 
     @Nls
@@ -44,7 +43,7 @@ public final class VersionPropsSettingsPage implements Configurable {
     @Override
     public JComponent createComponent() {
         JPanel rootPanel = new JPanel();
-        enabledCheckbox = new JCheckBox("Enable gradle-consistent-versions plugin");
+        enabledCheckbox = new JCheckBox("Enable writeVersionsLock on save");
         rootPanel.add(enabledCheckbox);
         return rootPanel;
     }
