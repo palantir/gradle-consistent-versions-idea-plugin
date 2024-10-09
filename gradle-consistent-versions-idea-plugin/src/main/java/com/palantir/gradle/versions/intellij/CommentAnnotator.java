@@ -38,9 +38,9 @@ public class CommentAnnotator implements Annotator {
             "DEPENDENCY_UPGRADER_ON", new TextAttributes(JBColor.GREEN, null, null, null, Font.BOLD));
 
     private static final Pattern DEPENDENCY_UPGRADER_OFF_PATTERN =
-            Pattern.compile("dependency-upgrader:OFF", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("dependency-upgrader:\\s*OFF", Pattern.CASE_INSENSITIVE);
     private static final Pattern DEPENDENCY_UPGRADER_ON_PATTERN =
-            Pattern.compile("dependency-upgrader:ON", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("dependency-upgrader:\\s*ON", Pattern.CASE_INSENSITIVE);
 
     @Override
     public final void annotate(PsiElement element, AnnotationHolder holder) {
