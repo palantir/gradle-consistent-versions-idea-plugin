@@ -32,7 +32,7 @@ import java.util.Set;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
-    private static final GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
+    private final GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
 
     public FolderCompletionContributor() {
         cacheCompletion(VersionPropsTypes.GROUP_PART);

@@ -24,6 +24,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,27 +37,30 @@ class GradleCacheExplorerTest {
 
     @BeforeEach
     void beforeEach() {
-        List<String> projectUrls = List.of("https://repo.maven.apache.org/maven2/", "https://jcenter.bintray.com/");
-        explorer = new GradleCacheExplorer(projectUrls);
+        explorer = new GradleCacheExplorer();
     }
 
     @Test
     void test_gets_valid_urls_only() {
+        Set<String> projectUrls = Set.of("https://repo.maven.apache.org/maven2/", "https://jcenter.bintray.com/");
+
         assertThat(explorer.isValidResourceUrl(
-                        "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom"))
+                        projectUrls, "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom"))
                 .as("because the URL is from a known valid repository and ends with .pom")
                 .isTrue();
 
-        assertThat(explorer.isValidResourceUrl("https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar"))
+        assertThat(explorer.isValidResourceUrl(
+                        projectUrls, "https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar"))
                 .as("because the URL is from a known valid repository and ends with .jar")
                 .isTrue();
 
-        assertThat(explorer.isValidResourceUrl("https://example.com/com/example/artifact/1.0/artifact-1.0.pom"))
+        assertThat(explorer.isValidResourceUrl(
+                        projectUrls, "https://example.com/com/example/artifact/1.0/artifact-1.0.pom"))
                 .as("because the URL is not from a known valid repository")
                 .isFalse();
 
         assertThat(explorer.isValidResourceUrl(
-                        "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.txt"))
+                        projectUrls, "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.txt"))
                 .as("because the URL ends with an invalid extension")
                 .isFalse();
     }
@@ -78,25 +82,28 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_extract_group_artifact_from_url_correctly() {
+        Set<String> projectUrls = Set.of("https://repo.maven.apache.org/maven2/", "https://jcenter.bintray.com/");
+
         assertThat(explorer.extractGroupAndArtifactFromUrl(
+                                projectUrls,
                                 "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom")
                         .get())
                 .as("because the URL should be parsed into group and artifact")
                 .isEqualTo("com.example:artifact");
 
         assertThat(explorer.extractGroupAndArtifactFromUrl(
-                                "https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar")
+                                projectUrls, "https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar")
                         .get())
                 .as("because the URL should be parsed into group and artifact")
                 .isEqualTo("com.example:artifact");
         assertThat(explorer.extractGroupAndArtifactFromUrl(
-                        "https://not.vaild.com/example/artifact/1.0/artifact-1.0.jar"))
+                        projectUrls, "https://not.vaild.com/example/artifact/1.0/artifact-1.0.jar"))
                 .as("Expected the URL to not match any project URL, resulting in an empty Optional")
                 .isEmpty();
-        assertThat(explorer.extractGroupAndArtifactFromUrl("https://jcenter.bintray.com/com/example"))
+        assertThat(explorer.extractGroupAndArtifactFromUrl(projectUrls, "https://jcenter.bintray.com/com/example"))
                 .as("Could not find second to last slash, resulting in an empty Optional")
                 .isEmpty();
-        assertThat(explorer.extractGroupAndArtifactFromUrl(""))
+        assertThat(explorer.extractGroupAndArtifactFromUrl(projectUrls, ""))
                 .as("Empty passed in so empty returned")
                 .isEmpty();
     }

@@ -77,8 +77,11 @@ public class GradleCacheExplorer {
 
     private Set<String> extractStrings(Set<String> repoUrls, ProgressIndicator indicator) {
         return cache.get("metadata", key -> {
-            try (Stream<Path> metadataFolders = Files.list(Paths.get(GRADLE_CACHE_PATH))
-                    .filter(path -> path.getFileName().toString().startsWith("metadata-"))) {
+            try (Stream<Path> allFolders = Files.list(Paths.get(GRADLE_CACHE_PATH))) {
+
+                Stream<Path> metadataFolders =
+                        allFolders.filter(path -> path.getFileName().toString().startsWith("metadata-"));
+
                 return metadataFolders
                         .peek(metadataFolder -> {
                             if (indicator.isCanceled()) {
@@ -138,7 +141,7 @@ public class GradleCacheExplorer {
     }
 
     /**
-     * Extracts the group and artifact identifiers from a given URL.
+     * Extracts the group and artifact identifiers from a given maven2 layout URL.
      *
      * <p>The method removes the base project URL from the input if it matches any in a predefined list,
      * then converts the remaining path to the format "group:artifact".
@@ -152,17 +155,27 @@ public class GradleCacheExplorer {
      */
     Optional<String> extractGroupAndArtifactFromUrl(Set<String> repoUrls, String url) {
         return repoUrls.stream().filter(url::startsWith).findFirst().flatMap(projectUrl -> {
-            String finalUrl = url.substring(projectUrl.length());
-            int lastSlashIndex = finalUrl.lastIndexOf('/');
-            int secondLastSlashIndex = finalUrl.lastIndexOf('/', lastSlashIndex - 1);
+            String mavenLayout = url.substring(projectUrl.length());
 
-            if (lastSlashIndex == -1 || secondLastSlashIndex == -1) {
+            int lastSlashIndex = mavenLayout.lastIndexOf('/');
+            if (lastSlashIndex == -1) {
                 return Optional.empty();
             }
 
-            finalUrl = finalUrl.substring(0, secondLastSlashIndex).replace('/', '.');
-            finalUrl = finalUrl.replaceFirst("\\.([^.]*)$", ":$1");
-            return Optional.of(finalUrl);
+            int secondLastSlashIndex = mavenLayout.lastIndexOf('/', lastSlashIndex - 1);
+            if (secondLastSlashIndex == -1) {
+                return Optional.empty();
+            }
+
+            int thirdLastSlashIndex = mavenLayout.lastIndexOf('/', secondLastSlashIndex - 1);
+            if (thirdLastSlashIndex == -1) {
+                return Optional.empty();
+            }
+
+            String group = mavenLayout.substring(0, thirdLastSlashIndex).replace('/', '.');
+            String artifact = mavenLayout.substring(thirdLastSlashIndex + 1, secondLastSlashIndex);
+
+            return Optional.of(String.format("%s:%s", group, artifact));
         });
     }
 }
