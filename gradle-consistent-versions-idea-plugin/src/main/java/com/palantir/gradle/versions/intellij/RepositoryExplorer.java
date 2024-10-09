@@ -64,7 +64,7 @@ public class RepositoryExplorer {
             return new ArrayList<>();
         }
 
-        return fetchFoldersFromUrl(content.get());
+        return fetchFoldersFromContent(content.get());
     }
 
     public final List<DependencyVersion> getVersions(DependencyGroup group, DependencyName dependencyPackage) {
@@ -76,7 +76,7 @@ public class RepositoryExplorer {
             return new ArrayList<>();
         }
 
-        return parseVersionsFromMetadata(content.get());
+        return parseVersionsFromContent(content.get());
     }
 
     private Optional<String> fetchContent(String urlString) {
@@ -89,7 +89,7 @@ public class RepositoryExplorer {
         }
     }
 
-    private List<Folder> fetchFoldersFromUrl(String contents) {
+    private List<Folder> fetchFoldersFromContent(String contents) {
         List<Folder> folders = new ArrayList<>();
 
         Document doc = Jsoup.parse(contents);
@@ -104,7 +104,7 @@ public class RepositoryExplorer {
         return folders;
     }
 
-    private List<DependencyVersion> parseVersionsFromMetadata(String content) {
+    private List<DependencyVersion> parseVersionsFromContent(String content) {
         List<DependencyVersion> versions = new ArrayList<>();
         try {
             XmlMapper xmlMapper = new XmlMapper();

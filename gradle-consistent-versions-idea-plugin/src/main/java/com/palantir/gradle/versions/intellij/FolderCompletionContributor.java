@@ -31,19 +31,23 @@ import java.util.List;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
-    public FolderCompletionContributor() {
-        extendCompletion(VersionPropsTypes.GROUP_PART);
+    private final GradleCacheExplorer gradleCacheExplorer =
+            new GradleCacheExplorer(List.of("https://repo.maven.apache.org/maven2/"));
 
-        extendCompletion(VersionPropsTypes.NAME_KEY);
+    public FolderCompletionContributor() {
+        cacheCompletion(VersionPropsTypes.GROUP_PART);
+        cacheCompletion(VersionPropsTypes.NAME_KEY);
+        remoteCompletion(VersionPropsTypes.GROUP_PART);
+        remoteCompletion(VersionPropsTypes.NAME_KEY);
     }
 
-    private void extendCompletion(IElementType elementType) {
+    private void remoteCompletion(IElementType elementType) {
         extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
             @Override
             protected void addCompletions(
                     CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
 
-                List<String> repositories = List.of("https://repo1.maven.org/maven2/");
+                List<String> repositories = List.of("https://repo.maven.apache.org/maven2/");
 
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
@@ -51,6 +55,21 @@ public class FolderCompletionContributor extends CompletionContributor {
                         .map(RepositoryExplorer::new)
                         .flatMap(repositoryExplorer -> repositoryExplorer.getFolders(group).stream())
                         .map(LookupElementBuilder::create)
+                        .forEach(resultSet::addElement);
+            }
+        });
+    }
+
+    private void cacheCompletion(IElementType elementType) {
+        extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
+            @Override
+            protected void addCompletions(
+                    CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
+
+                DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
+
+                gradleCacheExplorer.getCompletions(group).stream()
+                        .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion)))
                         .forEach(resultSet::addElement);
             }
         });
