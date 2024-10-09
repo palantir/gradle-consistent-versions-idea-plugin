@@ -1,0 +1,17 @@
+odd/.characters@?'.in!:all\\/ = the_pl4ces.,?
+VersionPropsTokenType.GROUP_PART odd/
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART characters@?'
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART in!
+DEPENDENCY_GROUP odd/.characters@?'.in!
+VersionPropsTokenType.COLON :
+VersionPropsTokenType.NAME_KEY all\\/
+DEPENDENCY_NAME all\\/
+WHITE_SPACE  
+VersionPropsTokenType.EQUALS =
+WHITE_SPACE  
+VersionPropsTokenType.VERSION the_pl4ces.,?
+DEPENDENCY_VERSION the_pl4ces.,?
+PROPERTY odd/.characters@?'.in!:all\\/ = the_pl4ces.,?
+FILE odd/.characters@?'.in!:all\\/ = the_pl4ces.,?

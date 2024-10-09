@@ -31,14 +31,19 @@ import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
+    private final GradleCacheExplorer gradleCacheExplorer =
+            new GradleCacheExplorer(List.of("https://repo.maven.apache.org/maven2/"));
+
     private static final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
 
     public FolderCompletionContributor() {
-        extendCompletion(VersionPropsTypes.GROUP_PART);
-        extendCompletion(VersionPropsTypes.NAME_KEY);
+        cacheCompletion(VersionPropsTypes.GROUP_PART);
+        cacheCompletion(VersionPropsTypes.NAME_KEY);
+        remoteCompletion(VersionPropsTypes.GROUP_PART);
+        remoteCompletion(VersionPropsTypes.NAME_KEY);
     }
 
-    private void extendCompletion(IElementType elementType) {
+    private void remoteCompletion(IElementType elementType) {
         extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
             @Override
             protected void addCompletions(
@@ -51,6 +56,21 @@ public class FolderCompletionContributor extends CompletionContributor {
                 RepositoryLoader.loadRepositories(project).stream()
                         .flatMap(url -> repositoryExplorer.getFolders(group, url).stream())
                         .map(LookupElementBuilder::create)
+                        .forEach(resultSet::addElement);
+            }
+        });
+    }
+
+    private void cacheCompletion(IElementType elementType) {
+        extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
+            @Override
+            protected void addCompletions(
+                    CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
+
+                DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
+
+                gradleCacheExplorer.getCompletions(group).stream()
+                        .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion)))
                         .forEach(resultSet::addElement);
             }
         });

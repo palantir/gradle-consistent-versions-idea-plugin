@@ -61,7 +61,7 @@ public class RepositoryExplorer {
             return Collections.emptySet();
         }
 
-        return fetchFoldersFromUrl(content.get());
+        return fetchFoldersFromContent(content.get());
     }
 
     public final Set<DependencyVersion> getVersions(
@@ -74,7 +74,7 @@ public class RepositoryExplorer {
             return Collections.emptySet();
         }
 
-        return parseVersionsFromMetadata(content.get());
+        return parseVersionsFromContent(content.get());
     }
 
     private Optional<String> fetchContent(String urlString) {
@@ -87,7 +87,7 @@ public class RepositoryExplorer {
         }
     }
 
-    private Set<Folder> fetchFoldersFromUrl(String contents) {
+    private Set<Folder> fetchFoldersFromContent(String contents) {
         Set<Folder> folders = new HashSet<>();
 
         Document doc = Jsoup.parse(contents);
@@ -102,7 +102,7 @@ public class RepositoryExplorer {
         return folders;
     }
 
-    private Set<DependencyVersion> parseVersionsFromMetadata(String content) {
+    private Set<DependencyVersion> parseVersionsFromContent(String content) {
         Set<DependencyVersion> versions = new HashSet<>();
         try {
             XmlMapper xmlMapper = new XmlMapper();
