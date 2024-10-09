@@ -89,8 +89,15 @@ class GradleCacheExplorerTest {
                         .get())
                 .as("because the URL should be parsed into group and artifact")
                 .isEqualTo("com.example:artifact");
-        assertThat(explorer.extractGroupAndArtifactFromUrl("https://jcenter.bintray.com/garbage"))
-                .as("because the URL should be parsed into group and artifact")
+        assertThat(explorer.extractGroupAndArtifactFromUrl(
+                        "https://not.vaild.com/example/artifact/1.0/artifact-1.0.jar"))
+                .as("Expected the URL to not match any project URL, resulting in an empty Optional")
+                .isEmpty();
+        assertThat(explorer.extractGroupAndArtifactFromUrl("https://jcenter.bintray.com/com/example"))
+                .as("Could not find second to last slash, resulting in an empty Optional")
+                .isEmpty();
+        assertThat(explorer.extractGroupAndArtifactFromUrl(""))
+                .as("Empty passed in so empty returned")
                 .isEmpty();
     }
 }

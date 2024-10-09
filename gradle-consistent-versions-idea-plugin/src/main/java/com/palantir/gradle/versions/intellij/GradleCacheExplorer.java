@@ -146,18 +146,19 @@ public class GradleCacheExplorer {
      * @return an {@link Optional} containing a string in the format "group:artifact" if extraction is successful,
      *         or {@link Optional#empty()} if no matching project URL is found or the URL does not have the expected structure.
      */
-    public Optional<String> extractGroupAndArtifactFromUrl(String url) {
-        return projectUrls.stream().filter(url::startsWith).findFirst().map(projectUrl -> {
+    Optional<String> extractGroupAndArtifactFromUrl(String url) {
+        return projectUrls.stream().filter(url::startsWith).findFirst().flatMap(projectUrl -> {
             String finalUrl = url.substring(projectUrl.length());
             int lastSlashIndex = finalUrl.lastIndexOf('/');
             int secondLastSlashIndex = finalUrl.lastIndexOf('/', lastSlashIndex - 1);
 
             if (lastSlashIndex == -1 || secondLastSlashIndex == -1) {
-                return null;
+                return Optional.empty();
             }
 
             finalUrl = finalUrl.substring(0, secondLastSlashIndex).replace('/', '.');
-            return finalUrl.replaceFirst("\\.([^.]*)$", ":$1");
+            finalUrl = finalUrl.replaceFirst("\\.([^.]*)$", ":$1");
+            return Optional.of(finalUrl);
         });
     }
 }
