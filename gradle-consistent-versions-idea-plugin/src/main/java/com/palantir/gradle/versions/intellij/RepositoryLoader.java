@@ -27,9 +27,9 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,28 +46,22 @@ public final class RepositoryLoader {
     }
 
     public static Set<String> loadRepositories(Project project) {
-        Set<String> urls = new HashSet<>();
         File mavenRepoFile = new File(project.getBasePath(), MAVEN_REPOSITORIES_FILE_NAME);
 
         if (!mavenRepoFile.exists()) {
-            urls.add(DEFAULT);
-            return urls;
+            return Set.of(DEFAULT);
         }
 
         try {
             Repositories repositories = XML_MAPPER.readValue(mavenRepoFile, Repositories.class);
-            for (RepositoryConfig config : repositories.repositories()) {
-                urls.add(config.url());
-            }
+            return repositories.repositories().stream()
+                    .map(RepositoryConfig::url)
+                    .collect(Collectors.toSet());
         } catch (IOException e) {
             log.error("Failed to load repositories", e);
         }
 
-        if (urls.isEmpty()) {
-            urls.add(DEFAULT);
-        }
-
-        return urls;
+        return Set.of(DEFAULT);
     }
 
     @Value.Immutable
