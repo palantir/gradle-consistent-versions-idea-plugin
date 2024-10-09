@@ -31,10 +31,9 @@ import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
-    private final GradleCacheExplorer gradleCacheExplorer =
-            new GradleCacheExplorer(List.of("https://repo.maven.apache.org/maven2/"));
+    private final GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
 
-    private static final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
+    private final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
 
     public FolderCompletionContributor() {
         cacheCompletion(VersionPropsTypes.GROUP_PART);
@@ -69,7 +68,9 @@ public class FolderCompletionContributor extends CompletionContributor {
 
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
-                gradleCacheExplorer.getCompletions(group).stream()
+                Project project = parameters.getOriginalFile().getProject();
+
+                gradleCacheExplorer.getCompletions(RepositoryLoader.loadRepositories(project), group).stream()
                         .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion)))
                         .forEach(resultSet::addElement);
             }
