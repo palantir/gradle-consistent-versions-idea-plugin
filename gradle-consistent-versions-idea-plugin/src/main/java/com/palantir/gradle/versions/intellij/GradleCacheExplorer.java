@@ -44,7 +44,7 @@ public class GradleCacheExplorer {
 
     private static final Logger log = LoggerFactory.getLogger(GradleCacheExplorer.class);
     private static final String GRADLE_CACHE_PATH = System.getProperty("user.home") + "/.gradle/caches/modules-2/";
-    private static final Cache<String, Set<String>> cache =
+    private final Cache<String, Set<String>> cache =
             Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
     private final List<String> projectUrls;

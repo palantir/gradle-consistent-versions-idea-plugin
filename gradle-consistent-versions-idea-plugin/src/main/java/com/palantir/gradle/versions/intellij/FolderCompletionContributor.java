@@ -69,8 +69,7 @@ public class FolderCompletionContributor extends CompletionContributor {
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
                 gradleCacheExplorer.getCompletions(group).stream()
-                        .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion))
-                                .withTypeText("gradle cache", true))
+                        .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion)))
                         .forEach(resultSet::addElement);
             }
         });
