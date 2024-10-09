@@ -19,6 +19,7 @@ package com.palantir.gradle.versions.intellij;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import java.io.BufferedInputStream;
@@ -32,7 +33,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -74,7 +74,7 @@ public class GradleCacheExplorer {
                     .filter(result -> result.startsWith(parsedInput))
                     .map(result -> result.substring(parsedInput.length() + 1))
                     .collect(Collectors.toSet());
-        } catch (CancellationException e) {
+        } catch (ProcessCanceledException e) {
             log.debug("Operation was cancelled", e);
         } catch (Exception e) {
             log.warn("Failed to get completions", e);
@@ -87,7 +87,12 @@ public class GradleCacheExplorer {
             try (Stream<Path> metadataFolders = Files.list(Paths.get(GRADLE_CACHE_PATH))
                     .filter(path -> path.getFileName().toString().startsWith("metadata-"))) {
                 return metadataFolders
-                        .filter(metadataFolder -> !indicator.isCanceled())
+                        .peek(metadataFolder -> {
+                            if (indicator.isCanceled()) {
+                                throw new RuntimeException(
+                                        new InterruptedException("Operation was canceled by the user."));
+                            }
+                        })
                         .map(metadataFolder -> metadataFolder.resolve("resource-at-url.bin"))
                         .filter(Files::exists)
                         .flatMap(this::extractStringsFromBinFile)
@@ -98,6 +103,12 @@ public class GradleCacheExplorer {
             } catch (IOException e) {
                 log.error("Failed to list metadata folders", e);
                 return Collections.emptySet();
+            } catch (RuntimeException e) {
+                if (e.getCause() instanceof InterruptedException) {
+                    log.debug("Operation was cancelled", e);
+                    return Collections.emptySet();
+                }
+                throw e;
             }
         });
     }
