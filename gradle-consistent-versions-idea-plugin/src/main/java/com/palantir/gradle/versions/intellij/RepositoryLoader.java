@@ -31,8 +31,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.immutables.value.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RepositoryLoader {
+    private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
+
     private static final ObjectMapper XML_MAPPER = new XmlMapper().registerModule(new GuavaModule());
     private static final String MAVEN_REPOSITORIES_FILE_NAME = ".idea/gcv-maven-repositories.xml";
     private static final String DEFAULT = "https://repo.maven.apache.org/maven2/";
@@ -45,10 +49,8 @@ public final class RepositoryLoader {
         Set<String> urls = new HashSet<>();
         File mavenRepoFile = new File(project.getBasePath(), MAVEN_REPOSITORIES_FILE_NAME);
 
-        // Add a default so that if nothing is found auto complete still works
-        urls.add(DEFAULT);
-
         if (!mavenRepoFile.exists()) {
+            urls.add(DEFAULT);
             return urls;
         }
 
@@ -57,10 +59,15 @@ public final class RepositoryLoader {
             for (RepositoryConfig config : repositories.repositories()) {
                 urls.add(config.url());
             }
-            return urls;
         } catch (IOException e) {
-            return urls;
+            log.error("Failed to load repositories", e);
         }
+
+        if (urls.isEmpty()) {
+            urls.add(DEFAULT);
+        }
+
+        return urls;
     }
 
     @Value.Immutable

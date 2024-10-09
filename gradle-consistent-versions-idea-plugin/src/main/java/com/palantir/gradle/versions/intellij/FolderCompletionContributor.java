@@ -31,9 +31,10 @@ import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
+    private static final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
+
     public FolderCompletionContributor() {
         extendCompletion(VersionPropsTypes.GROUP_PART);
-
         extendCompletion(VersionPropsTypes.NAME_KEY);
     }
 
@@ -48,8 +49,7 @@ public class FolderCompletionContributor extends CompletionContributor {
                 Project project = parameters.getOriginalFile().getProject();
 
                 RepositoryLoader.loadRepositories(project).stream()
-                        .map(RepositoryExplorer::new)
-                        .flatMap(repositoryExplorer -> repositoryExplorer.getFolders(group).stream())
+                        .flatMap(url -> repositoryExplorer.getFolders(group, url).stream())
                         .map(LookupElementBuilder::create)
                         .forEach(resultSet::addElement);
             }

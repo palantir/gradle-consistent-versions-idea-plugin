@@ -31,12 +31,10 @@ import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class VersionCompletionContributor extends CompletionContributor {
 
-    private static final Logger log = LoggerFactory.getLogger(VersionCompletionContributor.class);
+    private static final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
 
     VersionCompletionContributor() {
         extend(
@@ -61,9 +59,7 @@ public class VersionCompletionContributor extends CompletionContributor {
                         Project project = parameters.getOriginalFile().getProject();
 
                         RepositoryLoader.loadRepositories(project).stream()
-                                .map(RepositoryExplorer::new)
-                                .flatMap(repositoryExplorer ->
-                                        repositoryExplorer.getVersions(group, dependencyPackage).stream())
+                                .flatMap(url -> repositoryExplorer.getVersions(group, dependencyPackage, url).stream())
                                 .map(version -> version.isLatest()
                                         ? PrioritizedLookupElement.withPriority(
                                                 LookupElementBuilder.create(version)

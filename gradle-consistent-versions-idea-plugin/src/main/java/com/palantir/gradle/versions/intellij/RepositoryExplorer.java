@@ -21,10 +21,10 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.immutables.value.Value;
 import org.jsoup.Jsoup;
@@ -37,45 +37,41 @@ import org.slf4j.LoggerFactory;
 public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
 
-    private final String baseUrl;
-    private static final Cache<CacheKey, List<Folder>> folderCache = Caffeine.newBuilder()
+    private final Cache<CacheKey, Set<Folder>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .maximumSize(100)
             .build();
 
-    public RepositoryExplorer(String baseUrl) {
-        this.baseUrl = baseUrl;
-    }
-
-    public final List<Folder> getFolders(DependencyGroup group) {
-        CacheKey cacheKey = CacheKey.of(baseUrl, group);
-        List<Folder> folders = folderCache.get(cacheKey, key -> {
-            List<Folder> loadedFolders = loadFolders(key.group());
+    public final Set<Folder> getFolders(DependencyGroup group, String url) {
+        CacheKey cacheKey = CacheKey.of(url, group);
+        Set<Folder> folders = folderCache.get(cacheKey, key -> {
+            Set<Folder> loadedFolders = loadFolders(key.group(), url);
             return loadedFolders.isEmpty() ? null : loadedFolders;
         });
 
-        return folders != null ? folders : Collections.emptyList();
+        return folders != null ? folders : Collections.emptySet();
     }
 
-    private List<Folder> loadFolders(DependencyGroup group) {
-        String urlString = baseUrl + group.asUrlString();
+    private Set<Folder> loadFolders(DependencyGroup group, String url) {
+        String urlString = url + group.asUrlString();
         Optional<String> content = fetchContent(urlString);
 
         if (content.isEmpty()) {
             log.debug("Page does not exist");
-            return new ArrayList<>();
+            return Collections.emptySet();
         }
 
         return fetchFoldersFromUrl(content.get());
     }
 
-    public final List<DependencyVersion> getVersions(DependencyGroup group, DependencyName dependencyPackage) {
-        String urlString = baseUrl + group.asUrlString() + dependencyPackage.name() + "/maven-metadata.xml";
+    public final Set<DependencyVersion> getVersions(
+            DependencyGroup group, DependencyName dependencyPackage, String url) {
+        String urlString = url + group.asUrlString() + dependencyPackage.name() + "/maven-metadata.xml";
         Optional<String> content = fetchContent(urlString);
 
         if (content.isEmpty()) {
             log.debug("Empty metadata content received");
-            return new ArrayList<>();
+            return Collections.emptySet();
         }
 
         return parseVersionsFromMetadata(content.get());
@@ -91,8 +87,8 @@ public class RepositoryExplorer {
         }
     }
 
-    private List<Folder> fetchFoldersFromUrl(String contents) {
-        List<Folder> folders = new ArrayList<>();
+    private Set<Folder> fetchFoldersFromUrl(String contents) {
+        Set<Folder> folders = new HashSet<>();
 
         Document doc = Jsoup.parse(contents);
         Elements links = doc.select("a[href]");
@@ -106,8 +102,8 @@ public class RepositoryExplorer {
         return folders;
     }
 
-    private List<DependencyVersion> parseVersionsFromMetadata(String content) {
-        List<DependencyVersion> versions = new ArrayList<>();
+    private Set<DependencyVersion> parseVersionsFromMetadata(String content) {
+        Set<DependencyVersion> versions = new HashSet<>();
         try {
             XmlMapper xmlMapper = new XmlMapper();
 
@@ -126,12 +122,12 @@ public class RepositoryExplorer {
 
     @Value.Immutable
     interface CacheKey {
-        String baseUrl();
+        String url();
 
         DependencyGroup group();
 
-        static CacheKey of(String baseUrl, DependencyGroup group) {
-            return ImmutableCacheKey.builder().baseUrl(baseUrl).group(group).build();
+        static CacheKey of(String url, DependencyGroup group) {
+            return ImmutableCacheKey.builder().url(url).group(group).build();
         }
     }
 }
