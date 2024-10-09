@@ -28,11 +28,11 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.List;
-import java.util.Set;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
-    private final GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
+    private final GradleCacheExplorer gradleCacheExplorer =
+            new GradleCacheExplorer(List.of("https://repo.maven.apache.org/maven2/"));
 
     public FolderCompletionContributor() {
         cacheCompletion(VersionPropsTypes.GROUP_PART);
@@ -66,11 +66,9 @@ public class FolderCompletionContributor extends CompletionContributor {
             protected void addCompletions(
                     CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
 
-                Set<String> repositories = Set.of("https://repo.maven.apache.org/maven2/");
-
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
-                gradleCacheExplorer.getCompletions(repositories, group).stream()
+                gradleCacheExplorer.getCompletions(group).stream()
                         .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion)))
                         .forEach(resultSet::addElement);
             }

@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -46,7 +47,13 @@ public class GradleCacheExplorer {
     private final Cache<String, Set<String>> cache =
             Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
-    public final Set<String> getCompletions(Set<String> repoUrls, DependencyGroup input) {
+    private final List<String> projectUrls;
+
+    public GradleCacheExplorer(List<String> projectUrls) {
+        this.projectUrls = projectUrls;
+    }
+
+    public final Set<String> getCompletions(DependencyGroup input) {
         String parsedInput = String.join(".", input.parts());
         ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
         if (indicator == null) {
@@ -54,7 +61,7 @@ public class GradleCacheExplorer {
         }
 
         try {
-            Callable<Set<String>> task = () -> extractStrings(repoUrls, indicator);
+            Callable<Set<String>> task = () -> extractStrings(indicator);
             Future<Set<String>> future = ApplicationManager.getApplication().executeOnPooledThread(task);
             Set<String> results =
                     com.intellij.openapi.application.ex.ApplicationUtil.runWithCheckCanceled(future::get, indicator);
@@ -75,7 +82,7 @@ public class GradleCacheExplorer {
         return Collections.emptySet();
     }
 
-    private Set<String> extractStrings(Set<String> repoUrls, ProgressIndicator indicator) {
+    private Set<String> extractStrings(ProgressIndicator indicator) {
         return cache.get("metadata", key -> {
             try (Stream<Path> allFolders = Files.list(Paths.get(GRADLE_CACHE_PATH))) {
 
@@ -92,8 +99,8 @@ public class GradleCacheExplorer {
                         .map(metadataFolder -> metadataFolder.resolve("resource-at-url.bin"))
                         .filter(Files::exists)
                         .flatMap(this::extractStringsFromBinFile)
-                        .filter(url -> isValidResourceUrl(repoUrls, url))
-                        .map(url -> extractGroupAndArtifactFromUrl(repoUrls, url))
+                        .filter(this::isValidResourceUrl)
+                        .map(this::extractGroupAndArtifactFromUrl)
                         .flatMap(Optional::stream)
                         .collect(Collectors.toSet());
             } catch (IOException e) {
@@ -109,8 +116,8 @@ public class GradleCacheExplorer {
         });
     }
 
-    final boolean isValidResourceUrl(Set<String> repoUrls, String url) {
-        return repoUrls.stream().anyMatch(url::startsWith) && (url.endsWith(".pom") || url.endsWith(".jar"));
+    final boolean isValidResourceUrl(String url) {
+        return projectUrls.stream().anyMatch(url::startsWith) && (url.endsWith(".pom") || url.endsWith(".jar"));
     }
 
     final Stream<String> extractStringsFromBinFile(Path binFile) {
@@ -153,8 +160,8 @@ public class GradleCacheExplorer {
      * @return an {@link Optional} containing a string in the format "group:artifact" if extraction is successful,
      *         or {@link Optional#empty()} if no matching project URL is found or the URL does not have the expected structure.
      */
-    Optional<String> extractGroupAndArtifactFromUrl(Set<String> repoUrls, String url) {
-        return repoUrls.stream().filter(url::startsWith).findFirst().flatMap(projectUrl -> {
+    Optional<String> extractGroupAndArtifactFromUrl(String url) {
+        return projectUrls.stream().filter(url::startsWith).findFirst().flatMap(projectUrl -> {
             String mavenLayout = url.substring(projectUrl.length());
 
             int lastSlashIndex = mavenLayout.lastIndexOf('/');
