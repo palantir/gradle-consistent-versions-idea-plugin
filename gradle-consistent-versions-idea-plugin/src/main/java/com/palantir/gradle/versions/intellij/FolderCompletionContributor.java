@@ -39,7 +39,7 @@ public class FolderCompletionContributor extends CompletionContributor {
     public FolderCompletionContributor() {
         // We add listener at this stage so that we can invalidate the cache when the gradle project refreshed
         ExternalSystemProgressNotificationManager.getInstance()
-                .addNotificationListener(new GradleProjectRefreshListener(gradleCacheExplorer));
+                .addNotificationListener(new InvalidateCacheOnGradleProjectRefresh(gradleCacheExplorer));
         cacheCompletion(VersionPropsTypes.GROUP_PART);
         cacheCompletion(VersionPropsTypes.NAME_KEY);
         remoteCompletion(VersionPropsTypes.GROUP_PART);
@@ -57,7 +57,7 @@ public class FolderCompletionContributor extends CompletionContributor {
                 Project project = parameters.getOriginalFile().getProject();
 
                 RepositoryLoader.loadRepositories(project).stream()
-                        .flatMap(url -> repositoryExplorer.getFolders(group, url).stream())
+                        .flatMap(url -> repositoryExplorer.getGroupPartOrPackageName(group, url).stream())
                         .map(LookupElementBuilder::create)
                         .forEach(resultSet::addElement);
             }
@@ -75,7 +75,7 @@ public class FolderCompletionContributor extends CompletionContributor {
                 Project project = parameters.getOriginalFile().getProject();
 
                 gradleCacheExplorer.getCompletions(RepositoryLoader.loadRepositories(project), group).stream()
-                        .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion)))
+                        .map(suggestion -> LookupElementBuilder.create(GroupPartOrPackageName.of(suggestion)))
                         .forEach(resultSet::addElement);
             }
         });

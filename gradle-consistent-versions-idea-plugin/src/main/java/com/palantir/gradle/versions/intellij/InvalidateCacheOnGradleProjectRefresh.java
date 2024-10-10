@@ -24,12 +24,12 @@ import org.jetbrains.plugins.gradle.util.GradleConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GradleProjectRefreshListener implements ExternalSystemTaskNotificationListener {
-    private static final Logger log = LoggerFactory.getLogger(GradleProjectRefreshListener.class);
+public class InvalidateCacheOnGradleProjectRefresh implements ExternalSystemTaskNotificationListener {
+    private static final Logger log = LoggerFactory.getLogger(InvalidateCacheOnGradleProjectRefresh.class);
 
     private final GradleCacheExplorer gradleCacheExplorer;
 
-    public GradleProjectRefreshListener(GradleCacheExplorer gradleCacheExplorer) {
+    public InvalidateCacheOnGradleProjectRefresh(GradleCacheExplorer gradleCacheExplorer) {
         this.gradleCacheExplorer = gradleCacheExplorer;
     }
 

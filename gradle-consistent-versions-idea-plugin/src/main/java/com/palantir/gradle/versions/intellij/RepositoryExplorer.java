@@ -37,22 +37,22 @@ import org.slf4j.LoggerFactory;
 public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
 
-    private final Cache<CacheKey, Set<Folder>> folderCache = Caffeine.newBuilder()
+    private final Cache<CacheKey, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .maximumSize(100)
             .build();
 
-    public final Set<Folder> getFolders(DependencyGroup group, String url) {
+    public final Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, String url) {
         CacheKey cacheKey = CacheKey.of(url, group);
-        Set<Folder> folders = folderCache.get(cacheKey, key -> {
-            Set<Folder> loadedFolders = loadFolders(key.group(), url);
+        Set<GroupPartOrPackageName> folders = folderCache.get(cacheKey, key -> {
+            Set<GroupPartOrPackageName> loadedFolders = loadFolders(key.group(), url);
             return loadedFolders.isEmpty() ? null : loadedFolders;
         });
 
         return folders != null ? folders : Collections.emptySet();
     }
 
-    private Set<Folder> loadFolders(DependencyGroup group, String url) {
+    private Set<GroupPartOrPackageName> loadFolders(DependencyGroup group, String url) {
         String urlString = url + group.asUrlString();
         Optional<String> content = fetchContent(urlString);
 
@@ -87,8 +87,8 @@ public class RepositoryExplorer {
         }
     }
 
-    private Set<Folder> fetchFoldersFromContent(String contents) {
-        Set<Folder> folders = new HashSet<>();
+    private Set<GroupPartOrPackageName> fetchFoldersFromContent(String contents) {
+        Set<GroupPartOrPackageName> folders = new HashSet<>();
 
         Document doc = Jsoup.parse(contents);
         Elements links = doc.select("a[href]");
@@ -96,7 +96,7 @@ public class RepositoryExplorer {
         for (Element link : links) {
             String href = link.attr("href");
             if (href.endsWith("/") && !href.contains(".")) {
-                folders.add(Folder.of(href.substring(0, href.length() - 1)));
+                folders.add(GroupPartOrPackageName.of(href.substring(0, href.length() - 1)));
             }
         }
         return folders;
