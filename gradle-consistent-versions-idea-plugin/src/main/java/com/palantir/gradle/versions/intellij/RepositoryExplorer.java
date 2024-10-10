@@ -21,11 +21,12 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import org.immutables.value.Value;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -36,44 +37,41 @@ import org.slf4j.LoggerFactory;
 public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
 
-    private final String baseUrl;
-    private static final Cache<DependencyGroup, List<Folder>> folderCache = Caffeine.newBuilder()
+    private final Cache<CacheKey, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .maximumSize(100)
             .build();
 
-    public RepositoryExplorer(String baseUrl) {
-        this.baseUrl = baseUrl;
-    }
-
-    public final List<Folder> getFolders(DependencyGroup group) {
-        List<Folder> folders = folderCache.get(group, key -> {
-            List<Folder> loadedFolders = loadFolders(key);
+    public final Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, String url) {
+        CacheKey cacheKey = CacheKey.of(url, group);
+        Set<GroupPartOrPackageName> folders = folderCache.get(cacheKey, key -> {
+            Set<GroupPartOrPackageName> loadedFolders = loadFolders(key.group(), url);
             return loadedFolders.isEmpty() ? null : loadedFolders;
         });
 
-        return folders != null ? folders : Collections.emptyList();
+        return folders != null ? folders : Collections.emptySet();
     }
 
-    private List<Folder> loadFolders(DependencyGroup group) {
-        String urlString = baseUrl + group.asUrlString();
+    private Set<GroupPartOrPackageName> loadFolders(DependencyGroup group, String url) {
+        String urlString = url + group.asUrlString();
         Optional<String> content = fetchContent(urlString);
 
         if (content.isEmpty()) {
             log.debug("Page does not exist");
-            return new ArrayList<>();
+            return Collections.emptySet();
         }
 
         return fetchFoldersFromContent(content.get());
     }
 
-    public final List<DependencyVersion> getVersions(DependencyGroup group, DependencyName dependencyPackage) {
-        String urlString = baseUrl + group.asUrlString() + dependencyPackage.name() + "/maven-metadata.xml";
+    public final Set<DependencyVersion> getVersions(
+            DependencyGroup group, DependencyName dependencyPackage, String url) {
+        String urlString = url + group.asUrlString() + dependencyPackage.name() + "/maven-metadata.xml";
         Optional<String> content = fetchContent(urlString);
 
         if (content.isEmpty()) {
             log.debug("Empty metadata content received");
-            return new ArrayList<>();
+            return Collections.emptySet();
         }
 
         return parseVersionsFromContent(content.get());
@@ -89,8 +87,8 @@ public class RepositoryExplorer {
         }
     }
 
-    private List<Folder> fetchFoldersFromContent(String contents) {
-        List<Folder> folders = new ArrayList<>();
+    private Set<GroupPartOrPackageName> fetchFoldersFromContent(String contents) {
+        Set<GroupPartOrPackageName> folders = new HashSet<>();
 
         Document doc = Jsoup.parse(contents);
         Elements links = doc.select("a[href]");
@@ -98,14 +96,14 @@ public class RepositoryExplorer {
         for (Element link : links) {
             String href = link.attr("href");
             if (href.endsWith("/") && !href.contains(".")) {
-                folders.add(Folder.of(href.substring(0, href.length() - 1)));
+                folders.add(GroupPartOrPackageName.of(href.substring(0, href.length() - 1)));
             }
         }
         return folders;
     }
 
-    private List<DependencyVersion> parseVersionsFromContent(String content) {
-        List<DependencyVersion> versions = new ArrayList<>();
+    private Set<DependencyVersion> parseVersionsFromContent(String content) {
+        Set<DependencyVersion> versions = new HashSet<>();
         try {
             XmlMapper xmlMapper = new XmlMapper();
 
@@ -120,5 +118,16 @@ public class RepositoryExplorer {
             log.error("Failed to parse maven-metadata.xml", e);
         }
         return versions;
+    }
+
+    @Value.Immutable
+    interface CacheKey {
+        String url();
+
+        DependencyGroup group();
+
+        static CacheKey of(String url, DependencyGroup group) {
+            return ImmutableCacheKey.builder().url(url).group(group).build();
+        }
     }
 }

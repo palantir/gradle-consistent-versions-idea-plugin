@@ -22,19 +22,24 @@ import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.openapi.externalSystem.service.notification.ExternalSystemProgressNotificationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
-import java.util.List;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
-    private final GradleCacheExplorer gradleCacheExplorer =
-            new GradleCacheExplorer(List.of("https://repo.maven.apache.org/maven2/"));
+    private final GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
+
+    private final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
 
     public FolderCompletionContributor() {
+        // We add listener at this stage so that we can invalidate the cache when the gradle project refreshed
+        ExternalSystemProgressNotificationManager.getInstance()
+                .addNotificationListener(new InvalidateCacheOnGradleProjectRefresh(gradleCacheExplorer));
         cacheCompletion(VersionPropsTypes.GROUP_PART);
         cacheCompletion(VersionPropsTypes.NAME_KEY);
         remoteCompletion(VersionPropsTypes.GROUP_PART);
@@ -47,13 +52,12 @@ public class FolderCompletionContributor extends CompletionContributor {
             protected void addCompletions(
                     CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
 
-                List<String> repositories = List.of("https://repo.maven.apache.org/maven2/");
-
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
-                repositories.stream()
-                        .map(RepositoryExplorer::new)
-                        .flatMap(repositoryExplorer -> repositoryExplorer.getFolders(group).stream())
+                Project project = parameters.getOriginalFile().getProject();
+
+                RepositoryLoader.loadRepositories(project).stream()
+                        .flatMap(url -> repositoryExplorer.getGroupPartOrPackageName(group, url).stream())
                         .map(LookupElementBuilder::create)
                         .forEach(resultSet::addElement);
             }
@@ -68,8 +72,10 @@ public class FolderCompletionContributor extends CompletionContributor {
 
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
-                gradleCacheExplorer.getCompletions(group).stream()
-                        .map(suggestion -> LookupElementBuilder.create(Folder.of(suggestion)))
+                Project project = parameters.getOriginalFile().getProject();
+
+                gradleCacheExplorer.getCompletions(RepositoryLoader.loadRepositories(project), group).stream()
+                        .map(suggestion -> LookupElementBuilder.create(GroupPartOrPackageName.of(suggestion)))
                         .forEach(resultSet::addElement);
             }
         });

@@ -19,11 +19,11 @@ package com.palantir.gradle.versions.intellij;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public abstract class Folder {
+public abstract class GroupPartOrPackageName {
     protected abstract String name();
 
-    public static Folder of(String name) {
-        return ImmutableFolder.builder().name(name).build();
+    public static GroupPartOrPackageName of(String name) {
+        return ImmutableGroupPartOrPackageName.builder().name(name).build();
     }
 
     @Override
