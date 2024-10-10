@@ -22,6 +22,7 @@ import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.openapi.externalSystem.service.notification.ExternalSystemProgressNotificationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.PsiElement;
@@ -36,6 +37,9 @@ public class FolderCompletionContributor extends CompletionContributor {
     private final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
 
     public FolderCompletionContributor() {
+        // We add listener at this stage so that we can invalidate the cache when the gradle project refreshed
+        ExternalSystemProgressNotificationManager.getInstance()
+                .addNotificationListener(new GradleProjectRefreshListener(gradleCacheExplorer));
         cacheCompletion(VersionPropsTypes.GROUP_PART);
         cacheCompletion(VersionPropsTypes.NAME_KEY);
         remoteCompletion(VersionPropsTypes.GROUP_PART);

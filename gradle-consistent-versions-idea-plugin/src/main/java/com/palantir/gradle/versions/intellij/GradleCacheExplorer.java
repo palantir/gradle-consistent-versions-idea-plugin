@@ -46,6 +46,10 @@ public class GradleCacheExplorer {
     private final Cache<String, Set<String>> cache =
             Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
+    public final void invalidateCache() {
+        cache.invalidateAll();
+    }
+
     public final Set<String> getCompletions(Set<String> repoUrls, DependencyGroup input) {
         String parsedInput = String.join(".", input.parts());
         ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
