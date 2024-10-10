@@ -20,12 +20,12 @@ import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskId;
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskNotificationEvent;
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskNotificationListener;
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskType;
+import com.palantir.logsafe.logger.SafeLogger;
+import com.palantir.logsafe.logger.SafeLoggerFactory;
 import org.jetbrains.plugins.gradle.util.GradleConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class InvalidateCacheOnGradleProjectRefresh implements ExternalSystemTaskNotificationListener {
-    private static final Logger log = LoggerFactory.getLogger(InvalidateCacheOnGradleProjectRefresh.class);
+    private static final SafeLogger log = SafeLoggerFactory.get(InvalidateCacheOnGradleProjectRefresh.class);
 
     private final GradleCacheExplorer gradleCacheExplorer;
 
