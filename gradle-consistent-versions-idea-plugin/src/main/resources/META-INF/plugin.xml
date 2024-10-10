@@ -10,7 +10,7 @@
     <h2> Gradle Consistent Versions Idea Plugin </h2>
 
     <p>
-    An IntelliJ plugin for use with [gradle consistent versions](https://github.com/palantir/gradle-consistent-versions).
+    An IntelliJ plugin for use with <a href="https://github.com/palantir/gradle-consistent-versions" target="_blank">gradle-consistent-versions</a>.
     </p>
 
     <h3> Features: </h3>
