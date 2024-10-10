@@ -4,7 +4,7 @@
 
 # Gradle Consistent Versions Idea Plugin
 
-An intellij plugin for use with [gradle consistent versions](https://github.com/palantir/gradle-consistent-versions)
+An Idea plugin for use with [gradle consistent versions](https://github.com/palantir/gradle-consistent-versions)
 
 ## Features:
 ### Automatic gradle refresh when changes are detected in `versions.props`
@@ -13,7 +13,7 @@ No more worrying about running `writeVersionsLock` simply save your `versions.pr
 ![Write Versions Lock](media/write-versions-lock.gif)
 
 ### Auto-complete for packages and versions in `versions.props`
-Simply have version `2.26.0` or higher of the `gradle-consistent-versions` plugin applied, and you will get auto complete suggestions directly in `versions.props`.
+First ensure version `2.26.0` or higher of the `gradle-consistent-versions` plugin is applied in your project, and you will get auto-complete suggestions directly in `versions.props`.
 
 ![Remote Suggestions](media/suggestions.gif)
 
@@ -25,7 +25,7 @@ Superfast auto-complete directly from your gradle cache allows for full package 
 
 ![Cache Suggestions](media/cache.gif)
 
-### Project Level Disable
+### Project Level Disable For On Save Lock Writing
 Either disable via the settings page or add the following to a projects `.idea/gcv-plugin-settings.xml`
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -39,11 +39,11 @@ Either disable via the settings page or add the following to a projects `.idea/g
 ![Settings Page](media/settings.gif)
 
 ### Syntax highlighting
-`versions.props` files have syntax highlighting and proper parsing to ensure they are correctly formatted. With highlighting rules to clearly mark `dependency-upgrader` controls.
+`versions.props` files now have syntax highlighting. With highlighting rules to clearly mark `dependency-upgrader` controls.
 
 ![Highlighter](media/highlighting.png)
 
 ### Commenter support
-Create comments automatically using the intellij shortcuts
+Create comments automatically using the your default intellij shortcuts.
 
 ![Commenter](media/commenter.gif)
