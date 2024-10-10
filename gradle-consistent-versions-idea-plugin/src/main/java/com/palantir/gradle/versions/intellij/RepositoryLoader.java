@@ -25,17 +25,17 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.intellij.openapi.project.Project;
+import com.palantir.logsafe.logger.SafeLogger;
+import com.palantir.logsafe.logger.SafeLoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class RepositoryLoader {
-    private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
+    private static final SafeLogger log = SafeLoggerFactory.get(RepositoryExplorer.class);
 
     private static final ObjectMapper XML_MAPPER = new XmlMapper().registerModule(new GuavaModule());
     private static final String MAVEN_REPOSITORIES_FILE_NAME = ".idea/gcv-maven-repositories.xml";
