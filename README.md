@@ -44,6 +44,6 @@ Either disable via the settings page or add the following to a projects `.idea/g
 ![Highlighter](media/highlighting.png)
 
 ### Commenter support
-Create comments automatically using the intellij shortcut
+Create comments automatically using the intellij shortcuts
 
 ![Commenter](media/commenter.gif)

@@ -5,6 +5,34 @@
     Palantir
   </vendor>
 
+  <description>
+    <![CDATA[
+    <h2> Gradle Consistent Versions Idea Plugin </h2>
+
+    <p>
+    An IntelliJ plugin for use with [gradle consistent versions](https://github.com/palantir/gradle-consistent-versions).
+    </p>
+
+    <h3> Features: </h3>
+
+    <ul>
+     <li> Automatic gradle refresh when changes are detected in `versions.props`. </li>
+     <li> Auto-complete for packages and versions in `versions.props`. </li>
+     <li> Syntax parsing and highlighting for `versions.props` files. With highlighting rules to clearly mark `dependency-upgrader` controls. </li>
+     <li> Create comments automatically using the IntelliJ shortcuts. </li>
+    </ul>
+
+    <h3>Help</h3>
+
+    For further help, see also:
+
+    <ul>
+      <li><a href="https://github.com/palantir/gradle-consistent-versions-idea-plugin" target="_blank">GitHub Repository</a></li>
+      <li><a href="https://github.com/palantir/gradle-consistent-versions-idea-plugin/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc" target="_blank">Issue Tracker</a></li>
+    </ul>
+    ]]>
+  </description>
+
   <depends>com.intellij.modules.java</depends>
   <depends>com.intellij.modules.lang</depends>
   <depends>com.intellij.modules.platform</depends>
