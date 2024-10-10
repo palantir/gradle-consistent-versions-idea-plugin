@@ -37,7 +37,7 @@ public class GradleProjectRefreshListener implements ExternalSystemTaskNotificat
     public final void onSuccess(ExternalSystemTaskId id) {
         if (GradleConstants.SYSTEM_ID.equals(id.getProjectSystemId())
                 && id.getType() == ExternalSystemTaskType.RESOLVE_PROJECT) {
-            log.info("Gradle project refresh finished for project");
+            log.info("Gradle project refresh finished");
             gradleCacheExplorer.invalidateCache();
         }
     }
