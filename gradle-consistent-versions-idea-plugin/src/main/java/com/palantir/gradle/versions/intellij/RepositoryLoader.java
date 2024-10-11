@@ -27,6 +27,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,7 +53,7 @@ public final class RepositoryLoader {
             Repositories repositories = XML_MAPPER.readValue(mavenRepoFile, Repositories.class);
             return repositories.repositories().stream()
                     .map(RepositoryConfig::url)
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
         } catch (IOException e) {
             log.error("Failed to load repositories", e);
         }
