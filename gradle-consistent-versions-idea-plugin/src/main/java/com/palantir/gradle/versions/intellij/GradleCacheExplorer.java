@@ -63,7 +63,7 @@ public class GradleCacheExplorer {
         }
 
         stopWatch.stop();
-        log.warn("Cache parsing time: {} ms", stopWatch.getTime());
+        log.debug("Cache parsing time: {} ms", stopWatch.getTime());
 
         return results.stream()
                 .filter(result -> result.startsWith(parsedInput))
