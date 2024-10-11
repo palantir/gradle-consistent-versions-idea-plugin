@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.versions.intellij;
 
+import com.google.common.base.Stopwatch;
 import com.intellij.openapi.application.ApplicationManager;
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -29,7 +30,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,8 +48,7 @@ public class GradleCacheExplorer {
     }
 
     public final Set<String> getCompletions(Set<String> repoUrls, DependencyGroup input) {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
+        Stopwatch stopWatch = Stopwatch.createStarted();
 
         String parsedInput = String.join(".", input.parts());
 
@@ -63,7 +62,7 @@ public class GradleCacheExplorer {
         }
 
         stopWatch.stop();
-        log.debug("Cache parsing time: {} ms", stopWatch.getTime());
+        log.debug("Completion matching time: {} ms", stopWatch.elapsed().toMillis());
 
         return results.stream()
                 .filter(result -> result.startsWith(parsedInput))
