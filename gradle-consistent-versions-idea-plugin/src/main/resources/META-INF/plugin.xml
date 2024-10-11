@@ -10,6 +10,11 @@
   <depends>com.intellij.modules.platform</depends>
   <depends>org.jetbrains.plugins.gradle</depends>
 
+  <applicationListeners>
+    <listener class="com.palantir.gradle.versions.intellij.LoadCacheOnGradleProjectRefresh"
+              topic="com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskNotificationListener"/>
+  </applicationListeners>
+
   <extensions defaultExtensionNs="com.intellij">
     <projectConfigurable instance="com.palantir.gradle.versions.intellij.VersionPropsSettingsPage" displayName="Gradle Consistent Versions" id="VersionPropsSettingsPage"/>
     <fileType name="VersionProps File" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsFileType" fieldName="INSTANCE"
@@ -24,5 +29,7 @@
     <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
     <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsFileListener"/>
     <annotator language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.CommentAnnotator" />
+    <externalSystemTaskNotificationListener implementation="com.palantir.gradle.versions.intellij.LoadCacheOnGradleProjectRefresh" />
+    <applicationService serviceImplementation="com.palantir.gradle.versions.intellij.GradleCacheExplorer" />
   </extensions>
 </idea-plugin>

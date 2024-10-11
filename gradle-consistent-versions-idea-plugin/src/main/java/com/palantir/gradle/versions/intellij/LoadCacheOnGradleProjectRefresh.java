@@ -24,21 +24,15 @@ import org.jetbrains.plugins.gradle.util.GradleConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class InvalidateCacheOnGradleProjectRefresh implements ExternalSystemTaskNotificationListener {
-    private static final Logger log = LoggerFactory.getLogger(InvalidateCacheOnGradleProjectRefresh.class);
-
-    private final GradleCacheExplorer gradleCacheExplorer;
-
-    public InvalidateCacheOnGradleProjectRefresh(GradleCacheExplorer gradleCacheExplorer) {
-        this.gradleCacheExplorer = gradleCacheExplorer;
-    }
+public class LoadCacheOnGradleProjectRefresh implements ExternalSystemTaskNotificationListener {
+    private static final Logger log = LoggerFactory.getLogger(LoadCacheOnGradleProjectRefresh.class);
 
     @Override
     public final void onSuccess(ExternalSystemTaskId id) {
         if (GradleConstants.SYSTEM_ID.equals(id.getProjectSystemId())
                 && id.getType() == ExternalSystemTaskType.RESOLVE_PROJECT) {
-            log.info("Gradle project refresh finished");
-            gradleCacheExplorer.invalidateCache();
+            log.debug("Gradle project refresh finished");
+            GradleCacheExplorer.getInstance().loadCache();
         }
     }
 

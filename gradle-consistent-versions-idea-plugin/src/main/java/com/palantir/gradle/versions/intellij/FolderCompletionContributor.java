@@ -22,7 +22,6 @@ import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
-import com.intellij.openapi.externalSystem.service.notification.ExternalSystemProgressNotificationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.PsiElement;
@@ -32,14 +31,9 @@ import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 
 public class FolderCompletionContributor extends CompletionContributor {
 
-    private final GradleCacheExplorer gradleCacheExplorer = new GradleCacheExplorer();
-
     private final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
 
     public FolderCompletionContributor() {
-        // We add listener at this stage so that we can invalidate the cache when the gradle project refreshed
-        ExternalSystemProgressNotificationManager.getInstance()
-                .addNotificationListener(new InvalidateCacheOnGradleProjectRefresh(gradleCacheExplorer));
         cacheCompletion(VersionPropsTypes.GROUP_PART);
         cacheCompletion(VersionPropsTypes.NAME_KEY);
         remoteCompletion(VersionPropsTypes.GROUP_PART);
@@ -74,7 +68,9 @@ public class FolderCompletionContributor extends CompletionContributor {
 
                 Project project = parameters.getOriginalFile().getProject();
 
-                gradleCacheExplorer.getCompletions(RepositoryLoader.loadRepositories(project), group).stream()
+                GradleCacheExplorer.getInstance()
+                        .getCompletions(RepositoryLoader.loadRepositories(project), group)
+                        .stream()
                         .map(suggestion -> LookupElementBuilder.create(GroupPartOrPackageName.of(suggestion)))
                         .forEach(resultSet::addElement);
             }
