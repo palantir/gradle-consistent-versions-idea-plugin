@@ -17,15 +17,20 @@
 package com.palantir.gradle.versions.intellij;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -103,21 +108,39 @@ public class RepositoryExplorer {
     }
 
     private Set<DependencyVersion> parseVersionsFromContent(String content) {
-        Set<DependencyVersion> versions = new HashSet<>();
         try {
             XmlMapper xmlMapper = new XmlMapper();
+            xmlMapper.registerModule(new GuavaModule());
 
             Metadata metadata = xmlMapper.readValue(content, Metadata.class);
-            if (metadata.versioning() != null && metadata.versioning().versions() != null) {
-                String latest = metadata.versioning().latest();
-                for (String version : metadata.versioning().versions()) {
-                    versions.add(DependencyVersion.of(version, latest.equals(version)));
-                }
+            List<String> allVersions = new ArrayList<>(metadata.versioning().versions());
+            Collections.reverse(allVersions);
+
+            if (allVersions.isEmpty()) {
+                return Collections.emptySet();
             }
+
+            String latest = Optional.ofNullable(metadata.versioning().release())
+                    .filter(l -> !l.isEmpty())
+                    .orElseGet(() -> metadata.versioning().latest());
+
+            if (latest.toLowerCase(Locale.ROOT).contains("rc")
+                    || latest.toLowerCase(Locale.ROOT).contains("snapshot")) {
+                latest = allVersions.stream()
+                        .filter(version -> !version.toLowerCase(Locale.ROOT).contains("rc")
+                                && !version.toLowerCase(Locale.ROOT).contains("snapshot"))
+                        .findFirst()
+                        .orElse(latest);
+            }
+
+            String finalLatest = latest;
+            return allVersions.stream()
+                    .map(version -> DependencyVersion.of(version, finalLatest.equals(version)))
+                    .collect(Collectors.toSet());
         } catch (Exception e) {
             log.error("Failed to parse maven-metadata.xml", e);
         }
-        return versions;
+        return Collections.emptySet();
     }
 
     @Value.Immutable
