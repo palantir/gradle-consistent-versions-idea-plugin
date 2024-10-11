@@ -42,25 +42,21 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_gets_valid_urls_only() {
-        Set<String> projectUrls = Set.of("https://repo.maven.apache.org/maven2/", "https://jcenter.bintray.com/");
-
         assertThat(explorer.isValidResourceUrl(
-                        projectUrls, "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom"))
+                        "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom"))
                 .as("because the URL is from a known valid repository and ends with .pom")
                 .isTrue();
 
-        assertThat(explorer.isValidResourceUrl(
-                        projectUrls, "https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar"))
+        assertThat(explorer.isValidResourceUrl("https://jcenter.bintray.com/com/example/artifact/1.0/artifact-1.0.jar"))
                 .as("because the URL is from a known valid repository and ends with .jar")
                 .isTrue();
 
-        assertThat(explorer.isValidResourceUrl(
-                        projectUrls, "https://example.com/com/example/artifact/1.0/artifact-1.0.pom"))
-                .as("because the URL is not from a known valid repository")
+        assertThat(explorer.isValidResourceUrl("example.com/com/example/artifact/1.0/artifact-1.0.pom"))
+                .as("because the URL is not a valid URL")
                 .isFalse();
 
         assertThat(explorer.isValidResourceUrl(
-                        projectUrls, "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.txt"))
+                        "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.txt"))
                 .as("because the URL ends with an invalid extension")
                 .isFalse();
     }

@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: Cache is loaded on first instance and on project refresh
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/45

@@ -16,12 +16,8 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.base.Stopwatch;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.progress.ProcessCanceledException;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,9 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -43,78 +37,59 @@ public class GradleCacheExplorer {
 
     private static final Logger log = LoggerFactory.getLogger(GradleCacheExplorer.class);
     private static final String GRADLE_CACHE_PATH = System.getProperty("user.home") + "/.gradle/caches/modules-2/";
-    private final Cache<String, Set<String>> cache =
-            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
+    private final AtomicReference<Set<String>> cache = new AtomicReference<>(Collections.emptySet());
 
-    public final void invalidateCache() {
-        cache.invalidateAll();
+    GradleCacheExplorer() {
+        loadCache();
+    }
+
+    public final void loadCache() {
+        cache.set(extractStrings());
     }
 
     public final Set<String> getCompletions(Set<String> repoUrls, DependencyGroup input) {
+        Stopwatch stopWatch = Stopwatch.createStarted();
+
         String parsedInput = String.join(".", input.parts());
-        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-        if (indicator == null) {
+
+        Set<String> results = cache.get().stream()
+                .map(url -> extractGroupAndArtifactFromUrl(repoUrls, url))
+                .flatMap(Optional::stream)
+                .collect(Collectors.toSet());
+
+        if (parsedInput.isEmpty()) {
+            return results;
+        }
+
+        stopWatch.stop();
+        log.debug("Completion matching time: {} ms", stopWatch.elapsed().toMillis());
+
+        return results.stream()
+                .filter(result -> result.startsWith(parsedInput))
+                .map(result -> result.substring(parsedInput.length() + 1))
+                .collect(Collectors.toSet());
+    }
+
+    private Set<String> extractStrings() {
+        try (Stream<Path> allFolders = Files.list(Paths.get(GRADLE_CACHE_PATH))) {
+
+            Stream<Path> metadataFolders =
+                    allFolders.filter(path -> path.getFileName().toString().startsWith("metadata-"));
+
+            return metadataFolders
+                    .map(metadataFolder -> metadataFolder.resolve("resource-at-url.bin"))
+                    .filter(Files::exists)
+                    .flatMap(this::extractStringsFromBinFile)
+                    .filter(this::isValidResourceUrl)
+                    .collect(Collectors.toSet());
+        } catch (IOException e) {
+            log.error("Failed to list metadata folders", e);
             return Collections.emptySet();
         }
-
-        try {
-            Callable<Set<String>> task = () -> extractStrings(repoUrls, indicator);
-            Future<Set<String>> future = ApplicationManager.getApplication().executeOnPooledThread(task);
-            Set<String> results =
-                    com.intellij.openapi.application.ex.ApplicationUtil.runWithCheckCanceled(future::get, indicator);
-
-            if (parsedInput.isEmpty()) {
-                return results;
-            }
-
-            return results.stream()
-                    .filter(result -> result.startsWith(parsedInput))
-                    .map(result -> result.substring(parsedInput.length() + 1))
-                    .collect(Collectors.toSet());
-        } catch (ProcessCanceledException e) {
-            log.debug("Operation was cancelled", e);
-        } catch (Exception e) {
-            log.warn("Failed to get completions", e);
-        }
-        return Collections.emptySet();
     }
 
-    private Set<String> extractStrings(Set<String> repoUrls, ProgressIndicator indicator) {
-        return cache.get("metadata", key -> {
-            try (Stream<Path> allFolders = Files.list(Paths.get(GRADLE_CACHE_PATH))) {
-
-                Stream<Path> metadataFolders =
-                        allFolders.filter(path -> path.getFileName().toString().startsWith("metadata-"));
-
-                return metadataFolders
-                        .peek(metadataFolder -> {
-                            if (indicator.isCanceled()) {
-                                throw new RuntimeException(
-                                        new InterruptedException("Operation was canceled by the user."));
-                            }
-                        })
-                        .map(metadataFolder -> metadataFolder.resolve("resource-at-url.bin"))
-                        .filter(Files::exists)
-                        .flatMap(this::extractStringsFromBinFile)
-                        .filter(url -> isValidResourceUrl(repoUrls, url))
-                        .map(url -> extractGroupAndArtifactFromUrl(repoUrls, url))
-                        .flatMap(Optional::stream)
-                        .collect(Collectors.toSet());
-            } catch (IOException e) {
-                log.error("Failed to list metadata folders", e);
-                return Collections.emptySet();
-            } catch (RuntimeException e) {
-                if (e.getCause() instanceof InterruptedException) {
-                    log.debug("Operation was cancelled", e);
-                    return Collections.emptySet();
-                }
-                throw e;
-            }
-        });
-    }
-
-    final boolean isValidResourceUrl(Set<String> repoUrls, String url) {
-        return repoUrls.stream().anyMatch(url::startsWith) && (url.endsWith(".pom") || url.endsWith(".jar"));
+    final boolean isValidResourceUrl(String url) {
+        return (url.startsWith("https://")) && (url.endsWith(".pom") || url.endsWith(".jar"));
     }
 
     final Stream<String> extractStringsFromBinFile(Path binFile) {
@@ -181,5 +156,9 @@ public class GradleCacheExplorer {
 
             return Optional.of(String.format("%s:%s", group, artifact));
         });
+    }
+
+    static GradleCacheExplorer getInstance() {
+        return ApplicationManager.getApplication().getService(GradleCacheExplorer.class);
     }
 }
