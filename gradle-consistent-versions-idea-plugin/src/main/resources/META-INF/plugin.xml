@@ -10,15 +10,15 @@
     <h2> Gradle Consistent Versions Idea Plugin </h2>
 
     <p>
-    An Idea plugin for use with <a href="https://github.com/palantir/gradle-consistent-versions" target="_blank">gradle-consistent-versions</a>.
+    An IntelliJ IDEA plugin for use with <a href="https://github.com/palantir/gradle-consistent-versions" target="_blank">gradle-consistent-versions</a>.
     </p>
 
     <h3> Features: </h3>
 
     <ul>
-     <li> Automatic gradle refresh when changes are detected in `versions.props`.</li>
-     <li> Auto-complete for packages and versions in `versions.props`.</li>
-     <li> Syntax parsing and highlighting for `versions.props` files. With highlighting rules to clearly mark `dependency-upgrader` controls.</li>
+     <li> Automatic <code>--write-locks</code> and Gradle refresh when changes are detected in <code>versions.props</code>.</li>
+     <li> Auto-complete for packages and versions in <code>versions.props</code>.</li>
+     <li> Syntax parsing and highlighting for <code>versions.props</code> files. With highlighting rules to clearly mark <code>dependency-upgrader</code> controls.</li>
      <li> Create comments automatically using the default IntelliJ shortcuts.</li>
     </ul>
 
