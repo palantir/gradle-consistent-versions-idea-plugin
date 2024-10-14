@@ -21,6 +21,7 @@ import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.completion.PrioritizedLookupElement;
+import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
@@ -31,6 +32,8 @@ import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
+import java.util.List;
+import java.util.stream.IntStream;
 
 public class VersionCompletionContributor extends CompletionContributor {
 
@@ -58,7 +61,7 @@ public class VersionCompletionContributor extends CompletionContributor {
 
                         Project project = parameters.getOriginalFile().getProject();
 
-                        RepositoryLoader.loadRepositories(project).stream()
+                        List<LookupElement> versions = RepositoryLoader.loadRepositories(project).stream()
                                 .flatMap(url -> repositoryExplorer.getVersions(group, dependencyPackage, url).stream())
                                 .map(version -> version.isLatest()
                                         ? PrioritizedLookupElement.withPriority(
@@ -67,7 +70,14 @@ public class VersionCompletionContributor extends CompletionContributor {
                                                         .withLookupString("latest"),
                                                 Double.MAX_VALUE)
                                         : LookupElementBuilder.create(version))
-                                .forEach(resultSet::addElement);
+                                .toList();
+
+                        List<LookupElement> prioritizedVersions = IntStream.range(0, versions.size())
+                                .mapToObj(i ->
+                                        PrioritizedLookupElement.withPriority(versions.get(i), i - versions.size()))
+                                .toList();
+
+                        resultSet.addAllElements(prioritizedVersions);
                     }
                 });
     }
