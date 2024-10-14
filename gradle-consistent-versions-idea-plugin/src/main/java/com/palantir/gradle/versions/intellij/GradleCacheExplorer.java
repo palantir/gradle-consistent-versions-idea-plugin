@@ -89,7 +89,7 @@ public class GradleCacheExplorer {
     }
 
     final boolean isValidResourceUrl(String url) {
-        return (url.startsWith("https://")) && (url.endsWith(".pom") || url.endsWith(".jar"));
+        return url.startsWith("https://") && (url.endsWith(".pom") || url.endsWith(".jar"));
     }
 
     final Stream<String> extractStringsFromBinFile(Path binFile) {
