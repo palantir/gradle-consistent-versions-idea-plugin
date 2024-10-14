@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -47,7 +49,7 @@ public class GradleCacheExplorer {
         cache.set(extractStrings());
     }
 
-    public final Set<String> getCompletions(Set<String> repoUrls, DependencyGroup input) {
+    public final Set<String> getCompletions(Set<String> repoUrls, DependencyGroup input, boolean isPackageName) {
         Stopwatch stopWatch = Stopwatch.createStarted();
 
         String parsedInput = String.join(".", input.parts());
@@ -57,17 +59,36 @@ public class GradleCacheExplorer {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toSet());
 
+        Set<String> resultsWithStarsIncluded = results.stream()
+                .map(result -> {
+                    int colonIndex = result.indexOf(':');
+                    if (colonIndex != -1) {
+                        return Arrays.asList(result, result.substring(0, colonIndex) + ":*");
+                    }
+                    return Collections.singletonList(result);
+                })
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
         if (parsedInput.isEmpty()) {
             return results;
+        }
+
+        Set<String> filteredResults = resultsWithStarsIncluded.stream()
+                .filter(result -> result.startsWith(parsedInput))
+                .map(result -> result.substring(parsedInput.length() + 1))
+                .collect(Collectors.toSet());
+
+        if (isPackageName) {
+            filteredResults = filteredResults.stream()
+                    .filter(result -> !result.contains(":"))
+                    .collect(Collectors.toSet());
         }
 
         stopWatch.stop();
         log.debug("Completion matching time: {} ms", stopWatch.elapsed().toMillis());
 
-        return results.stream()
-                .filter(result -> result.startsWith(parsedInput))
-                .map(result -> result.substring(parsedInput.length() + 1))
-                .collect(Collectors.toSet());
+        return filteredResults;
     }
 
     private Set<String> extractStrings() {
