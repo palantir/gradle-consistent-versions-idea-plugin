@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -32,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import one.util.streamex.StreamEx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,30 +59,35 @@ public class GradleCacheExplorer {
                 .collect(Collectors.toSet());
 
         Set<String> resultsWithStarsIncluded = results.stream()
-                .map(result -> {
+                .flatMap(result -> {
                     int colonIndex = result.indexOf(':');
                     if (colonIndex != -1) {
-                        return Arrays.asList(result, result.substring(0, colonIndex) + ":*");
+                        String prefix = result.substring(0, colonIndex);
+                        long count = results.stream()
+                                .filter(r -> r.startsWith(prefix + ":"))
+                                .count();
+                        if (count > 1) {
+                            return Stream.of(result, prefix + ":*");
+                        }
                     }
-                    return Collections.singletonList(result);
+                    return Stream.of(result);
                 })
-                .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
 
         if (parsedInput.isEmpty()) {
-            return results;
+            return resultsWithStarsIncluded;
         }
 
-        Set<String> filteredResults = resultsWithStarsIncluded.stream()
+        Set<String> filteredResults = StreamEx.of(resultsWithStarsIncluded)
                 .filter(result -> result.startsWith(parsedInput))
                 .map(result -> result.substring(parsedInput.length() + 1))
-                .collect(Collectors.toSet());
-
-        if (isPackageName) {
-            filteredResults = filteredResults.stream()
-                    .filter(result -> !result.contains(":"))
-                    .collect(Collectors.toSet());
-        }
+                .chain(stream -> {
+                    if (isPackageName) {
+                        return stream.filter(result -> !result.contains(":"));
+                    }
+                    return stream;
+                })
+                .toSet();
 
         stopWatch.stop();
         log.debug("Completion matching time: {} ms", stopWatch.elapsed().toMillis());
@@ -181,5 +185,10 @@ public class GradleCacheExplorer {
 
     static GradleCacheExplorer getInstance() {
         return ApplicationManager.getApplication().getService(GradleCacheExplorer.class);
+    }
+
+    // This should only ever be used by tests
+    final void setCacheForTesting(Set<String> newCache) {
+        cache.set(newCache);
     }
 }

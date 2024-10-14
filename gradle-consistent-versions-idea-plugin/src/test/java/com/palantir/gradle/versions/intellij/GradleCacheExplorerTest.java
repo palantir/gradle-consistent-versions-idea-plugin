@@ -103,4 +103,92 @@ class GradleCacheExplorerTest {
                 .as("Empty passed in so empty returned")
                 .isEmpty();
     }
+
+    @Test
+    void test_get_completion_no_match() {
+        Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
+        Set<String> cache = Set.of(
+                "https://example.one/com/exampleOne/artifactOne/1.0/artifact-1.0.pom",
+                "https://example.one/com/exampleOne/artifactTwo/1.0/artifact-1.0.jar",
+                "https://example.one/com/exampleDifferent/artifactOne/1.0/artifact-1.0.jar",
+                "https://example.two/com/exampleTwo/artifactOne/1.0/artifact-1.0.pom",
+                "https://example.two/com/exampleTwo/artifactTwo/1.0/artifact-1.0.jar",
+                "https://example.one/org/exampleOrg/artifactOrg/1.0/artifact-1.0.pom",
+                "https://example.three/com/exampleThree/artifactOne/1.0/artifact-1.0.pom");
+
+        explorer.setCacheForTesting(cache);
+        assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString("org.expected"), false))
+                .as("No group match")
+                .isEmpty();
+    }
+
+    @Test
+    void test_get_completion_match_all() {
+        Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
+        Set<String> cache = Set.of(
+                "https://example.one/com/exampleOne/artifactOne/1.0/artifact-1.0.pom",
+                "https://example.one/com/exampleOne/artifactTwo/1.0/artifact-1.0.jar",
+                "https://example.one/com/exampleDifferent/artifactOne/1.0/artifact-1.0.jar",
+                "https://example.two/com/exampleTwo/artifactOne/1.0/artifact-1.0.pom",
+                "https://example.two/com/exampleTwo/artifactTwo/1.0/artifact-1.0.jar",
+                "https://example.one/org/exampleOrg/artifactOrg/1.0/artifact-1.0.pom",
+                "https://example.three/com/exampleThree/artifactOne/1.0/artifact-1.0.pom");
+
+        explorer.setCacheForTesting(cache);
+        assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString(""), false))
+                .as("Matches all")
+                .containsOnly(
+                        "com.exampleDifferent:artifactOne",
+                        "com.exampleTwo:*",
+                        "org.exampleOrg:artifactOrg",
+                        "com.exampleOne:artifactOne",
+                        "com.exampleTwo:artifactTwo",
+                        "com.exampleOne:*",
+                        "com.exampleOne:artifactTwo",
+                        "com.exampleTwo:artifactOne");
+    }
+
+    @Test
+    void test_get_completion_match_some() {
+        Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
+        Set<String> cache = Set.of(
+                "https://example.one/com/exampleOne/artifactOne/1.0/artifact-1.0.pom",
+                "https://example.one/com/exampleOne/artifactTwo/1.0/artifact-1.0.jar",
+                "https://example.one/com/exampleDifferent/artifactOne/1.0/artifact-1.0.jar",
+                "https://example.two/com/exampleTwo/artifactOne/1.0/artifact-1.0.pom",
+                "https://example.two/com/exampleTwo/artifactTwo/1.0/artifact-1.0.jar",
+                "https://example.one/org/exampleOrg/artifactOrg/1.0/artifact-1.0.pom",
+                "https://example.three/com/exampleThree/artifactOne/1.0/artifact-1.0.pom");
+
+        explorer.setCacheForTesting(cache);
+        assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString("com"), false))
+                .as("Matches all")
+                .containsOnly(
+                        "exampleOne:*",
+                        "exampleOne:artifactOne",
+                        "exampleOne:artifactTwo",
+                        "exampleDifferent:artifactOne",
+                        "exampleTwo:*",
+                        "exampleTwo:artifactOne",
+                        "exampleTwo:artifactTwo");
+    }
+
+    @Test
+    void test_get_completion_match_is_package_name() {
+        Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
+        Set<String> cache = Set.of(
+                "https://example.one/com/exampleOne/artifactOne/1.0/artifact-1.0.pom",
+                "https://example.one/com/exampleOne/artifactTwo/1.0/artifact-1.0.jar",
+                "https://example.one/com/exampleOne/anotherGroup/artifactOne/1.0/artifact-1.0.jar",
+                "https://example.one/com/exampleDifferent/artifactOne/1.0/artifact-1.0.jar",
+                "https://example.two/com/exampleTwo/artifactOne/1.0/artifact-1.0.pom",
+                "https://example.two/com/exampleTwo/artifactTwo/1.0/artifact-1.0.jar",
+                "https://example.one/org/exampleOrg/artifactOrg/1.0/artifact-1.0.pom",
+                "https://example.three/com/exampleThree/artifactOne/1.0/artifact-1.0.pom");
+
+        explorer.setCacheForTesting(cache);
+        assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString("com.exampleOne"), true))
+                .as("Matches all")
+                .containsOnly("*", "artifactOne", "artifactTwo");
+    }
 }
