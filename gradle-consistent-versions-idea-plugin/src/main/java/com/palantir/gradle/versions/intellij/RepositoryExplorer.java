@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
 import org.jsoup.Jsoup;
@@ -41,6 +42,9 @@ import org.slf4j.LoggerFactory;
 
 public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
+
+    private static final Pattern VERSION_PATTERN =
+            Pattern.compile(".*(-rc\\d*|-SNAPSHOT|-M\\d+|-alpha|-beta)$", Pattern.CASE_INSENSITIVE);
 
     private final Cache<CacheKey, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -124,11 +128,11 @@ public class RepositoryExplorer {
                     .filter(l -> !l.isEmpty())
                     .orElseGet(() -> metadata.versioning().latest());
 
-            if (latest.toLowerCase(Locale.ROOT).contains("rc")
-                    || latest.toLowerCase(Locale.ROOT).contains("snapshot")) {
+            if (VERSION_PATTERN.matcher(latest.toLowerCase(Locale.ROOT)).matches()) {
                 latest = allVersions.stream()
-                        .filter(version -> !version.toLowerCase(Locale.ROOT).contains("rc")
-                                && !version.toLowerCase(Locale.ROOT).contains("snapshot"))
+                        .filter(version -> !VERSION_PATTERN
+                                .matcher(version.toLowerCase(Locale.ROOT))
+                                .matches())
                         .findFirst()
                         .orElse(latest);
             }
