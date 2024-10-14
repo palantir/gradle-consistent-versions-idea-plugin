@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: better logging for `ConnectException` in contents util
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/50
