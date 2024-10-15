@@ -182,8 +182,44 @@ class GradleCacheExplorerTest {
         explorer = new GradleCacheExplorer(cache);
 
         assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString("same.group"), false))
-                .as(
-                        "When a group is passed only packages that match are suggested and the group is removed from the start")
+                .as("When a group is passed only packages that match are suggested")
                 .containsOnly("*", "nameOne", "nameTwo");
+    }
+
+    @Test
+    public void test_if_multiple_matching_groups_adds_star() {
+        Set<String> results = Set.of("group1:artifact1", "group1:artifact2", "group2:artifact1");
+        String result = "group1:artifact1";
+        Set<String> expected = Set.of("group1:artifact1", "group1:*");
+
+        Set<String> actual = GradleCacheExplorer.includeStarsIfMultipleArtifacts(result, results)
+                .collect(Collectors.toSet());
+
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    public void test_single_artifact_has_group_no_star_added() {
+        Set<String> results = Set.of("group1:artifact1", "group1:artifact2", "group2:artifact1");
+        String result = "group2:artifact1";
+        Set<String> expected = Set.of("group2:artifact1");
+
+        Set<String> actual = GradleCacheExplorer.includeStarsIfMultipleArtifacts(result, results)
+                .collect(Collectors.toSet());
+
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    public void test_returns_input_if_no_colon() {
+        Set<String> results = Set.of("group1:artifact1", "group1:artifact2", "group2:artifact1");
+
+        String result = "group3artifact1";
+        Set<String> expected = Set.of("group3artifact1");
+
+        Set<String> actual = GradleCacheExplorer.includeStarsIfMultipleArtifacts(result, results)
+                .collect(Collectors.toSet());
+
+        assertThat(actual).isEqualTo(expected);
     }
 }

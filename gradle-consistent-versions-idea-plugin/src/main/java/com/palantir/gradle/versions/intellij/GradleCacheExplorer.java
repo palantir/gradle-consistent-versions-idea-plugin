@@ -65,19 +65,7 @@ public class GradleCacheExplorer {
                 .collect(Collectors.toSet());
 
         Set<String> resultsWithStarsIncluded = results.stream()
-                .flatMap(result -> {
-                    int colonIndex = result.indexOf(':');
-                    if (colonIndex != -1) {
-                        String prefix = result.substring(0, colonIndex);
-                        long count = results.stream()
-                                .filter(r -> r.startsWith(prefix + ":"))
-                                .count();
-                        if (count > 1) {
-                            return Stream.of(result, prefix + ":*");
-                        }
-                    }
-                    return Stream.of(result);
-                })
+                .flatMap(result -> includeStarsIfMultipleArtifacts(result, results))
                 .collect(Collectors.toSet());
 
         if (parsedInput.isEmpty()) {
@@ -99,6 +87,19 @@ public class GradleCacheExplorer {
         log.debug("Completion matching time: {} ms", stopWatch.elapsed().toMillis());
 
         return filteredResults;
+    }
+
+    static Stream<String> includeStarsIfMultipleArtifacts(String result, Set<String> results) {
+        int colonIndex = result.indexOf(':');
+        if (colonIndex != -1) {
+            String prefix = result.substring(0, colonIndex);
+            long count =
+                    results.stream().filter(r -> r.startsWith(prefix + ":")).count();
+            if (count > 1) {
+                return Stream.of(result, prefix + ":*");
+            }
+        }
+        return Stream.of(result);
     }
 
     private Set<String> extractStrings() {
