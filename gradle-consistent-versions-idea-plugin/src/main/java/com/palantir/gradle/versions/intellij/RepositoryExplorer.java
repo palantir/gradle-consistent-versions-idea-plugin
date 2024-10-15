@@ -21,10 +21,9 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -66,14 +65,14 @@ public class RepositoryExplorer {
         return fetchFoldersFromContent(content.get());
     }
 
-    public final List<DependencyVersion> getVersions(
+    public final Set<DependencyVersion> getVersions(
             DependencyGroup group, DependencyName dependencyPackage, String url) {
         String urlString = url + group.asUrlString() + dependencyPackage.name() + "/maven-metadata.xml";
         Optional<String> content = fetchContent(urlString);
 
         if (content.isEmpty()) {
             log.debug("Empty metadata content received");
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
 
         return parseVersionsFromContent(content.get());
@@ -104,8 +103,8 @@ public class RepositoryExplorer {
         return folders;
     }
 
-    private List<DependencyVersion> parseVersionsFromContent(String content) {
-        List<DependencyVersion> versions = new ArrayList<>();
+    private Set<DependencyVersion> parseVersionsFromContent(String content) {
+        Set<DependencyVersion> versions = new LinkedHashSet<>();
         try {
             XmlMapper xmlMapper = new XmlMapper();
 

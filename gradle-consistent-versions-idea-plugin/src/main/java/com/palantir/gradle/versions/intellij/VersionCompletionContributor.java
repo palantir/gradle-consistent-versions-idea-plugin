@@ -32,8 +32,8 @@ import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
-import java.util.List;
 import java.util.stream.IntStream;
+import one.util.streamex.StreamEx;
 
 public class VersionCompletionContributor extends CompletionContributor {
 
@@ -61,23 +61,21 @@ public class VersionCompletionContributor extends CompletionContributor {
 
                         Project project = parameters.getOriginalFile().getProject();
 
-                        List<LookupElement> versions = RepositoryLoader.loadRepositories(project).stream()
+                        StreamEx.of(RepositoryLoader.loadRepositories(project))
                                 .flatMap(url -> repositoryExplorer.getVersions(group, dependencyPackage, url).stream())
-                                .map(version -> version.isLatest()
-                                        ? PrioritizedLookupElement.withPriority(
-                                                LookupElementBuilder.create(version)
-                                                        .withTypeText("Latest", true)
-                                                        .withLookupString("latest"),
-                                                Double.MAX_VALUE)
-                                        : LookupElementBuilder.create(version))
-                                .toList();
+                                .zipWith(IntStream.iterate(0, i -> i + 1).boxed())
+                                .mapKeyValue(this::getLookupElement)
+                                .forEach(resultSet::addElement);
+                    }
 
-                        List<LookupElement> prioritizedVersions = IntStream.range(0, versions.size())
-                                .mapToObj(i ->
-                                        PrioritizedLookupElement.withPriority(versions.get(i), i - versions.size()))
-                                .toList();
-
-                        resultSet.addAllElements(prioritizedVersions);
+                    private LookupElement getLookupElement(DependencyVersion version, Integer priority) {
+                        return version.isLatest()
+                                ? PrioritizedLookupElement.withPriority(
+                                        LookupElementBuilder.create(version)
+                                                .withTypeText("Latest", true)
+                                                .withLookupString("latest"),
+                                        Double.MAX_VALUE)
+                                : PrioritizedLookupElement.withPriority(LookupElementBuilder.create(version), priority);
                     }
                 });
     }
