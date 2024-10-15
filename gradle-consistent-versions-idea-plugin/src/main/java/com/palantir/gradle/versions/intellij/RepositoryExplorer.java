@@ -20,6 +20,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.annotations.VisibleForTesting;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ import org.slf4j.LoggerFactory;
 public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
 
-    private static final Pattern VERSION_PATTERN =
+    private static final Pattern UNSTABLE_VERSION_PATTERN =
             Pattern.compile(".*(-rc\\d*|-SNAPSHOT|-M\\d+|-alpha|-beta)$", Pattern.CASE_INSENSITIVE);
 
     private final Cache<CacheKey, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
@@ -117,34 +118,41 @@ public class RepositoryExplorer {
             xmlMapper.registerModule(new GuavaModule());
 
             Metadata metadata = xmlMapper.readValue(content, Metadata.class);
-            List<String> allVersions = new ArrayList<>(metadata.versioning().versions());
-            Collections.reverse(allVersions);
-
-            if (allVersions.isEmpty()) {
-                return Collections.emptySet();
-            }
-
-            String latest = Optional.ofNullable(metadata.versioning().release())
-                    .filter(l -> !l.isEmpty())
-                    .orElseGet(() -> metadata.versioning().latest());
-
-            if (VERSION_PATTERN.matcher(latest.toLowerCase(Locale.ROOT)).matches()) {
-                latest = allVersions.stream()
-                        .filter(version -> !VERSION_PATTERN
-                                .matcher(version.toLowerCase(Locale.ROOT))
-                                .matches())
-                        .findFirst()
-                        .orElse(latest);
-            }
-
-            String finalLatest = latest;
-            return allVersions.stream()
-                    .map(version -> DependencyVersion.of(version, finalLatest.equals(version)))
-                    .collect(Collectors.toSet());
+            return parseVersionsFromContent(metadata);
         } catch (Exception e) {
             log.error("Failed to parse maven-metadata.xml", e);
         }
         return Collections.emptySet();
+    }
+
+    @VisibleForTesting
+    final Set<DependencyVersion> parseVersionsFromContent(Metadata metadata) {
+        List<String> allVersions = new ArrayList<>(metadata.versioning().versions());
+        Collections.reverse(allVersions);
+
+        if (allVersions.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        String metadataReleaseOrLatest = Optional.ofNullable(
+                        metadata.versioning().release())
+                .filter(l -> !l.isEmpty())
+                .orElseGet(() -> metadata.versioning().latest());
+
+        String latestStableVersion = Optional.of(metadataReleaseOrLatest)
+                .filter(this::isStableVersion)
+                .or(() -> allVersions.stream().filter(this::isStableVersion).findFirst())
+                .orElse(metadataReleaseOrLatest);
+
+        return allVersions.stream()
+                .map(version -> DependencyVersion.of(version, latestStableVersion.equals(version)))
+                .collect(Collectors.toSet());
+    }
+
+    private boolean isStableVersion(String version) {
+        return !UNSTABLE_VERSION_PATTERN
+                .matcher(version.toLowerCase(Locale.ROOT))
+                .matches();
     }
 
     @Value.Immutable
