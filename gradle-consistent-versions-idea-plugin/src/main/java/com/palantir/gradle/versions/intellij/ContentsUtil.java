@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,20 +68,14 @@ public final class ContentsUtil {
                     throw new ProcessCanceledException();
                 }
 
-                BufferedReader in =
-                        new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-                StringBuilder result = new StringBuilder();
-                String inputLine;
-
-                while ((inputLine = in.readLine()) != null) {
-                    if (indicator.isCanceled()) {
-                        throw new InterruptedException("Fetch cancelled");
-                    }
-                    result.append(inputLine);
+                if (indicator.isCanceled()) {
+                    throw new InterruptedException("Fetch cancelled");
                 }
 
-                in.close();
-                return result.toString();
+                BufferedReader in =
+                        new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+
+                return in.lines().collect(Collectors.joining("\n"));
             } catch (ConnectException e) {
                 log.error("Connection refused on page {}", pageUrl, e);
                 throw e;
