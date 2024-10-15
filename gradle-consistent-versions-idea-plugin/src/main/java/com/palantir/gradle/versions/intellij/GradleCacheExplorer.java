@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.versions.intellij;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.intellij.openapi.application.ApplicationManager;
 import java.io.BufferedInputStream;
@@ -42,6 +43,11 @@ public class GradleCacheExplorer {
 
     GradleCacheExplorer() {
         loadCache();
+    }
+
+    @VisibleForTesting
+    GradleCacheExplorer(Set<String> newCache) {
+        cache.set(newCache);
     }
 
     public final void loadCache() {
@@ -185,10 +191,5 @@ public class GradleCacheExplorer {
 
     static GradleCacheExplorer getInstance() {
         return ApplicationManager.getApplication().getService(GradleCacheExplorer.class);
-    }
-
-    // This should only ever be used by tests
-    final void setCacheForTesting(Set<String> newCache) {
-        cache.set(newCache);
     }
 }

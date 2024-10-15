@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -35,13 +34,9 @@ class GradleCacheExplorerTest {
 
     private GradleCacheExplorer explorer;
 
-    @BeforeEach
-    void beforeEach() {
-        explorer = new GradleCacheExplorer();
-    }
-
     @Test
     void test_gets_valid_urls_only() {
+        explorer = new GradleCacheExplorer();
         assertThat(explorer.isValidResourceUrl(
                         "https://repo.maven.apache.org/maven2/com/example/artifact/1.0/artifact-1.0.pom"))
                 .as("because the URL is from a known valid repository and ends with .pom")
@@ -63,6 +58,7 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_gets_all_strings_from_bin(@TempDir File tempDir) throws IOException {
+        explorer = new GradleCacheExplorer();
         File tempFile = new File(tempDir, "test.bin");
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile, StandardCharsets.UTF_8))) {
             writer.write("hello.jar\nworld.pom\nanother.jar\b\f");
@@ -78,6 +74,7 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_extract_group_artifact_from_url_correctly() {
+        explorer = new GradleCacheExplorer();
         Set<String> projectUrls = Set.of("https://repo.maven.apache.org/maven2/", "https://jcenter.bintray.com/");
 
         assertThat(explorer.extractGroupAndArtifactFromUrl(
@@ -108,15 +105,12 @@ class GradleCacheExplorerTest {
     void test_get_completion_no_match() {
         Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
         Set<String> cache = Set.of(
-                "https://example.one/com/exampleOne/artifactOne/1.0/artifact-1.0.pom",
-                "https://example.one/com/exampleOne/artifactTwo/1.0/artifact-1.0.jar",
-                "https://example.one/com/exampleDifferent/artifactOne/1.0/artifact-1.0.jar",
-                "https://example.two/com/exampleTwo/artifactOne/1.0/artifact-1.0.pom",
-                "https://example.two/com/exampleTwo/artifactTwo/1.0/artifact-1.0.jar",
-                "https://example.one/org/exampleOrg/artifactOrg/1.0/artifact-1.0.pom",
-                "https://example.three/com/exampleThree/artifactOne/1.0/artifact-1.0.pom");
+                "https://example.one/exampleOne/nameOne/version/artifact.pom",
+                "https://example.two/exampleTwo/nameTwo/version/artifact.pom",
+                "https://not.included.url/exampleThree/exampleThree/version/artifact.pom");
 
-        explorer.setCacheForTesting(cache);
+        explorer = new GradleCacheExplorer(cache);
+
         assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString("org.expected"), false))
                 .as("No group match")
                 .isEmpty();
@@ -126,69 +120,70 @@ class GradleCacheExplorerTest {
     void test_get_completion_match_all() {
         Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
         Set<String> cache = Set.of(
-                "https://example.one/com/exampleOne/artifactOne/1.0/artifact-1.0.pom",
-                "https://example.one/com/exampleOne/artifactTwo/1.0/artifact-1.0.jar",
-                "https://example.one/com/exampleDifferent/artifactOne/1.0/artifact-1.0.jar",
-                "https://example.two/com/exampleTwo/artifactOne/1.0/artifact-1.0.pom",
-                "https://example.two/com/exampleTwo/artifactTwo/1.0/artifact-1.0.jar",
-                "https://example.one/org/exampleOrg/artifactOrg/1.0/artifact-1.0.pom",
-                "https://example.three/com/exampleThree/artifactOne/1.0/artifact-1.0.pom");
+                "https://example.one/exampleOne/nameOne/version/artifact.pom",
+                "https://example.two/exampleTwo/nameTwo/version/artifact.pom");
 
-        explorer.setCacheForTesting(cache);
+        explorer = new GradleCacheExplorer(cache);
+
         assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString(""), false))
                 .as("Matches all")
-                .containsOnly(
-                        "com.exampleDifferent:artifactOne",
-                        "com.exampleTwo:*",
-                        "org.exampleOrg:artifactOrg",
-                        "com.exampleOne:artifactOne",
-                        "com.exampleTwo:artifactTwo",
-                        "com.exampleOne:*",
-                        "com.exampleOne:artifactTwo",
-                        "com.exampleTwo:artifactOne");
+                .containsOnly("exampleOne:nameOne", "exampleTwo:nameTwo");
     }
 
     @Test
-    void test_get_completion_match_some() {
-        Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
+    void test_ignore_if_not_in_repo_list() {
+        Set<String> repoUrls = Set.of("https://example.one/");
         Set<String> cache = Set.of(
-                "https://example.one/com/exampleOne/artifactOne/1.0/artifact-1.0.pom",
-                "https://example.one/com/exampleOne/artifactTwo/1.0/artifact-1.0.jar",
-                "https://example.one/com/exampleDifferent/artifactOne/1.0/artifact-1.0.jar",
-                "https://example.two/com/exampleTwo/artifactOne/1.0/artifact-1.0.pom",
-                "https://example.two/com/exampleTwo/artifactTwo/1.0/artifact-1.0.jar",
-                "https://example.one/org/exampleOrg/artifactOrg/1.0/artifact-1.0.pom",
-                "https://example.three/com/exampleThree/artifactOne/1.0/artifact-1.0.pom");
+                "https://example.one/exampleOne/nameOne/version/artifact.pom",
+                "https://example.two/exampleTwo/nameTwo/version/artifact.pom");
 
-        explorer.setCacheForTesting(cache);
-        assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString("com"), false))
+        explorer = new GradleCacheExplorer(cache);
+
+        assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString(""), false))
                 .as("Matches all")
-                .containsOnly(
-                        "exampleOne:*",
-                        "exampleOne:artifactOne",
-                        "exampleOne:artifactTwo",
-                        "exampleDifferent:artifactOne",
-                        "exampleTwo:*",
-                        "exampleTwo:artifactOne",
-                        "exampleTwo:artifactTwo");
+                .containsOnly("exampleOne:nameOne");
     }
 
     @Test
-    void test_get_completion_match_is_package_name() {
+    void test_long_urls_correctly_parsed() {
+        Set<String> repoUrls = Set.of("https://example.one/");
+        Set<String> cache = Set.of("https://example.one/this/is/a/very/long/url/version/artifact.pom");
+
+        explorer = new GradleCacheExplorer(cache);
+
+        assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString(""), false))
+                .as("Long url broken into group and artifact")
+                .containsOnly("this.is.a.very.long:url");
+    }
+
+    @Test
+    void test_two_packages_with_same_group_suggests_wildcard() {
+        Set<String> repoUrls = Set.of("https://example.one/");
+        Set<String> cache = Set.of(
+                "https://example.one/same/group/nameOne/version/artifact.pom",
+                "https://example.one/same/group/nameTwo/version/artifact.pom");
+
+        explorer = new GradleCacheExplorer(cache);
+
+        assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString(""), false))
+                .as("If more than one package with same group a wildcard is suggested")
+                .containsOnly("same.group:*", "same.group:nameOne", "same.group:nameTwo");
+    }
+
+    @Test
+    void test_matches_based_on_group_and_wildcard_suggested_across_urls() {
         Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
         Set<String> cache = Set.of(
-                "https://example.one/com/exampleOne/artifactOne/1.0/artifact-1.0.pom",
-                "https://example.one/com/exampleOne/artifactTwo/1.0/artifact-1.0.jar",
-                "https://example.one/com/exampleOne/anotherGroup/artifactOne/1.0/artifact-1.0.jar",
-                "https://example.one/com/exampleDifferent/artifactOne/1.0/artifact-1.0.jar",
-                "https://example.two/com/exampleTwo/artifactOne/1.0/artifact-1.0.pom",
-                "https://example.two/com/exampleTwo/artifactTwo/1.0/artifact-1.0.jar",
-                "https://example.one/org/exampleOrg/artifactOrg/1.0/artifact-1.0.pom",
-                "https://example.three/com/exampleThree/artifactOne/1.0/artifact-1.0.pom");
+                "https://example.one/same/group/nameOne/version/artifact.pom",
+                "https://example.one/different/group/differentNameOne/version/artifact.pom",
+                "https://example.two/same/group/nameTwo/version/artifact.pom",
+                "https://example.two/different/group/differentNameTwo/version/artifact.pom");
 
-        explorer.setCacheForTesting(cache);
-        assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString("com.exampleOne"), true))
-                .as("Matches all")
-                .containsOnly("*", "artifactOne", "artifactTwo");
+        explorer = new GradleCacheExplorer(cache);
+
+        assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString("same.group"), false))
+                .as(
+                        "When a group is passed only packages that match are suggested and the group is removed from the start")
+                .containsOnly("*", "nameOne", "nameTwo");
     }
 }
