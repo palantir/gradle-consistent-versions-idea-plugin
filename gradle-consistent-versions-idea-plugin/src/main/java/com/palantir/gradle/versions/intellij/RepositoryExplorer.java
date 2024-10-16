@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -103,7 +104,7 @@ public class RepositoryExplorer {
     }
 
     private Set<DependencyVersion> parseVersionsFromContent(String content) {
-        Set<DependencyVersion> versions = new HashSet<>();
+        Set<DependencyVersion> versions = new LinkedHashSet<>();
         try {
             XmlMapper xmlMapper = new XmlMapper();
 

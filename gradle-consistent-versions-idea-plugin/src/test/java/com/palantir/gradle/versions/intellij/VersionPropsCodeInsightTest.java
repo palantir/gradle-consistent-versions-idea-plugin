@@ -40,11 +40,15 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     public void test_version_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
-        fixture.configureByText("versions.props", "com.palantir.baseline:baseline-error-prone = <caret>");
+        fixture.configureByText("versions.props", "com.palantir.goethe:goethe = <caret>");
         fixture.complete(CompletionType.BASIC);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
-        UsefulTestCase.assertContainsElements(lookupElementStrings, "0.66.0", "2.40.2");
+        assertThat(lookupElementStrings)
+                .as("Lookup elements should be returned with this order")
+                .containsSubsequence(
+                        "0.13.0", "0.12.0", "0.11.0", "0.10.0", "0.9.0", "0.8.0", "0.7.0", "0.6.0", "0.5.0", "0.4.0",
+                        "0.3.0", "0.2.0", "0.1.0");
     }
 
     @Test
