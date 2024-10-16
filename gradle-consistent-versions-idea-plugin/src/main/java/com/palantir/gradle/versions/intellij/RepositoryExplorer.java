@@ -134,15 +134,17 @@ public class RepositoryExplorer {
             return Collections.emptySet();
         }
 
-        String metadataReleaseOrLatest = Optional.ofNullable(
+        String releaseOrLatestVersion = Optional.ofNullable(
                         metadata.versioning().release())
                 .filter(l -> !l.isEmpty())
                 .orElseGet(() -> metadata.versioning().latest());
 
-        String latestStableVersion = Optional.of(metadataReleaseOrLatest)
+        // Check if the releaseOrLatestVersion is stable, it not find first stable version, if no stable versions return
+        // the releaseOrLatestVersion
+        String latestStableVersion = Optional.of(releaseOrLatestVersion)
                 .filter(this::isStableVersion)
                 .or(() -> allVersions.stream().filter(this::isStableVersion).findFirst())
-                .orElse(metadataReleaseOrLatest);
+                .orElse(releaseOrLatestVersion);
 
         return allVersions.stream()
                 .map(version -> DependencyVersion.of(version, latestStableVersion.equals(version)))
