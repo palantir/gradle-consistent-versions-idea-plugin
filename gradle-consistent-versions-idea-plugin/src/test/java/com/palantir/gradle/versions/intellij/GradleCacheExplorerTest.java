@@ -127,7 +127,7 @@ class GradleCacheExplorerTest {
 
         assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString(""), false))
                 .as("Matches all")
-                .containsOnly("exampleOne:nameOne", "exampleTwo:nameTwo");
+                .containsOnly("exampleOne:nameOne", "exampleOne:*", "exampleTwo:nameTwo", "exampleTwo:*");
     }
 
     @Test
@@ -141,7 +141,7 @@ class GradleCacheExplorerTest {
 
         assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString(""), false))
                 .as("Matches all")
-                .containsOnly("exampleOne:nameOne");
+                .containsOnly("exampleOne:nameOne", "exampleOne:*");
     }
 
     @Test
@@ -153,11 +153,11 @@ class GradleCacheExplorerTest {
 
         assertThat(explorer.getCompletions(repoUrls, DependencyGroup.fromString(""), false))
                 .as("Long url broken into group and artifact")
-                .containsOnly("this.is.a.very.long:url");
+                .containsOnly("this.is.a.very.long:url", "this.is.a.very.long:*");
     }
 
     @Test
-    void test_two_packages_with_same_group_suggests_wildcard() {
+    void test_two_packages_with_same_group_suggests_one_wildcard() {
         Set<String> repoUrls = Set.of("https://example.one/");
         Set<String> cache = Set.of(
                 "https://example.one/same/group/nameOne/version/artifact.pom",
@@ -187,38 +187,21 @@ class GradleCacheExplorerTest {
     }
 
     @Test
-    public void test_if_multiple_matching_groups_adds_star() {
-        Set<String> results = Set.of("group1:artifact1", "group1:artifact2", "group2:artifact1");
+    public void test_if_adds_star() {
         String result = "group1:artifact1";
         Set<String> expected = Set.of("group1:artifact1", "group1:*");
 
-        Set<String> actual = GradleCacheExplorer.includeStarsIfMultipleArtifacts(result, results)
-                .collect(Collectors.toSet());
-
-        assertThat(actual).isEqualTo(expected);
-    }
-
-    @Test
-    public void test_single_artifact_has_group_no_star_added() {
-        Set<String> results = Set.of("group1:artifact1", "group1:artifact2", "group2:artifact1");
-        String result = "group2:artifact1";
-        Set<String> expected = Set.of("group2:artifact1");
-
-        Set<String> actual = GradleCacheExplorer.includeStarsIfMultipleArtifacts(result, results)
-                .collect(Collectors.toSet());
+        Set<String> actual = GradleCacheExplorer.includeStars(result).collect(Collectors.toSet());
 
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void test_returns_input_if_no_colon() {
-        Set<String> results = Set.of("group1:artifact1", "group1:artifact2", "group2:artifact1");
-
         String result = "group3artifact1";
         Set<String> expected = Set.of("group3artifact1");
 
-        Set<String> actual = GradleCacheExplorer.includeStarsIfMultipleArtifacts(result, results)
-                .collect(Collectors.toSet());
+        Set<String> actual = GradleCacheExplorer.includeStars(result).collect(Collectors.toSet());
 
         assertThat(actual).isEqualTo(expected);
     }

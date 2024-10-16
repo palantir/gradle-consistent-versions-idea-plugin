@@ -64,9 +64,8 @@ public class GradleCacheExplorer {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toSet());
 
-        Set<String> resultsWithStarsIncluded = results.stream()
-                .flatMap(result -> includeStarsIfMultipleArtifacts(result, results))
-                .collect(Collectors.toSet());
+        Set<String> resultsWithStarsIncluded =
+                results.stream().flatMap(GradleCacheExplorer::includeStars).collect(Collectors.toSet());
 
         if (parsedInput.isEmpty()) {
             return resultsWithStarsIncluded;
@@ -89,15 +88,11 @@ public class GradleCacheExplorer {
         return filteredResults;
     }
 
-    static Stream<String> includeStarsIfMultipleArtifacts(String result, Set<String> results) {
+    static Stream<String> includeStars(String result) {
         int colonIndex = result.indexOf(':');
         if (colonIndex != -1) {
             String prefix = result.substring(0, colonIndex);
-            long count =
-                    results.stream().filter(r -> r.startsWith(prefix + ":")).count();
-            if (count > 1) {
-                return Stream.of(result, prefix + ":*");
-            }
+            return Stream.of(result, prefix + ":*");
         }
         return Stream.of(result);
     }
