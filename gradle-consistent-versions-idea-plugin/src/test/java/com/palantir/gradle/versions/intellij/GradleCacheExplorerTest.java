@@ -193,7 +193,7 @@ class GradleCacheExplorerTest {
 
         Set<String> actual = GradleCacheExplorer.includeStars(result).collect(Collectors.toSet());
 
-        assertThat(actual).isEqualTo(expected);
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test
@@ -203,6 +203,6 @@ class GradleCacheExplorerTest {
 
         Set<String> actual = GradleCacheExplorer.includeStars(result).collect(Collectors.toSet());
 
-        assertThat(actual).isEqualTo(expected);
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
     }
 }
