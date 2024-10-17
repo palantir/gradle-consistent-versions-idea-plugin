@@ -53,6 +53,9 @@ public final class RepositoryLoader {
             Repositories repositories = XML_MAPPER.readValue(mavenRepoFile, Repositories.class);
             return repositories.repositories().stream()
                     .map(RepositoryConfig::url)
+                    // This is a temporary workaround to ignore localhost and file system from maven local - long term
+                    // we should fix localhost on the GCV side, and we should be able to explore the maven local repo
+                    .filter(url -> !url.contains("localhost") && !url.startsWith("file:"))
                     .collect(Collectors.toCollection(LinkedHashSet::new));
         } catch (IOException e) {
             log.error("Failed to load repositories", e);
