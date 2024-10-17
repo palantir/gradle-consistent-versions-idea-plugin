@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: ignore localhost and file system repositories from gcv-maven-repositories.xml
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/56
