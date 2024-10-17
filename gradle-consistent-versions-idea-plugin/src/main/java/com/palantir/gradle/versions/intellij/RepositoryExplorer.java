@@ -19,6 +19,8 @@ package com.palantir.gradle.versions.intellij;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.palantir.logsafe.logger.SafeLogger;
+import com.palantir.logsafe.logger.SafeLoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
@@ -32,11 +34,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RepositoryExplorer {
-    private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
+    private static final SafeLogger log = SafeLoggerFactory.get(RepositoryExplorer.class);
 
     private final Cache<CacheKey, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
