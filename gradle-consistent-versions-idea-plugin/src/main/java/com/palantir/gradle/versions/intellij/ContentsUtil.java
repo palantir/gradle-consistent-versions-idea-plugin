@@ -64,12 +64,8 @@ public final class ContentsUtil {
                 connection = (HttpURLConnection) pageUrl.openConnection();
                 connection.setRequestMethod("GET");
 
-                if (connection.getResponseCode() != 200) {
+                if (indicator.isCanceled() || connection.getResponseCode() != 200) {
                     throw new ProcessCanceledException();
-                }
-
-                if (indicator.isCanceled()) {
-                    throw new InterruptedException("Fetch cancelled");
                 }
 
                 BufferedReader in =
@@ -77,8 +73,8 @@ public final class ContentsUtil {
 
                 return in.lines().collect(Collectors.joining("\n"));
             } catch (ConnectException e) {
-                log.error("Connection refused on page {}", pageUrl, e);
-                throw e;
+                log.debug("Connection refused on page {}", pageUrl, e);
+                return null;
             } finally {
                 if (connection != null) {
                     connection.disconnect();
