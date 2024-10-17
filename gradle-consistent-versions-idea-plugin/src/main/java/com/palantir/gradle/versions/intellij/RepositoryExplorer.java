@@ -17,7 +17,6 @@
 package com.palantir.gradle.versions.intellij;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
@@ -44,8 +43,8 @@ import org.slf4j.LoggerFactory;
 public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
 
-    private static final Pattern UNSTABLE_VERSION_PATTERN =
-            Pattern.compile(".*(-rc\\d*|-SNAPSHOT|-M\\d+|-alpha|-beta)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern UNSTABLE_VERSION_PATTERN = Pattern.compile(
+            ".*(-rc(\\d+|-\\d+)?|-SNAPSHOT|-M\\d+|-alpha(\\d+|-\\d+)?|-beta(\\d+|-\\d+)?)$", Pattern.CASE_INSENSITIVE);
 
     private final Cache<CacheKey, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -115,7 +114,6 @@ public class RepositoryExplorer {
     private Set<DependencyVersion> parseVersionsFromContent(String content) {
         try {
             XmlMapper xmlMapper = new XmlMapper();
-            xmlMapper.registerModule(new GuavaModule());
 
             Metadata metadata = xmlMapper.readValue(content, Metadata.class);
             return parseVersionsFromContent(metadata);

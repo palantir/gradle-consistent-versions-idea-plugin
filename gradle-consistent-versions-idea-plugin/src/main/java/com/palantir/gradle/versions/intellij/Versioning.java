@@ -25,6 +25,7 @@ import java.util.List;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@Value.Style(jdkOnly = true)
 @JsonDeserialize(as = ImmutableVersioning.class)
 @JsonSerialize(as = ImmutableVersioning.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -48,4 +49,10 @@ interface Versioning {
     @JacksonXmlElementWrapper(localName = "versions")
     @JacksonXmlProperty(localName = "version")
     List<String> versions();
+
+    static Builder builder() {
+        return new Builder();
+    }
+
+    class Builder extends ImmutableVersioning.Builder {}
 }
