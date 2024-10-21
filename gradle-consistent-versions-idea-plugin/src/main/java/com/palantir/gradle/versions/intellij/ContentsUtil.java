@@ -20,6 +20,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
+import com.palantir.logsafe.logger.SafeLogger;
+import com.palantir.logsafe.logger.SafeLoggerFactory;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -28,11 +30,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class ContentsUtil {
-    private static final Logger log = LoggerFactory.getLogger(ContentsUtil.class);
+    private static final SafeLogger log = SafeLoggerFactory.get(ContentsUtil.class);
 
     public static Optional<String> fetchPageContents(URL pageUrl) {
         ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();

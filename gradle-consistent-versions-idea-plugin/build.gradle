@@ -30,6 +30,7 @@ dependencies {
     compileOnly 'org.immutables:value::annotations'
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.assertj:assertj-core'
+    implementation 'com.palantir.safe-logging:logger'
 }
 
 grammarKit {
