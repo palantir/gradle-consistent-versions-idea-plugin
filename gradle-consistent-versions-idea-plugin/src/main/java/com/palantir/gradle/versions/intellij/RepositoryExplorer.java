@@ -25,6 +25,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -144,9 +145,11 @@ public class RepositoryExplorer {
                 .or(() -> allVersions.stream().filter(this::isStableVersion).findFirst())
                 .orElse(releaseOrLatestVersion);
 
+        Collections.reverse(allVersions);
+
         return allVersions.stream()
                 .map(version -> DependencyVersion.of(version, latestStableVersion.equals(version)))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private boolean isStableVersion(String version) {

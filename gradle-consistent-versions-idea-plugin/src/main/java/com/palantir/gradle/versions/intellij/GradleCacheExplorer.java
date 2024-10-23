@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.versions.intellij;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.intellij.openapi.application.ApplicationManager;
 import java.io.BufferedInputStream;
@@ -30,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import one.util.streamex.StreamEx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,11 +45,16 @@ public class GradleCacheExplorer {
         loadCache();
     }
 
+    @VisibleForTesting
+    GradleCacheExplorer(Set<String> newCache) {
+        cache.set(newCache);
+    }
+
     public final void loadCache() {
         cache.set(extractStrings());
     }
 
-    public final Set<String> getCompletions(Set<String> repoUrls, DependencyGroup input) {
+    public final Set<String> getCompletions(Set<String> repoUrls, DependencyGroup input, boolean isPackageName) {
         Stopwatch stopWatch = Stopwatch.createStarted();
 
         String parsedInput = String.join(".", input.parts());
@@ -57,17 +64,37 @@ public class GradleCacheExplorer {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toSet());
 
+        Set<String> resultsWithStarsIncluded =
+                results.stream().flatMap(GradleCacheExplorer::includeStars).collect(Collectors.toSet());
+
         if (parsedInput.isEmpty()) {
-            return results;
+            return resultsWithStarsIncluded;
         }
+
+        Set<String> filteredResults = StreamEx.of(resultsWithStarsIncluded)
+                .filter(result -> result.startsWith(parsedInput))
+                .map(result -> result.substring(parsedInput.length() + 1))
+                .chain(stream -> {
+                    if (isPackageName) {
+                        return stream.filter(result -> !result.contains(":"));
+                    }
+                    return stream;
+                })
+                .toSet();
 
         stopWatch.stop();
         log.debug("Completion matching time: {} ms", stopWatch.elapsed().toMillis());
 
-        return results.stream()
-                .filter(result -> result.startsWith(parsedInput))
-                .map(result -> result.substring(parsedInput.length() + 1))
-                .collect(Collectors.toSet());
+        return filteredResults;
+    }
+
+    static Stream<String> includeStars(String result) {
+        int colonIndex = result.indexOf(':');
+        if (colonIndex != -1) {
+            String prefix = result.substring(0, colonIndex);
+            return Stream.of(result, prefix + ":*");
+        }
+        return Stream.of(result);
     }
 
     private Set<String> extractStrings() {
@@ -89,7 +116,7 @@ public class GradleCacheExplorer {
     }
 
     final boolean isValidResourceUrl(String url) {
-        return (url.startsWith("https://")) && (url.endsWith(".pom") || url.endsWith(".jar"));
+        return url.startsWith("https://") && (url.endsWith(".pom") || url.endsWith(".jar"));
     }
 
     final Stream<String> extractStringsFromBinFile(Path binFile) {

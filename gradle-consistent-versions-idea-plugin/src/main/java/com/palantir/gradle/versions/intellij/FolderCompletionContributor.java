@@ -69,7 +69,10 @@ public class FolderCompletionContributor extends CompletionContributor {
                 Project project = parameters.getOriginalFile().getProject();
 
                 GradleCacheExplorer.getInstance()
-                        .getCompletions(RepositoryLoader.loadRepositories(project), group)
+                        .getCompletions(
+                                RepositoryLoader.loadRepositories(project),
+                                group,
+                                elementType == VersionPropsTypes.NAME_KEY)
                         .stream()
                         .map(suggestion -> LookupElementBuilder.create(GroupPartOrPackageName.of(suggestion)))
                         .forEach(resultSet::addElement);
