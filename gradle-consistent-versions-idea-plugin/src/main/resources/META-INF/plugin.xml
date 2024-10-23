@@ -45,6 +45,7 @@
     <lang.parserDefinition language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsParserDefinition"/>
     <lang.syntaxHighlighterFactory language="VersionProps"
                                    implementationClass="com.palantir.gradle.versions.intellij.VersionPropsSyntaxHighlighterFactory"/>
+    <lang.formatter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsFormattingModelBuilder"/>
     <completion.contributor language="VersionProps"
                             implementationClass="com.palantir.gradle.versions.intellij.VersionCompletionContributor" order="last"/>
     <completion.contributor language="VersionProps"

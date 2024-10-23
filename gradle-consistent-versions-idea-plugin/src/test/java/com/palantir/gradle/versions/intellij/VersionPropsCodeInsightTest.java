@@ -18,6 +18,8 @@ package com.palantir.gradle.versions.intellij;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.intellij.codeInsight.completion.CompletionType;
+import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.testFramework.UsefulTestCase;
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase5;
@@ -80,5 +82,19 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
         fixture.complete(CompletionType.BASIC);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         UsefulTestCase.assertEmpty(lookupElementStrings);
+    }
+
+    @Test
+    public void test_formatter() {
+        JavaCodeInsightTestFixture fixture = getFixture();
+        fixture.configureByText(
+                "versions.props",
+                "groupPart1.groupPart2:packageName  =  version \ngroupPart1.groupPart2:packageName=version");
+
+        WriteCommandAction.writeCommandAction(fixture.getProject()).run(() -> CodeStyleManager.getInstance(
+                        fixture.getProject())
+                .reformatText(fixture.getFile(), List.of(fixture.getFile().getTextRange())));
+        fixture.checkResult(
+                "groupPart1.groupPart2:packageName = version \ngroupPart1.groupPart2:packageName = version");
     }
 }
