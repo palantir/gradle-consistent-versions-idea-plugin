@@ -1,0 +1,5 @@
+type: improvement
+improvement:
+  description: Naive star version suggestions
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/61
