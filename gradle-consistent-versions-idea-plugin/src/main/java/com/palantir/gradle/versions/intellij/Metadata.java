@@ -44,4 +44,10 @@ interface Metadata {
     @JacksonXmlElementWrapper(useWrapping = false)
     @JacksonXmlProperty(localName = "versioning")
     Versioning versioning();
+
+    static Builder builder() {
+        return new Builder();
+    }
+
+    class Builder extends ImmutableMetadata.Builder {}
 }

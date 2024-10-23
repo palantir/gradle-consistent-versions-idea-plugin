@@ -19,14 +19,20 @@ package com.palantir.gradle.versions.intellij;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.annotations.VisibleForTesting;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -37,6 +43,9 @@ import org.slf4j.LoggerFactory;
 
 public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
+
+    private static final Pattern UNSTABLE_VERSION_PATTERN = Pattern.compile(
+            ".*(-rc(\\d+|-\\d+)?|-SNAPSHOT|-M\\d+|-alpha(\\d+|-\\d+)?|-beta(\\d+|-\\d+)?)$", Pattern.CASE_INSENSITIVE);
 
     private final Cache<CacheKey, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -104,21 +113,49 @@ public class RepositoryExplorer {
     }
 
     private Set<DependencyVersion> parseVersionsFromContent(String content) {
-        Set<DependencyVersion> versions = new LinkedHashSet<>();
         try {
             XmlMapper xmlMapper = new XmlMapper();
 
             Metadata metadata = xmlMapper.readValue(content, Metadata.class);
-            if (metadata.versioning() != null && metadata.versioning().versions() != null) {
-                String latest = metadata.versioning().latest();
-                for (String version : metadata.versioning().versions()) {
-                    versions.add(DependencyVersion.of(version, latest.equals(version)));
-                }
-            }
+            return parseVersionsFromContent(metadata);
         } catch (Exception e) {
             log.error("Failed to parse maven-metadata.xml", e);
         }
-        return versions;
+        return Collections.emptySet();
+    }
+
+    @VisibleForTesting
+    final Set<DependencyVersion> parseVersionsFromContent(Metadata metadata) {
+        List<String> allVersions = new ArrayList<>(metadata.versioning().versions());
+        Collections.reverse(allVersions);
+
+        if (allVersions.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        String releaseOrLatestVersion = Optional.ofNullable(
+                        metadata.versioning().release())
+                .filter(l -> !l.isEmpty())
+                .orElseGet(() -> metadata.versioning().latest());
+
+        // Check if the releaseOrLatestVersion is stable, it not find first stable version, if no stable versions return
+        // the releaseOrLatestVersion
+        String latestStableVersion = Optional.of(releaseOrLatestVersion)
+                .filter(this::isStableVersion)
+                .or(() -> allVersions.stream().filter(this::isStableVersion).findFirst())
+                .orElse(releaseOrLatestVersion);
+
+        Collections.reverse(allVersions);
+
+        return allVersions.stream()
+                .map(version -> DependencyVersion.of(version, latestStableVersion.equals(version)))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private boolean isStableVersion(String version) {
+        return !UNSTABLE_VERSION_PATTERN
+                .matcher(version.toLowerCase(Locale.ROOT))
+                .matches();
     }
 
     @Value.Immutable
