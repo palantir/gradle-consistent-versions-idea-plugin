@@ -38,23 +38,27 @@ import org.slf4j.LoggerFactory;
 public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
 
-    private final Cache<CacheKey, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
+    private final Cache<String, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .maximumSize(100)
             .build();
 
+    // In general, we don't want to be caching version data as it changes often. However, for wildcard complete it
+    // can be very expensive to repeatedly get data that realistically doesn't change on a second by second basis so
+    // having a short-lived cache is okay
+    private final Cache<String, Set<DependencyVersion>> shortLivedVersionCache = Caffeine.newBuilder()
+            .expireAfterWrite(2, TimeUnit.MINUTES)
+            .maximumSize(10000)
+            .build();
+
     public final Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, String url) {
-        CacheKey cacheKey = CacheKey.of(url, group);
-        Set<GroupPartOrPackageName> folders = folderCache.get(cacheKey, key -> {
-            Set<GroupPartOrPackageName> loadedFolders = loadFolders(key.group(), url);
-            return loadedFolders.isEmpty() ? null : loadedFolders;
-        });
-
-        return folders != null ? folders : Collections.emptySet();
-    }
-
-    private Set<GroupPartOrPackageName> loadFolders(DependencyGroup group, String url) {
         String urlString = url + group.asUrlString();
+
+        Set<GroupPartOrPackageName> cachedGroupPartOrPackageName = folderCache.getIfPresent(urlString);
+        if (cachedGroupPartOrPackageName != null) {
+            return cachedGroupPartOrPackageName;
+        }
+
         Optional<String> content = fetchContent(urlString);
 
         if (content.isEmpty()) {
@@ -62,12 +66,21 @@ public class RepositoryExplorer {
             return Collections.emptySet();
         }
 
-        return fetchFoldersFromContent(content.get());
+        Set<GroupPartOrPackageName> parsedGroupPartOrPackageName = fetchFoldersFromContent(content.get());
+
+        folderCache.put(urlString, parsedGroupPartOrPackageName);
+        return parsedGroupPartOrPackageName;
     }
 
     public final Set<DependencyVersion> getVersions(
             DependencyGroup group, DependencyName dependencyPackage, String url) {
         String urlString = url + group.asUrlString() + dependencyPackage.name() + "/maven-metadata.xml";
+
+        Set<DependencyVersion> cacheVersions = shortLivedVersionCache.getIfPresent(urlString);
+        if (cacheVersions != null) {
+            return cacheVersions;
+        }
+
         Optional<String> content = fetchContent(urlString);
 
         if (content.isEmpty()) {
@@ -75,7 +88,9 @@ public class RepositoryExplorer {
             return Collections.emptySet();
         }
 
-        return parseVersionsFromContent(content.get());
+        Set<DependencyVersion> parsedVersions = parseVersionsFromContent(content.get());
+        shortLivedVersionCache.put(urlString, parsedVersions);
+        return parsedVersions;
     }
 
     private Optional<String> fetchContent(String urlString) {

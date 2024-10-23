@@ -52,6 +52,22 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
+    public void test_wild_card_version_completion() {
+        JavaCodeInsightTestFixture fixture = getFixture();
+        // The file name is required for context but does not need to exist on the filesystem
+        fixture.configureByText("versions.props", "com.palantir.tokens:* = <caret>");
+        fixture.complete(CompletionType.BASIC);
+        List<String> lookupElementStrings = fixture.getLookupElementStrings();
+        assertThat(lookupElementStrings).isNotNull();
+        assertThat(lookupElementStrings)
+                .as("Lookup elements should be returned with this order")
+                .containsSubsequence(
+                        "3.18.0", "3.17.0", "3.16.0", "3.15.0", "3.14.0", "3.13.0", "3.12.0", "3.11.0", "3.10.0",
+                        "3.9.0", "3.8.1", "3.8.0", "3.7.0", "3.6.2", "3.6.1", "3.6.0", "3.5.2", "3.5.1", "3.5.0",
+                        "3.4.0", "3.3.0", "3.2.1", "3.1.0", "3.0.3", "3.0.1", "3.0.0");
+    }
+
+    @Test
     public void test_group_completion() throws Exception {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
