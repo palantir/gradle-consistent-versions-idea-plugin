@@ -43,7 +43,7 @@ public class RepositoryExplorer {
             .maximumSize(100)
             .build();
 
-    // In general, we don't want to be caching version data as it changes regurlly. However, for wildcard complete it
+    // In general, we don't want to be caching version data as it changes often. However, for wildcard complete it
     // can be very expensive to repeatedly get data that realistically doesn't change on a second by second basis so
     // having a short-lived cache is okay
     private final Cache<String, Set<DependencyVersion>> shortLivedVersionCache = Caffeine.newBuilder()
