@@ -72,7 +72,12 @@ public class VersionCompletionContributor extends CompletionContributor {
                         Project project = parameters.getOriginalFile().getProject();
 
                         if (!dependencyName.name().contains("*")) {
-                            addToResults(resultSet, RepositoryLoader.loadRepositories(project), group, dependencyName);
+                            addToResults(
+                                    resultSet,
+                                    RepositoryLoader.loadRepositories(project),
+                                    group,
+                                    dependencyName,
+                                    false);
                             return;
                         }
                         Set<String> relevantRepos = findRelevantRepos(project, group);
@@ -83,7 +88,8 @@ public class VersionCompletionContributor extends CompletionContributor {
                                         .startsWith(dependencyName.name().replace("*", "")))
                                 .collect(Collectors.toSet());
 
-                        allPossibleNames.forEach(pkgName -> addToResults(resultSet, relevantRepos, group, pkgName));
+                        allPossibleNames.forEach(
+                                pkgName -> addToResults(resultSet, relevantRepos, group, pkgName, true));
                     }
 
                     private Set<String> findRelevantRepos(Project project, DependencyGroup group) {
@@ -108,20 +114,23 @@ public class VersionCompletionContributor extends CompletionContributor {
                             CompletionResultSet resultSet,
                             Set<String> repos,
                             DependencyGroup group,
-                            DependencyName dependencyName) {
+                            DependencyName dependencyName,
+                            Boolean starSearch) {
 
                         StreamEx.of(repos)
                                 .flatMap(url -> repositoryExplorer.getVersions(group, dependencyName, url).stream())
                                 .zipWith(IntStream.iterate(0, i -> i + 1).boxed())
-                                .mapKeyValue(this::getLookupElement)
+                                .mapKeyValue((version, integer) -> getLookupElement(version, integer, starSearch))
                                 .forEach(resultSet::addElement);
                     }
 
-                    private LookupElement getLookupElement(DependencyVersion version, Integer priority) {
+                    private LookupElement getLookupElement(
+                            DependencyVersion version, Integer priority, Boolean starSearch) {
+                        String lookupTest = starSearch ? "Possible Latest" : "Latest";
                         return version.isLatest()
                                 ? PrioritizedLookupElement.withPriority(
                                         LookupElementBuilder.create(version)
-                                                .withTypeText("Latest", true)
+                                                .withTypeText(lookupTest, true)
                                                 .withLookupString("latest"),
                                         Double.MAX_VALUE)
                                 : PrioritizedLookupElement.withPriority(LookupElementBuilder.create(version), priority);
