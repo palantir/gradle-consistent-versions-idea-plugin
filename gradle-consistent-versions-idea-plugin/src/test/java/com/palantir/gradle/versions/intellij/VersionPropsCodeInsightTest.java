@@ -68,7 +68,7 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_group_completion() throws Exception {
+    public void test_group_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.baseline.<caret>");
@@ -79,7 +79,7 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_package_completion() throws Exception {
+    public void test_package_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.baseline:<caret>");
@@ -90,7 +90,7 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_other_file_names() throws Exception {
+    public void test_other_file_names() {
         JavaCodeInsightTestFixture fixture = getFixture();
         fixture.configureByText("notVersions.props", "com.palantir.baseline:<caret>");
         fixture.complete(CompletionType.BASIC);
