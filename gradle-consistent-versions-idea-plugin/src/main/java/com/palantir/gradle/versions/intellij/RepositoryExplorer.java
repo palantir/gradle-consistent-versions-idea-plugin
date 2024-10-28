@@ -45,7 +45,7 @@ public class RepositoryExplorer {
     private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
 
     private static final Pattern UNSTABLE_VERSION_PATTERN = Pattern.compile(
-            ".*(-rc(\\d+|-\\d+)?|-SNAPSHOT|-M\\d+|-alpha(\\d+|-\\d+)?|-beta(\\d+|-\\d+)?)$", Pattern.CASE_INSENSITIVE);
+            ".*(-rc(-?\\d+)?|-SNAPSHOT|-M\\d+|-alpha(-?\\d+)?|-beta(-?\\d+)?)$", Pattern.CASE_INSENSITIVE);
 
     private final Cache<CacheKey, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
