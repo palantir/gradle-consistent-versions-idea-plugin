@@ -1,3 +1,6 @@
+import org.jetbrains.grammarkit.tasks.GenerateParserTask
+import org.jetbrains.grammarkit.tasks.GenerateLexerTask
+
 apply plugin: 'java'
 apply plugin: 'com.palantir.external-publish-intellij'
 apply plugin: 'org.jetbrains.grammarkit'
@@ -38,20 +41,37 @@ grammarKit {
 }
 
 generateParser {
-    sourceFile = file('src/main/java/com/palantir/gradle/versions/intellij/VersionProps.bnf')
+    sourceFile = file('src/main/java/com/palantir/gradle/versions/props/Props.bnf')
     targetRootOutputDir = file('build/generated/sources/intellij-parser/main/java')
-    pathToParser = 'com/palantir/gradle/versions/intellij/parser/VersionPropsParser'
-    pathToPsiRoot = 'com/palantir/gradle/versions/intellij/psi'
+    pathToParser = 'com/palantir/gradle/versions/props/parser/PropsParser'
+    pathToPsiRoot = 'com/palantir/gradle/versions/props/psi'
     purgeOldFiles = true
 }
 
 generateLexer {
-    sourceFile = file('src/main/java/com/palantir/gradle/versions/intellij/VersionProps.flex')
-    targetOutputDir = file('build/generated/sources/intellij-lexer/main/java/com/palantir/gradle/versions/intellij')
-    targetClass = 'com.palantir.gradle.versions.intellij.VersionPropsLexer'
+    sourceFile = file('src/main/java/com/palantir/gradle/versions/props/Props.flex')
+    targetOutputDir = file('build/generated/sources/intellij-lexer/main/java/com/palantir/gradle/versions/props')
+    targetClass = 'com.palantir.gradle.versions.props.PropsLexer'
     purgeOldFiles = true
 }
 
+tasks.register('generateLockParser', GenerateParserTask) { task ->
+    task.sourceFile = file('src/main/java/com/palantir/gradle/versions/lock/Lock.bnf')
+    task.targetRootOutputDir = file('build/generated/sources/intellij-parser/main/java')
+    task.pathToParser = 'com/palantir/gradle/versions/lock/parser/LockParser'
+    task.pathToPsiRoot = 'com/palantir/gradle/versions/lock/psi'
+    task.purgeOldFiles = true
+}
+
+tasks.register('generateLockLexer', GenerateLexerTask) { task ->
+    task.sourceFile = file('src/main/java/com/palantir/gradle/versions/lock/Lock.flex')
+    task.targetOutputDir = file('build/generated/sources/intellij-lexer/main/java/com/palantir/gradle/versions/lock')
+    task.targetClass = 'com.palantir.gradle.versions.lock.LockLexer'
+    task.purgeOldFiles = true
+}
+
+// Update compileJava task dependencies
 tasks.named('compileJava').configure {
-    dependsOn tasks.named('generateParser'), tasks.named('generateLexer')
+    dependsOn tasks.named('generateParser'), tasks.named('generateLexer'),
+            tasks.named('generateLockParser'), tasks.named('generateLockLexer')
 }

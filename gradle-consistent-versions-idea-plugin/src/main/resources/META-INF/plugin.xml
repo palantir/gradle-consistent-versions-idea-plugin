@@ -39,20 +39,28 @@
   <depends>org.jetbrains.plugins.gradle</depends>
 
   <extensions defaultExtensionNs="com.intellij">
-    <projectConfigurable instance="com.palantir.gradle.versions.intellij.VersionPropsSettingsPage" displayName="Gradle Consistent Versions" id="VersionPropsSettingsPage"/>
-    <fileType name="VersionProps File" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsFileType" fieldName="INSTANCE"
-              language="VersionProps" fileNames="versions.props"/>
-    <lang.parserDefinition language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsParserDefinition"/>
-    <lang.syntaxHighlighterFactory language="VersionProps"
-                                   implementationClass="com.palantir.gradle.versions.intellij.VersionPropsSyntaxHighlighterFactory"/>
-    <completion.contributor language="VersionProps"
-                            implementationClass="com.palantir.gradle.versions.intellij.VersionCompletionContributor" order="last"/>
-    <completion.contributor language="VersionProps"
-                            implementationClass="com.palantir.gradle.versions.intellij.FolderCompletionContributor"/>
-    <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
-    <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsFileListener"/>
-    <annotator language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.CommentAnnotator" />
-    <externalSystemTaskNotificationListener implementation="com.palantir.gradle.versions.intellij.LoadCacheOnGradleProjectRefresh" />
-    <applicationService serviceImplementation="com.palantir.gradle.versions.intellij.GradleCacheExplorer" />
+    <!--  Versions Props files  -->
+    <projectConfigurable instance="com.palantir.gradle.versions.props.PropsSettingsPage" displayName="Gradle Consistent Versions" id="VersionsPropsSettingsPage"/>
+    <fileType name="VersionsProps File" implementationClass="com.palantir.gradle.versions.props.PropsFileType" fieldName="INSTANCE"
+              language="VersionsProps" fileNames="versions.props"/>
+    <lang.parserDefinition language="VersionsProps" implementationClass="com.palantir.gradle.versions.props.PropsParserDefinition"/>
+    <lang.syntaxHighlighterFactory language="VersionsProps"
+                                   implementationClass="com.palantir.gradle.versions.props.PropsSyntaxHighlighterFactory"/>
+    <completion.contributor language="VersionsProps"
+                            implementationClass="com.palantir.gradle.versions.props.VersionCompletionContributor" order="last"/>
+    <completion.contributor language="VersionsProps"
+                            implementationClass="com.palantir.gradle.versions.props.FolderCompletionContributor"/>
+    <lang.commenter language="VersionsProps" implementationClass="com.palantir.gradle.versions.props.PropsCommenter"/>
+    <vfs.asyncListener implementation="com.palantir.gradle.versions.props.PropsFileListener"/>
+    <annotator language="VersionsProps" implementationClass="com.palantir.gradle.versions.props.PropsCommentAnnotator" />
+    <externalSystemTaskNotificationListener implementation="com.palantir.gradle.versions.props.LoadCacheOnGradleProjectRefresh" />
+    <applicationService serviceImplementation="com.palantir.gradle.versions.props.GradleCacheExplorer" />
+
+    <!--  Versions Lock files  -->
+    <fileType name="VersionsLock File" implementationClass="com.palantir.gradle.versions.lock.LockFileType" fieldName="INSTANCE"
+              language="VersionsLock" fileNames="versions.lock"/>
+    <lang.parserDefinition language="VersionsLock" implementationClass="com.palantir.gradle.versions.lock.LockParserDefinition"/>
+    <lang.syntaxHighlighterFactory language="VersionsLock"
+                                   implementationClass="com.palantir.gradle.versions.lock.LockSyntaxHighlighterFactory"/>
   </extensions>
 </idea-plugin>
