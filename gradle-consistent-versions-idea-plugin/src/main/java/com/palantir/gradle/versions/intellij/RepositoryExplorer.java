@@ -20,6 +20,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -127,7 +128,6 @@ public class RepositoryExplorer {
     @VisibleForTesting
     final Set<DependencyVersion> parseVersionsFromContent(Metadata metadata) {
         List<String> allVersions = new ArrayList<>(metadata.versioning().versions());
-        Collections.reverse(allVersions);
 
         if (allVersions.isEmpty()) {
             return Collections.emptySet();
@@ -142,10 +142,10 @@ public class RepositoryExplorer {
         // the releaseOrLatestVersion
         String latestStableVersion = Optional.of(releaseOrLatestVersion)
                 .filter(this::isStableVersion)
-                .or(() -> allVersions.stream().filter(this::isStableVersion).findFirst())
+                .or(() -> Lists.reverse(allVersions).stream()
+                        .filter(this::isStableVersion)
+                        .findFirst())
                 .orElse(releaseOrLatestVersion);
-
-        Collections.reverse(allVersions);
 
         return allVersions.stream()
                 .map(version -> DependencyVersion.of(version, latestStableVersion.equals(version)))
