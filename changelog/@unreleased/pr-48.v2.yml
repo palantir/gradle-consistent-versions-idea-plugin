@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: filter for rc and snapshot in versions
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/48

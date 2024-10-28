@@ -21,9 +21,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import java.util.List;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@Value.Style(jdkOnly = true)
 @JsonDeserialize(as = ImmutableVersioning.class)
 @JsonSerialize(as = ImmutableVersioning.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -46,5 +48,11 @@ interface Versioning {
     @Value.Parameter
     @JacksonXmlElementWrapper(localName = "versions")
     @JacksonXmlProperty(localName = "version")
-    String[] versions();
+    List<String> versions();
+
+    static Builder builder() {
+        return new Builder();
+    }
+
+    class Builder extends ImmutableVersioning.Builder {}
 }
