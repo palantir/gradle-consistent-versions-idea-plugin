@@ -47,7 +47,7 @@ public class RepositoryExplorer {
 
     private static final Pattern UNSTABLE_VERSION_PATTERN = Pattern.compile(
             ".*(-rc(-?\\d+)?|-SNAPSHOT|-M\\d+|-alpha(-?\\d+)?|-beta(-?\\d+)?)$", Pattern.CASE_INSENSITIVE);
-  
+
     private final Cache<String, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .maximumSize(100)
