@@ -22,12 +22,14 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,29 +59,27 @@ public final class ContentsUtil {
 
     private static Callable<String> fetchContentTask(URL pageUrl, ProgressIndicator indicator) {
         return () -> {
-            HttpURLConnection connection = (HttpURLConnection) pageUrl.openConnection();
-            connection.setRequestMethod("GET");
+            HttpURLConnection connection = null;
+            try {
+                connection = (HttpURLConnection) pageUrl.openConnection();
+                connection.setRequestMethod("GET");
 
-            if (connection.getResponseCode() != 200) {
-                connection.disconnect();
-                throw new ProcessCanceledException();
-            }
-
-            BufferedReader in =
-                    new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-            StringBuilder result = new StringBuilder();
-            String inputLine;
-
-            while ((inputLine = in.readLine()) != null) {
-                if (indicator.isCanceled()) {
-                    throw new InterruptedException("Fetch cancelled");
+                if (indicator.isCanceled() || connection.getResponseCode() != 200) {
+                    throw new ProcessCanceledException();
                 }
-                result.append(inputLine);
-            }
 
-            in.close();
-            connection.disconnect();
-            return result.toString();
+                BufferedReader in =
+                        new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+
+                return in.lines().collect(Collectors.joining("\n"));
+            } catch (ConnectException e) {
+                log.debug("Connection refused on page {}", pageUrl, e);
+                return null;
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            }
         };
     }
 
