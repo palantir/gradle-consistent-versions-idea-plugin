@@ -1,0 +1,23 @@
+bad.spaces:line:1.0(1 constraints: 170a83ac)
+LockTokenType.GROUP bad.spaces
+LockTokenType.COLON :
+LockTokenType.NAME line
+LockTokenType.COLON :
+LockTokenType.VERSION 1.0
+BAD_CHARACTER (
+ERROR_ELEMENT (
+LockTokenType.VERSION 1
+BAD_CHARACTER  
+LockTokenType.VERSION constraints
+BAD_CHARACTER : 
+BAD_CHARACTER 1
+BAD_CHARACTER 7
+BAD_CHARACTER 0
+BAD_CHARACTER a
+BAD_CHARACTER 8
+BAD_CHARACTER 3
+DUMMY_BLOCK 1 constraints: 170a83
+BAD_CHARACTER a
+BAD_CHARACTER c
+BAD_CHARACTER )
+FILE bad.spaces:line:1.0(1 constraints: 170a83ac)

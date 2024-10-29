@@ -43,10 +43,12 @@ OPEN_BRACKET=[\(]
 CLOSE_BRACKET=[\)]
 KEY=[^:()\ \n\t\f]+
 COMMENT=("#")[^\r\n]*
+TEST_DEPENDENCIES=("[")[^\r\n]*
 
 %%
 
 <YYINITIAL> {WHITE_SPACE}*{COMMENT}                   { yybegin(YYINITIAL); return LockTypes.COMMENT; }
+<YYINITIAL> {WHITE_SPACE}*{TEST_DEPENDENCIES}         { yybegin(YYINITIAL); return LockTypes.TEST_DEPENDENCIES; }
 <YYINITIAL> {KEY}                                     { yybegin(YYINITIAL); return LockTypes.GROUP; }
 <YYINITIAL> {COLON}                                   { yybegin(WAITING_NAME); return LockTypes.COLON; }
 <YYINITIAL> {WHITE_SPACE}*{COLON}{WHITE_SPACE}*       { yybegin(INVALID_VALUE); return TokenType.BAD_CHARACTER; }

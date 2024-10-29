@@ -31,7 +31,7 @@
 
 simpleFile ::= item_*
 
-private item_ ::= (property | COMMENT | CRLF)
+private item_ ::= (property | COMMENT | TEST_DEPENDENCIES | CRLF)
 
 property ::= lockGroup COLON lockName COLON lockVersion OPEN_BRACKET lockConstraintCount lockConstraints COLON lockHash CLOSE_BRACKET
 

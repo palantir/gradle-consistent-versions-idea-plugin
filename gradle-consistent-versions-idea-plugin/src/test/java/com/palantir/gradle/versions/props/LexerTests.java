@@ -40,9 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
-public class PropsLexerTests extends LightJavaCodeInsightFixtureTestCase5 {
-
-    private static String basePath = "src/test/resources/lexerTests/";
+public class LexerTests extends LightJavaCodeInsightFixtureTestCase5 {
 
     @Override
     protected final String getRelativePath() {
@@ -55,7 +53,7 @@ public class PropsLexerTests extends LightJavaCodeInsightFixtureTestCase5 {
     }
 
     @Test
-    public void test_psi_tree_structure() throws Exception {
+    public void test_props_psi_tree() throws Exception {
         Set<String> testCases = Set.of(
                 "a.normal:example = 1",
                 "random.characters:after = version blah blah",
@@ -70,32 +68,69 @@ public class PropsLexerTests extends LightJavaCodeInsightFixtureTestCase5 {
                 "has.loads.of.spaces:around   =   equals",
                 "    # comment after spaces");
 
+        String basePath = "src/test/resources/lexerPropsTests/";
+
+        String fileName = "versions.props";
+
+        generate_or_check_psi_tree_structure(testCases, basePath, fileName);
+    }
+
+    @Test
+    public void test_lock_psi_tree() throws Exception {
+        Set<String> testCases = Set.of(
+                "# A comment",
+                "  # Space then a comment",
+                "[ Test Dependencies]",
+                " [ Test Dependencies]",
+                "a.normal:line:1.0 (1 constraints: 170a83ac)",
+                "ends.with:newLine:1.0 (1 constraints: 170a83ac)\n",
+                "bad .spaces:line:1.0 (1 constraints: 170a83ac)",
+                "bad.spaces: line:1.0 (1 constraints: 170a83ac)",
+                "bad.spaces:line :1.0 (1 constraints: 170a83ac)",
+                "bad.spaces:line:1.0(1 constraints: 170a83ac)",
+                "bad.spaces:line:1.0 ( 1 constraints: 170a83ac)",
+                "bad.spaces:line:1.0 (1  constraints: 170a83ac)",
+                "bad.spaces:line:1.0 (1 constraints : 170a83ac)",
+                "bad.spaces:line:1.0 (1 constraints:170a83ac)",
+                "bad.spaces:line:1.0 (1 constraints: 170a83ac )",
+                "bad.spaces:line:1.0 (1 constraints: 170a83ac) ",
+                "bad.comment.at.end:line:1.0 (1 constraints: 170a83ac) # a comment");
+
+        String basePath = "src/test/resources/lexerLockTests/";
+
+        String fileName = "versions.lock";
+
+        generate_or_check_psi_tree_structure(testCases, basePath, fileName);
+    }
+
+    private void generate_or_check_psi_tree_structure(Set<String> testCases, String basePath, String fileName)
+            throws Exception {
         JavaCodeInsightTestFixture fixture = getFixture();
         Optional<String> inCi = Optional.ofNullable(System.getenv("CI"));
 
         // If we are running on remote check all the expected test files are checked in else clean the test directory
         if (inCi.equals(Optional.of("true"))) {
-            check_tests_match_input(testCases);
+            check_tests_match_input(testCases, basePath);
         } else {
             deleteOldTests(Paths.get(basePath));
         }
         testCases.forEach(inputItem -> {
-            fixture.configureByText("versions.props", inputItem);
+            fixture.configureByText(fileName, inputItem);
             ApplicationManager.getApplication().runReadAction(() -> {
                 PsiFile psiFile = fixture.getFile();
                 String tokenString = convertPsiToString(psiFile);
 
                 if (inCi.equals(Optional.of("true"))) {
-                    String expectedTokens = loadExpectedTokens(inputItem);
+                    String expectedTokens = loadExpectedTokens(inputItem, basePath);
                     assertThat(inputItem + "\n" + tokenString).isEqualTo(expectedTokens);
                 } else {
-                    saveActualTokens(inputItem, tokenString);
+                    saveActualTokens(inputItem, tokenString, basePath);
                 }
             });
         });
     }
 
-    private void check_tests_match_input(Set<String> input) {
+    private void check_tests_match_input(Set<String> input, String basePath) {
         File baseDir = new File(basePath);
         File[] allFiles = baseDir.listFiles();
 
@@ -152,23 +187,25 @@ public class PropsLexerTests extends LightJavaCodeInsightFixtureTestCase5 {
         return tokenStringBuilder.toString().trim();
     }
 
-    private String loadExpectedTokens(String fileName) {
-        try (BufferedReader reader = Files.newBufferedReader(getOutputFilePath(fileName), StandardCharsets.UTF_8)) {
+    private String loadExpectedTokens(String fileName, String basePath) {
+        try (BufferedReader reader =
+                Files.newBufferedReader(getOutputFilePath(fileName, basePath), StandardCharsets.UTF_8)) {
             return reader.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void saveActualTokens(String input, String token) {
-        try (BufferedWriter writer = Files.newBufferedWriter(getOutputFilePath(input), StandardCharsets.UTF_8)) {
+    private void saveActualTokens(String input, String token, String basePath) {
+        try (BufferedWriter writer =
+                Files.newBufferedWriter(getOutputFilePath(input, basePath), StandardCharsets.UTF_8)) {
             writer.write(input + "\n" + token);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Path getOutputFilePath(String input) throws IOException {
+    private Path getOutputFilePath(String input, String basePath) throws IOException {
         String fileName = hashToFolderName(input);
         Path outputPath = Paths.get(basePath + fileName);
         Files.createDirectories(outputPath.getParent());

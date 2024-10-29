@@ -40,19 +40,19 @@ grammarKit {
     grammarKitRelease = "2022.3.2"
 }
 
-generateParser {
-    sourceFile = file('src/main/java/com/palantir/gradle/versions/props/Props.bnf')
-    targetRootOutputDir = file('build/generated/sources/intellij-parser/main/java')
-    pathToParser = 'com/palantir/gradle/versions/props/parser/PropsParser'
-    pathToPsiRoot = 'com/palantir/gradle/versions/props/psi'
-    purgeOldFiles = true
+tasks.register('generatePropsParser', GenerateParserTask) { task ->
+    task.sourceFile = file('src/main/java/com/palantir/gradle/versions/props/Props.bnf')
+    task.targetRootOutputDir = file('build/generated/sources/intellij-parser/main/java')
+    task.pathToParser = 'com/palantir/gradle/versions/props/parser/PropsParser'
+    task.pathToPsiRoot = 'com/palantir/gradle/versions/props/psi'
+    task.purgeOldFiles = true
 }
 
-generateLexer {
-    sourceFile = file('src/main/java/com/palantir/gradle/versions/props/Props.flex')
-    targetOutputDir = file('build/generated/sources/intellij-lexer/main/java/com/palantir/gradle/versions/props')
-    targetClass = 'com.palantir.gradle.versions.props.PropsLexer'
-    purgeOldFiles = true
+tasks.register('generatePropsLexer', GenerateLexerTask) { task ->
+    task.sourceFile = file('src/main/java/com/palantir/gradle/versions/props/Props.flex')
+    task.targetOutputDir = file('build/generated/sources/intellij-lexer/main/java/com/palantir/gradle/versions/props')
+    task.targetClass = 'com.palantir.gradle.versions.props.PropsLexer'
+    task.purgeOldFiles = true
 }
 
 tasks.register('generateLockParser', GenerateParserTask) { task ->
@@ -72,6 +72,6 @@ tasks.register('generateLockLexer', GenerateLexerTask) { task ->
 
 // Update compileJava task dependencies
 tasks.named('compileJava').configure {
-    dependsOn tasks.named('generateParser'), tasks.named('generateLexer'),
+    dependsOn tasks.named('generatePropsParser'), tasks.named('generatePropsLexer'),
             tasks.named('generateLockParser'), tasks.named('generateLockLexer')
 }

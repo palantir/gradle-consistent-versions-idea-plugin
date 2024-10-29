@@ -16,32 +16,69 @@
 
 package com.palantir.gradle.versions.lock;
 
+import com.intellij.codeInspection.InspectionManager;
+import com.intellij.codeInspection.LocalQuickFix;
+import com.intellij.codeInspection.ProblemDescriptor;
+import com.intellij.codeInspection.ProblemHighlightType;
+import com.intellij.execution.executors.DefaultRunExecutor;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
-import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
-import com.intellij.openapi.editor.colors.TextAttributesKey;
-import com.intellij.openapi.editor.markup.EffectType;
-import com.intellij.openapi.editor.markup.TextAttributes;
+import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings;
+import com.intellij.openapi.externalSystem.util.ExternalSystemUtil;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
-import com.intellij.ui.JBColor;
 import com.palantir.gradle.versions.lock.psi.LockTypes;
+import java.util.Collections;
+import org.jetbrains.plugins.gradle.util.GradleConstants;
 
 public class HashAnnotator implements Annotator {
 
-    public static final TextAttributesKey ATTRIBUTES_KEY = TextAttributesKey.createTextAttributesKey(
-            "LOCK_TYPES_HASH_KEY", DefaultLanguageHighlighterColors.OPERATION_SIGN);
-
     @Override
-    public void annotate(PsiElement element, AnnotationHolder holder) {
-        if (element.getNode().getElementType() == LockTypes.HASH) {
-            TextAttributes attributes = new TextAttributes();
-            attributes.setForegroundColor(JBColor.BLUE);
-            attributes.setEffectColor(JBColor.RED);
-            attributes.setEffectType(EffectType.LINE_UNDERSCORE);
-            holder.newSilentAnnotation(com.intellij.lang.annotation.HighlightSeverity.INFORMATION)
+    public final void annotate(PsiElement element, AnnotationHolder holder) {
+        if (element.getNode().getElementType() == LockTypes.LOCK_HASH) {
+
+            Project project = element.getProject();
+            InspectionManager inspectionManager = InspectionManager.getInstance(project);
+            ProblemDescriptor problemDescriptor = inspectionManager.createProblemDescriptor(
+                    element,
+                    "Get hierarchy",
+                    new RunGradleTaskQuickFix(element),
+                    ProblemHighlightType.INFORMATION,
+                    true);
+
+            holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
                     .range(element)
-                    .textAttributes(ATTRIBUTES_KEY)
+                    .newLocalQuickFix(new RunGradleTaskQuickFix(element), problemDescriptor)
+                    .registerFix()
                     .create();
+        }
+    }
+
+    private record RunGradleTaskQuickFix(PsiElement element) implements LocalQuickFix {
+
+        @Override
+        public String getName() {
+            return "Get hierarchy";
+        }
+
+        @Override
+        public String getFamilyName() {
+            return "LockTypes Plugin";
+        }
+
+        @Override
+        public void applyFix(Project project, ProblemDescriptor descriptor) {
+            ExternalSystemTaskExecutionSettings settings = createExecutionSettings(project);
+            ExternalSystemUtil.runTask(settings, DefaultRunExecutor.EXECUTOR_ID, project, GradleConstants.SYSTEM_ID);
+        }
+
+        private ExternalSystemTaskExecutionSettings createExecutionSettings(Project project) {
+            ExternalSystemTaskExecutionSettings settings = new ExternalSystemTaskExecutionSettings();
+            settings.setExternalProjectPath(project.getBasePath());
+            settings.setTaskNames(Collections.singletonList("why --hash " + element.getText()));
+            settings.setExternalSystemIdString(GradleConstants.SYSTEM_ID.toString());
+            return settings;
         }
     }
 }

@@ -1,0 +1,23 @@
+bad.spaces:line:1.0 (1 constraints: 170a83ac) 
+LockTokenType.GROUP bad.spaces
+LOCK_GROUP bad.spaces
+LockTokenType.COLON :
+LockTokenType.NAME line
+LOCK_NAME line
+LockTokenType.COLON :
+LockTokenType.VERSION 1.0
+LOCK_VERSION 1.0
+LockTokenType.OPEN_BRACKET  (
+LockTokenType.CONSTRAINT_COUNT 1
+LOCK_CONSTRAINT_COUNT 1
+WHITE_SPACE  
+LockTokenType.CONSTRAINTS constraints
+LOCK_CONSTRAINTS constraints
+LockTokenType.COLON : 
+LockTokenType.HASH 170a83ac
+LOCK_HASH 170a83ac
+LockTokenType.CLOSE_BRACKET )
+PROPERTY bad.spaces:line:1.0 (1 constraints: 170a83ac)
+BAD_CHARACTER  
+ERROR_ELEMENT  
+FILE bad.spaces:line:1.0 (1 constraints: 170a83ac)
