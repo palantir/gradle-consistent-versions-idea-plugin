@@ -1,0 +1,5 @@
+type: feature
+feature:
+  description: support locks files and why annotator
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/65
