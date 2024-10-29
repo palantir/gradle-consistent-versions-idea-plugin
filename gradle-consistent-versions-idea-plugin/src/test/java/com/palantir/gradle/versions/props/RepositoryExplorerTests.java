@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.versions.intellij;
+package com.palantir.gradle.versions.props;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
