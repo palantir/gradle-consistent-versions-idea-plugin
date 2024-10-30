@@ -25,6 +25,10 @@ Superfast auto-complete directly from your gradle cache allows for full package 
 
 ![Cache Suggestions](media/cache.gif)
 
+Wildcard matching for artifact names.
+
+![Name Star](media/name_star.gif)
+
 ### Syntax highlighting
 `versions.props` files now have syntax highlighting. With highlighting rules to clearly mark `dependency-upgrader` controls.
 
