@@ -62,6 +62,10 @@ public class VersionCompletionContributor extends CompletionContributor {
 
                         Project project = parameters.getOriginalFile().getProject();
 
+                        // This can be slow so let the user know something is happening
+                        resultSet.addElement(
+                                LookupElementBuilder.create("").appendTailText("Loading Versions...", true));
+
                         if (!dependencyName.name().contains("*")) {
                             RepositoryLoader.loadRepositories(project)
                                     .forEach(url -> addToResults(resultSet, url, group, dependencyName));
