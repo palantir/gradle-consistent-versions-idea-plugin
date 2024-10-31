@@ -19,6 +19,7 @@ import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.CompletionSorter;
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.completion.PrioritizedLookupElement;
 import com.intellij.codeInsight.lookup.LookupElement;
@@ -33,7 +34,6 @@ import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.AbstractMap;
-import java.util.stream.IntStream;
 import one.util.streamex.StreamEx;
 
 public class VersionCompletionContributor extends CompletionContributor {
@@ -62,13 +62,25 @@ public class VersionCompletionContributor extends CompletionContributor {
 
                         Project project = parameters.getOriginalFile().getProject();
 
-                        // This can be slow so let the user know something is happening
-                        resultSet.addElement(
-                                LookupElementBuilder.create("").appendTailText("Loading Versions...", true));
+                        CompletionSorter sorter = CompletionSorter.emptySorter().weigh(new VersionWeigher());
+                        CompletionResultSet sortedResultSet = resultSet.withRelevanceSorter(sorter);
+
+                        LookupElement loadingElement = PrioritizedLookupElement.withPriority(
+                                LookupElementBuilder.create("Loading Versions...")
+                                        .withInsertHandler((elementContext, item) -> {
+                                            // Prevent insertion
+                                            elementContext
+                                                    .getDocument()
+                                                    .deleteString(
+                                                            elementContext.getStartOffset(),
+                                                            elementContext.getTailOffset());
+                                        }),
+                                Double.MIN_VALUE);
+                        sortedResultSet.addElement(loadingElement);
 
                         if (!dependencyName.name().contains("*")) {
                             RepositoryLoader.loadRepositories(project)
-                                    .forEach(url -> addToResults(resultSet, url, group, dependencyName));
+                                    .forEach(url -> addToResults(sortedResultSet, url, group, dependencyName));
                             return;
                         }
 
@@ -82,7 +94,7 @@ public class VersionCompletionContributor extends CompletionContributor {
                                     String url = entry.getKey();
                                     GroupPartOrPackageName pkgName = entry.getValue();
                                     DependencyName depName = DependencyName.of(pkgName.name());
-                                    addToResults(resultSet, url, group, depName);
+                                    addToResults(sortedResultSet, url, group, depName);
                                 });
                     }
 
@@ -93,19 +105,17 @@ public class VersionCompletionContributor extends CompletionContributor {
                             DependencyName dependencyName) {
 
                         StreamEx.of(repositoryExplorer.getVersions(group, dependencyName, url))
-                                .zipWith(IntStream.iterate(0, i -> i + 1).boxed())
-                                .mapKeyValue(this::getLookupElement)
+                                .map(this::getLookupElement)
                                 .forEach(resultSet::addElement);
                     }
 
-                    private LookupElement getLookupElement(DependencyVersion version, Integer priority) {
-                        return version.isLatest()
-                                ? PrioritizedLookupElement.withPriority(
-                                        LookupElementBuilder.create(version)
-                                                .withTypeText("Possible Latest", true)
-                                                .withLookupString("latest"),
-                                        Double.MAX_VALUE)
-                                : PrioritizedLookupElement.withPriority(LookupElementBuilder.create(version), priority);
+                    private LookupElement getLookupElement(DependencyVersion version) {
+                        if (version.isLatest()) {
+                            return LookupElementBuilder.create(version)
+                                    .withTypeText("Possible Latest", true)
+                                    .withLookupString("latest");
+                        }
+                        return LookupElementBuilder.create(version);
                     }
                 });
     }

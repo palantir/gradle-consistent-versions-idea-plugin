@@ -21,6 +21,11 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.intellij.codeInsight.completion.BaseCompletionService;
+import com.intellij.codeInsight.completion.CompletionProcess;
+import com.intellij.codeInsight.completion.CompletionProgressIndicator;
+import com.intellij.codeInsight.completion.CompletionService;
+import com.intellij.openapi.application.ApplicationManager;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -34,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.apache.http.HttpException;
 import org.immutables.value.Value;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -69,15 +75,21 @@ public class RepositoryExplorer {
             return cachedGroupPartOrPackageName;
         }
 
-        Optional<String> content = fetchContent(urlString);
+        Optional<String> content;
+        try {
+            content = fetchContent(urlString);
+        } catch (HttpException e) {
+            log.debug("Failed to fetch group/part/package", e);
+            folderCache.put(urlString, Collections.emptySet());
+            return Collections.emptySet();
+        }
 
         if (content.isEmpty()) {
-            log.debug("Page does not exist");
+            log.debug("Fetch cancelled or failed");
             return Collections.emptySet();
         }
 
         Set<GroupPartOrPackageName> parsedGroupPartOrPackageName = fetchFoldersFromContent(content.get());
-
         folderCache.put(urlString, parsedGroupPartOrPackageName);
         return parsedGroupPartOrPackageName;
     }
@@ -91,19 +103,28 @@ public class RepositoryExplorer {
             return cacheVersions;
         }
 
-        Optional<String> content = fetchContent(urlString);
-
-        if (content.isEmpty()) {
-            log.debug("Empty metadata content received");
+        Optional<String> content;
+        try {
+            content = fetchContent(urlString);
+        } catch (HttpException e) {
+            log.debug("Failed to fetch versions", e);
+            shortLivedVersionCache.put(urlString, Collections.emptySet());
             return Collections.emptySet();
         }
+
+        if (content.isEmpty()) {
+            log.debug("Fetch of metadata cancelled or failed");
+            return Collections.emptySet();
+        }
+
+        triggerRefresh();
 
         Set<DependencyVersion> parsedVersions = parseVersionsFromContent(content.get());
         shortLivedVersionCache.put(urlString, parsedVersions);
         return parsedVersions;
     }
 
-    private Optional<String> fetchContent(String urlString) {
+    private Optional<String> fetchContent(String urlString) throws HttpException {
         try {
             URL url = new URL(urlString);
             return ContentsUtil.fetchPageContents(url);
@@ -182,5 +203,23 @@ public class RepositoryExplorer {
         static CacheKey of(String url, DependencyGroup group) {
             return ImmutableCacheKey.builder().url(url).group(group).build();
         }
+    }
+
+    private void triggerRefresh() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            CompletionService completionService = CompletionService.getCompletionService();
+            if (completionService == null) {
+                return;
+            }
+
+            BaseCompletionService baseCompletionService = (BaseCompletionService) completionService;
+            CompletionProcess completionProgress = baseCompletionService.getCurrentCompletion();
+            if (completionProgress == null) {
+                return;
+            }
+
+            CompletionProgressIndicator completionProgressIndicator = (CompletionProgressIndicator) completionProgress;
+            completionProgressIndicator.scheduleRestart();
+        });
     }
 }

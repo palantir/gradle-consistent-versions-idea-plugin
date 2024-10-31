@@ -30,13 +30,14 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import org.apache.http.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class ContentsUtil {
     private static final Logger log = LoggerFactory.getLogger(ContentsUtil.class);
 
-    public static Optional<String> fetchPageContents(URL pageUrl) {
+    public static Optional<String> fetchPageContents(URL pageUrl) throws HttpException {
         ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
 
         if (indicator == null) {
@@ -51,21 +52,30 @@ public final class ContentsUtil {
             return Optional.ofNullable(content);
         } catch (InterruptedException | ProcessCanceledException e) {
             log.debug("Fetch operation was cancelled", e);
+            return Optional.empty();
+        } catch (HttpException e) {
+            log.debug("HTTP error while fetching contents", e);
+            throw e; // Propagate the exception
         } catch (Exception e) {
             log.warn("Failed to fetch contents", e);
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
-    private static Callable<String> fetchContentTask(URL pageUrl, ProgressIndicator indicator) {
+    private static Callable<String> fetchContentTask(URL pageUrl, ProgressIndicator indicator) throws HttpException {
         return () -> {
             HttpURLConnection connection = null;
             try {
                 connection = (HttpURLConnection) pageUrl.openConnection();
                 connection.setRequestMethod("GET");
 
-                if (indicator.isCanceled() || connection.getResponseCode() != 200) {
+                if (indicator.isCanceled()) {
                     throw new ProcessCanceledException();
+                }
+
+                int responseCode = connection.getResponseCode();
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    throw new HttpException("Failed to fetch contents. HTTP response code: " + responseCode);
                 }
 
                 BufferedReader in =
@@ -73,8 +83,8 @@ public final class ContentsUtil {
 
                 return in.lines().collect(Collectors.joining("\n"));
             } catch (ConnectException e) {
-                log.debug("Connection refused on page {}", pageUrl, e);
-                return null;
+                log.debug("Connection refused on page", e);
+                throw new HttpException("Connection refused");
             } finally {
                 if (connection != null) {
                     connection.disconnect();
