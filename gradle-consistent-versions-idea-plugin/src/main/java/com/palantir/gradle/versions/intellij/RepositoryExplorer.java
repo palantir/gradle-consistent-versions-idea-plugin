@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.http.HttpException;
-import org.immutables.value.Value;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -192,17 +191,6 @@ public class RepositoryExplorer {
         return !UNSTABLE_VERSION_PATTERN
                 .matcher(version.toLowerCase(Locale.ROOT))
                 .matches();
-    }
-
-    @Value.Immutable
-    interface CacheKey {
-        String url();
-
-        DependencyGroup group();
-
-        static CacheKey of(String url, DependencyGroup group) {
-            return ImmutableCacheKey.builder().url(url).group(group).build();
-        }
     }
 
     private void triggerRefresh() {
