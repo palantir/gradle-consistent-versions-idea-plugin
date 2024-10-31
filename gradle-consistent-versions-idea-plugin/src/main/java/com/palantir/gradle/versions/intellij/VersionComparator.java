@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
+import one.util.streamex.StreamEx;
 
 public record VersionComparator(boolean latest, List<Integer> numericParts, List<Qualifier> qualifiers) {
 
@@ -38,14 +40,16 @@ public record VersionComparator(boolean latest, List<Integer> numericParts, List
 
     private static int compareNumericParts(List<Integer> nums1, List<Integer> nums2) {
         int maxLength = Math.max(nums1.size(), nums2.size());
-        for (int i = 0; i < maxLength; i++) {
-            int num1 = i < nums1.size() ? nums1.get(i) : 0;
-            int num2 = i < nums2.size() ? nums2.get(i) : 0;
-            if (num1 != num2) {
-                return Integer.compare(num2, num1); // Higher number = newer
-            }
-        }
-        return 0;
+
+        return IntStream.range(0, maxLength)
+                .map(i -> {
+                    int num1 = i < nums1.size() ? nums1.get(i) : 0;
+                    int num2 = i < nums2.size() ? nums2.get(i) : 0;
+                    return Integer.compare(num2, num1); // Compare num2 to num1 for descending order
+                })
+                .filter(comparisonResult -> comparisonResult != 0) // Find the first non-zero comparison
+                .findFirst()
+                .orElse(0); // Return 0 if all parts are equal
     }
 
     private static int compareQualifiers(List<Qualifier> qualifiers1, List<Qualifier> qualifiers2) {
@@ -60,32 +64,30 @@ public record VersionComparator(boolean latest, List<Integer> numericParts, List
         }
 
         int minSize = Math.min(qualifiers1.size(), qualifiers2.size());
-        for (int i = 0; i < minSize; i++) {
-            Qualifier q1 = qualifiers1.get(i);
-            Qualifier q2 = qualifiers2.get(i);
 
-            int index1 = PRE_RELEASE_ORDER.indexOf(q1.type());
-            int index2 = PRE_RELEASE_ORDER.indexOf(q2.type());
+        List<Qualifier> subList1 = qualifiers1.subList(0, minSize);
+        List<Qualifier> subList2 = qualifiers2.subList(0, minSize);
 
-            if (index1 == index2) {
-                // Same type or both unknown; compare numbers
-                if (q1.number() != q2.number()) {
-                    return Integer.compare(q2.number(), q1.number()); // Higher number = newer
-                }
-                continue; // Move to next qualifier
-            }
+        // Zip the two sublists together and compare pair-wise
+        return StreamEx.zip(subList1, subList2, (q1, q2) -> {
+                    int index1 = PRE_RELEASE_ORDER.indexOf(q1.type());
+                    int index2 = PRE_RELEASE_ORDER.indexOf(q2.type());
 
-            if (index1 == -1) {
-                return 1; // q1 > q2
-            }
-            if (index2 == -1) {
-                return -1; // q1 < q2
-            }
+                    if (index1 == index2) {
+                        return Integer.compare(q2.number(), q1.number()); // Higher number = newer
+                    }
 
-            return Integer.compare(index1, index2); // Lower index = higher priority
-        }
+                    if (index1 == -1) {
+                        return 1; // q1 > q2
+                    }
+                    if (index2 == -1) {
+                        return -1; // q1 < q2
+                    }
 
-        return Integer.compare(qualifiers2.size(), qualifiers1.size()); // More qualifiers = newer
+                    return Integer.compare(index1, index2); // Lower index = higher priority
+                })
+                .findFirst(result -> result != 0)
+                .orElseGet(() -> Integer.compare(qualifiers2.size(), qualifiers1.size()));
     }
 
     private static Qualifier parseQualifier(String raw) {
