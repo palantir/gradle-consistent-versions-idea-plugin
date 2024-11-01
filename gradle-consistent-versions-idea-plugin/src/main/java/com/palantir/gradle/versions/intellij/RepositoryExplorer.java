@@ -21,11 +21,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import com.intellij.codeInsight.completion.BaseCompletionService;
-import com.intellij.codeInsight.completion.CompletionProcess;
-import com.intellij.codeInsight.completion.CompletionProgressIndicator;
-import com.intellij.codeInsight.completion.CompletionService;
-import com.intellij.openapi.application.ApplicationManager;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -40,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.http.HttpException;
+import org.immutables.value.Value;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -93,13 +89,12 @@ public class RepositoryExplorer {
         return parsedGroupPartOrPackageName;
     }
 
-    public final Set<DependencyVersion> getVersions(
-            DependencyGroup group, DependencyName dependencyPackage, String url) {
+    public final VersionResults getVersions(DependencyGroup group, DependencyName dependencyPackage, String url) {
         String urlString = url + group.asUrlString() + dependencyPackage.name() + "/maven-metadata.xml";
 
         Set<DependencyVersion> cacheVersions = shortLivedVersionCache.getIfPresent(urlString);
         if (cacheVersions != null) {
-            return cacheVersions;
+            return VersionResults.of(cacheVersions, true);
         }
 
         Optional<String> content;
@@ -108,19 +103,17 @@ public class RepositoryExplorer {
         } catch (HttpException e) {
             log.debug("Failed to fetch versions", e);
             shortLivedVersionCache.put(urlString, Collections.emptySet());
-            return Collections.emptySet();
+            return VersionResults.empty(false);
         }
 
         if (content.isEmpty()) {
             log.debug("Fetch of metadata cancelled or failed");
-            return Collections.emptySet();
+            return VersionResults.empty(false);
         }
-
-        triggerRefresh();
 
         Set<DependencyVersion> parsedVersions = parseVersionsFromContent(content.get());
         shortLivedVersionCache.put(urlString, parsedVersions);
-        return parsedVersions;
+        return VersionResults.of(parsedVersions, false);
     }
 
     private Optional<String> fetchContent(String urlString) throws HttpException {
@@ -193,21 +186,24 @@ public class RepositoryExplorer {
                 .matches();
     }
 
-    private void triggerRefresh() {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            CompletionService completionService = CompletionService.getCompletionService();
-            if (completionService == null) {
-                return;
-            }
+    @Value.Immutable
+    public abstract static class VersionResults {
+        protected abstract Set<DependencyVersion> versions();
 
-            BaseCompletionService baseCompletionService = (BaseCompletionService) completionService;
-            CompletionProcess completionProgress = baseCompletionService.getCurrentCompletion();
-            if (completionProgress == null) {
-                return;
-            }
+        protected abstract Boolean cached();
 
-            CompletionProgressIndicator completionProgressIndicator = (CompletionProgressIndicator) completionProgress;
-            completionProgressIndicator.scheduleRestart();
-        });
+        public static VersionResults of(Set<DependencyVersion> versions, Boolean cached) {
+            return ImmutableVersionResults.builder()
+                    .versions(versions)
+                    .cached(cached)
+                    .build();
+        }
+
+        public static VersionResults empty(Boolean cached) {
+            return ImmutableVersionResults.builder()
+                    .versions(Collections.emptySet())
+                    .cached(cached)
+                    .build();
+        }
     }
 }

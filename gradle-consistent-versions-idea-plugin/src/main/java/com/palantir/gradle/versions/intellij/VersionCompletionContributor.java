@@ -15,15 +15,20 @@
  */
 package com.palantir.gradle.versions.intellij;
 
+import com.intellij.codeInsight.completion.BaseCompletionService;
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
+import com.intellij.codeInsight.completion.CompletionProcess;
+import com.intellij.codeInsight.completion.CompletionProgressIndicator;
 import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.CompletionService;
 import com.intellij.codeInsight.completion.CompletionSorter;
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.completion.PrioritizedLookupElement;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.patterns.PlatformPatterns;
@@ -103,19 +108,26 @@ public class VersionCompletionContributor extends CompletionContributor {
                             String url,
                             DependencyGroup group,
                             DependencyName dependencyName) {
-
                         StreamEx.of(repositoryExplorer.getVersions(group, dependencyName, url))
-                                .map(this::getLookupElement)
+                                .peek(versionResults -> maybeRefresh(versionResults.cached()))
+                                .flatMap(versionResults -> versionResults.versions().stream())
+                                .map(this::createLookupElement)
                                 .forEach(resultSet::addElement);
                     }
 
-                    private LookupElement getLookupElement(DependencyVersion version) {
+                    private LookupElement createLookupElement(DependencyVersion version) {
                         if (version.isLatest()) {
                             return LookupElementBuilder.create(version)
                                     .withTypeText("Possible Latest", true)
                                     .withLookupString("latest");
                         }
                         return LookupElementBuilder.create(version);
+                    }
+
+                    private void maybeRefresh(boolean cached) {
+                        if (!cached) {
+                            triggerRefresh();
+                        }
                     }
                 });
     }
@@ -127,5 +139,23 @@ public class VersionCompletionContributor extends CompletionContributor {
     @Override
     public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
         return true;
+    }
+
+    private void triggerRefresh() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            CompletionService completionService = CompletionService.getCompletionService();
+            if (completionService == null) {
+                return;
+            }
+
+            BaseCompletionService baseCompletionService = (BaseCompletionService) completionService;
+            CompletionProcess completionProgress = baseCompletionService.getCurrentCompletion();
+            if (completionProgress == null) {
+                return;
+            }
+
+            CompletionProgressIndicator completionProgressIndicator = (CompletionProgressIndicator) completionProgress;
+            completionProgressIndicator.scheduleRestart();
+        });
     }
 }
