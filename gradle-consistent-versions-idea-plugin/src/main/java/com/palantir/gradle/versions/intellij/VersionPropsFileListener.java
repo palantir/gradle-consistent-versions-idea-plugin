@@ -37,6 +37,11 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.plugins.gradle.util.GradleConstants;
@@ -47,6 +52,13 @@ public final class VersionPropsFileListener implements AsyncFileListener {
     private static final Logger log = LoggerFactory.getLogger(VersionPropsFileListener.class);
     private static final String TASK_NAME = "writeVersionsLock";
 
+    // Shared state to track changes per project
+    private final ConcurrentMap<Project, ChangeFlags> projectChangeMap = new ConcurrentHashMap<>();
+
+    // Executor for debouncing
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private static final long DEBOUNCE_DELAY_MS = 250;
+
     @Nullable
     @Override
     public ChangeApplier prepareChange(List<? extends VFileEvent> events) {
@@ -56,36 +68,81 @@ public final class VersionPropsFileListener implements AsyncFileListener {
                 .filter(event -> "versions.props".equals(event.getFile().getName()))
                 .toList();
 
-        if (versionPropsEvents.isEmpty()) {
+        List<VFileContentChangeEvent> versionLockEvents = events.stream()
+                .filter(event -> event instanceof VFileContentChangeEvent)
+                .map(event -> (VFileContentChangeEvent) event)
+                .filter(event -> "versions.lock".equals(event.getFile().getName()))
+                .toList();
+
+        if (versionPropsEvents.isEmpty() && versionLockEvents.isEmpty()) {
             return null;
         }
 
-        List<Project> projectsAffected = Arrays.stream(
+        List<Project> allOpenProjects = Arrays.stream(
                         ProjectManager.getInstance().getOpenProjects())
                 .filter(Project::isInitialized)
                 .filter(Predicate.not(ComponentManager::isDisposed))
-                .filter(project -> versionPropsEvents.stream()
-                        .anyMatch(event -> event.getPath().startsWith(project.getBasePath())
-                                && !isFileMalformed(project, event.getFile())))
                 .toList();
+
+        // Update the shared state based on current events
+        allOpenProjects.forEach(project -> {
+            String basePath = project.getBasePath();
+            boolean hasPropsChange = versionPropsEvents.stream()
+                    .anyMatch(event ->
+                            event.getPath().startsWith(basePath) && !isFileMalformed(project, event.getFile()));
+            boolean hasLockChange =
+                    versionLockEvents.stream().anyMatch(event -> event.getPath().startsWith(basePath));
+
+            if (hasPropsChange || hasLockChange) {
+                projectChangeMap.compute(project, (proj, flags) -> {
+                    if (flags == null) {
+                        return ChangeFlags.of(hasPropsChange, hasLockChange);
+                    } else {
+                        return ChangeFlags.of(
+                                flags.hasPropsChange() || hasPropsChange, flags.hasLockChange() || hasLockChange);
+                    }
+                });
+            }
+        });
 
         return new ChangeApplier() {
             @Override
             public void afterVfsChange() {
-                projectsAffected.forEach(project -> {
-                    VersionPropsProjectSettings settings = VersionPropsProjectSettings.getInstance(project);
-                    if (!settings.isEnabled()) {
-                        return;
-                    }
-
-                    if (hasBuildSrc(project)) {
-                        runTaskThenRefresh(project);
-                    } else {
-                        refreshProjectWithTask(project);
-                    }
+                // Schedule processing after VFS changes have been applied
+                projectChangeMap.keySet().forEach(project -> {
+                    scheduler.schedule(() -> processChanges(project), DEBOUNCE_DELAY_MS, TimeUnit.MILLISECONDS);
                 });
             }
         };
+    }
+
+    private void processChanges(Project project) {
+        ChangeFlags flags = projectChangeMap.remove(project);
+        if (flags == null) {
+            return;
+        }
+
+        if (flags.hasPropsChange && flags.hasLockChange) {
+            // Both changes detected; do not process
+            log.debug(
+                    "Project {} has both versions.props and versions.lock changes. Skipping processing.",
+                    project.getName());
+            return;
+        }
+
+        if (flags.hasPropsChange) {
+            // Only props changed; process the project
+            VersionPropsProjectSettings settings = VersionPropsProjectSettings.getInstance(project);
+            if (!settings.isEnabled()) {
+                return;
+            }
+
+            if (hasBuildSrc(project)) {
+                runTaskThenRefresh(project);
+            } else {
+                refreshProjectWithTask(project);
+            }
+        }
     }
 
     private boolean hasBuildSrc(Project project) {
@@ -145,5 +202,11 @@ public final class VersionPropsFileListener implements AsyncFileListener {
         }
 
         return PsiTreeUtil.hasErrorElements(psiFile);
+    }
+
+    private record ChangeFlags(boolean hasPropsChange, boolean hasLockChange) {
+        public static ChangeFlags of(boolean hasPropsChange, boolean hasLockChange) {
+            return new ChangeFlags(hasPropsChange, hasLockChange);
+        }
     }
 }
