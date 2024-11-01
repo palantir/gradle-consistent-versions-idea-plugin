@@ -57,7 +57,7 @@ public final class VersionPropsFileListener implements AsyncFileListener {
 
     // Executor for debouncing
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private static final long DEBOUNCE_DELAY_MS = 250;
+    private static final long DEBOUNCE_DELAY_MS = 350;
 
     @Nullable
     @Override
