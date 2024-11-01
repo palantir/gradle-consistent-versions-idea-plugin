@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.versions.intellij;
 
+import com.google.common.collect.MapMaker;
 import com.intellij.execution.executors.DefaultRunExecutor;
 import com.intellij.openapi.components.ComponentManager;
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder;
@@ -37,7 +38,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,7 +53,8 @@ public final class VersionPropsFileListener implements AsyncFileListener {
     private static final String TASK_NAME = "writeVersionsLock";
 
     // Shared state to track changes per project
-    private final ConcurrentMap<Project, ChangeFlags> projectChangeMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Project, ChangeFlags> projectChangeMap =
+            new MapMaker().weakKeys().makeMap();
 
     // Executor for debouncing
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
