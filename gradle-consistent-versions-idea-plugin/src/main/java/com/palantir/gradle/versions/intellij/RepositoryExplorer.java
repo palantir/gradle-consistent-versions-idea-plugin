@@ -21,6 +21,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.palantir.gradle.versions.intellij.ContentsUtil.HttpException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -34,7 +35,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.http.HttpException;
 import org.immutables.value.Value;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -75,7 +75,11 @@ public class RepositoryExplorer {
             content = fetchContent(urlString);
         } catch (HttpException e) {
             log.debug("Failed to fetch group/part/package", e);
-            folderCache.put(urlString, Collections.emptySet());
+
+            if (e.getErrorCode() == 404) {
+                // We want to cache 404 errors
+                folderCache.put(urlString, Collections.emptySet());
+            }
             return Collections.emptySet();
         }
 
@@ -94,7 +98,7 @@ public class RepositoryExplorer {
 
         Set<DependencyVersion> cacheVersions = shortLivedVersionCache.getIfPresent(urlString);
         if (cacheVersions != null) {
-            return VersionResults.of(cacheVersions, true);
+            return VersionResults.of(cacheVersions, false);
         }
 
         Optional<String> content;
@@ -102,7 +106,11 @@ public class RepositoryExplorer {
             content = fetchContent(urlString);
         } catch (HttpException e) {
             log.debug("Failed to fetch versions", e);
-            shortLivedVersionCache.put(urlString, Collections.emptySet());
+
+            if (e.getErrorCode() == 404) {
+                // We want to cache 404 errors
+                shortLivedVersionCache.put(urlString, Collections.emptySet());
+            }
             return VersionResults.empty(false);
         }
 
@@ -113,7 +121,9 @@ public class RepositoryExplorer {
 
         Set<DependencyVersion> parsedVersions = parseVersionsFromContent(content.get());
         shortLivedVersionCache.put(urlString, parsedVersions);
-        return VersionResults.of(parsedVersions, false);
+
+        // Only want to trigger a refresh if something has been added
+        return VersionResults.of(parsedVersions, true);
     }
 
     private Optional<String> fetchContent(String urlString) throws HttpException {
@@ -190,19 +200,19 @@ public class RepositoryExplorer {
     public abstract static class VersionResults {
         protected abstract Set<DependencyVersion> versions();
 
-        protected abstract Boolean cached();
+        protected abstract Boolean triggerRefresh();
 
-        public static VersionResults of(Set<DependencyVersion> versions, Boolean cached) {
+        public static VersionResults of(Set<DependencyVersion> versions, Boolean triggerRefresh) {
             return ImmutableVersionResults.builder()
                     .versions(versions)
-                    .cached(cached)
+                    .triggerRefresh(triggerRefresh)
                     .build();
         }
 
-        public static VersionResults empty(Boolean cached) {
+        public static VersionResults empty(Boolean triggerRefresh) {
             return ImmutableVersionResults.builder()
                     .versions(Collections.emptySet())
-                    .cached(cached)
+                    .triggerRefresh(triggerRefresh)
                     .build();
         }
     }

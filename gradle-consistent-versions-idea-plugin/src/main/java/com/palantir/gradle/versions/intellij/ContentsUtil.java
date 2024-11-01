@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import org.apache.http.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +74,7 @@ public final class ContentsUtil {
 
                 int responseCode = connection.getResponseCode();
                 if (responseCode != HttpURLConnection.HTTP_OK) {
-                    throw new HttpException("Failed to fetch contents. HTTP response code: " + responseCode);
+                    throw new HttpException("Failed to fetch contents.", responseCode);
                 }
 
                 BufferedReader in =
@@ -83,8 +82,8 @@ public final class ContentsUtil {
 
                 return in.lines().collect(Collectors.joining("\n"));
             } catch (ConnectException e) {
-                log.debug("Connection refused on page", e);
-                throw new HttpException("Connection refused");
+                log.debug("Connection refused on page {}", pageUrl, e);
+                return null;
             } finally {
                 if (connection != null) {
                     connection.disconnect();
@@ -94,4 +93,17 @@ public final class ContentsUtil {
     }
 
     private ContentsUtil() {}
+
+    public static class HttpException extends Exception {
+        private final int errorCode;
+
+        public HttpException(String message, int errorCode) {
+            super(message);
+            this.errorCode = errorCode;
+        }
+
+        public final int getErrorCode() {
+            return errorCode;
+        }
+    }
 }

@@ -35,10 +35,12 @@ import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
+import com.palantir.gradle.versions.intellij.RepositoryExplorer.VersionResults;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.AbstractMap;
+import java.util.stream.Stream;
 import one.util.streamex.StreamEx;
 
 public class VersionCompletionContributor extends CompletionContributor {
@@ -109,10 +111,20 @@ public class VersionCompletionContributor extends CompletionContributor {
                             DependencyGroup group,
                             DependencyName dependencyName) {
                         StreamEx.of(repositoryExplorer.getVersions(group, dependencyName, url))
-                                .peek(versionResults -> maybeRefresh(versionResults.cached()))
-                                .flatMap(versionResults -> versionResults.versions().stream())
+                                .peek(this::handleVersionResults)
+                                .flatMap(this::extractVersions)
                                 .map(this::createLookupElement)
                                 .forEach(resultSet::addElement);
+                    }
+
+                    private void handleVersionResults(VersionResults versionResults) {
+                        if (versionResults.triggerRefresh()) {
+                            triggerRefresh();
+                        }
+                    }
+
+                    private Stream<DependencyVersion> extractVersions(VersionResults versionResults) {
+                        return versionResults.versions().stream();
                     }
 
                     private LookupElement createLookupElement(DependencyVersion version) {
@@ -122,12 +134,6 @@ public class VersionCompletionContributor extends CompletionContributor {
                                     .withLookupString("latest");
                         }
                         return LookupElementBuilder.create(version);
-                    }
-
-                    private void maybeRefresh(boolean cached) {
-                        if (!cached) {
-                            triggerRefresh();
-                        }
                     }
                 });
     }
