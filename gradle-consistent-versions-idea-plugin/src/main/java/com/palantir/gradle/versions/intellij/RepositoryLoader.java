@@ -67,12 +67,12 @@ public final class RepositoryLoader {
         return Set.of(DEFAULT);
     }
 
-    private static class RepositoryComparator implements Comparator<String> {
+    private static final class RepositoryComparator implements Comparator<String> {
         private static final Map<String, Integer> KEYWORD_SCORES = Map.of(
-                "release", 10,
+                "release", 15,
                 "jar", 10,
                 "dist", -5,
-                "internal", -5);
+                "internal", -10);
 
         @Override
         public int compare(String repo1, String repo2) {

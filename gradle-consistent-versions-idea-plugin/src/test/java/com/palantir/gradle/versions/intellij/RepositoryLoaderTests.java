@@ -16,7 +16,7 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import static org.gradle.internal.impldep.org.testng.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase5;
@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 {
 
@@ -42,23 +41,22 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
         return "";
     }
 
-    @TempDir
-    Path tempDir;
-
     @Test
-    void testLoadRepositories_fileDoesNotExist() {
+    void file_does_not_exist_return_default() {
         Project project = getFixture().getProject();
 
         Set<String> repositories = RepositoryLoader.loadRepositories(project);
-        assertEquals(Set.of(DEFAULT), repositories, "Should return default repository when file does not exist");
+        assertThat(repositories)
+                .as("Should return default repository when file does not exist")
+                .containsExactly(DEFAULT);
     }
 
     @Test
-    void testLoadRepositories_fileExists() throws IOException {
+    void loads_repos_for_file() throws IOException {
         Project project = getFixture().getProject();
 
         createMavenRepositoriesFile(
-                tempDir.resolve(MAVEN_REPOSITORIES_FILE_NAME),
+                project,
                 """
                     <repositories>
                       <repository url="https://repo1.maven.org/maven2/"/>
@@ -67,43 +65,68 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
                     """);
 
         Set<String> repositories = RepositoryLoader.loadRepositories(project);
-        System.out.println(repositories);
-        assertEquals(
-                Set.of("https://repo1.maven.org/maven2/", "https://repo2.maven.org/maven2/"),
-                repositories,
-                "Should load repositories from file");
+        assertThat(repositories)
+                .as("Should load repositories from file")
+                .containsExactlyInAnyOrder("https://repo1.maven.org/maven2/", "https://repo2.maven.org/maven2/");
     }
-    //
-    //    @Test
-    //    void testLoadRepositories_ignoreLocalhostAndFile() throws IOException {
-    //        createMavenRepositoriesFile(
-    //                tempDir.resolve(MAVEN_REPOSITORIES_FILE_NAME),
-    //                """
-    //                <repositories>
-    //                  <repository url="https://repo1.maven.org/maven2/"/>
-    //                  <repository url="http://localhost:8081/nexus/content/repositories/releases/"/>
-    //                  <repository url="file:///Users/user/.m2/repository/"/>
-    //                </repositories>
-    //                """);
-    //
-    //        Set<String> repositories = RepositoryLoader.loadRepositories(project);
-    //        assertEquals(
-    //                Set.of("https://repo1.maven.org/maven2/"),
-    //                repositories,
-    //                "Should ignore localhost and file repositories");
-    //    }
-    //
-    //    @Test
-    //    void testLoadRepositories_handlesIOException() throws IOException {
-    //        // Simulate IOException by creating a directory instead of a file
-    //        Files.createDirectory(tempDir.resolve(MAVEN_REPOSITORIES_FILE_NAME));
-    //
-    //        Set<String> repositories = RepositoryLoader.loadRepositories(project);
-    //        assertEquals(Set.of(DEFAULT_REPO), repositories, "Should return default repository when IOException
-    // occurs");
-    //    }
-    //
-    private void createMavenRepositoriesFile(Path path, String content) throws IOException {
+
+    @Test
+    void local_host_and_file_paths_ignored() throws IOException {
+        Project project = getFixture().getProject();
+
+        createMavenRepositoriesFile(
+                project,
+                """
+                    <repositories>
+                      <repository url="https://repo1.maven.org/maven2/"/>
+                      <repository url="http://localhost:8081/nexus/content/repositories/releases/"/>
+                      <repository url="file:///Users/user/.m2/repository/"/>
+                    </repositories>
+                    """);
+
+        Set<String> repositories = RepositoryLoader.loadRepositories(project);
+        assertThat(repositories)
+                .as("Should ignore localhost and file repositories")
+                .containsExactly("https://repo1.maven.org/maven2/");
+    }
+
+    @Test
+    void check_order_is_correct() throws IOException {
+        Project project = getFixture().getProject();
+
+        createMavenRepositoriesFile(
+                project,
+                """
+                    <repositories>
+                      <repository url="dist"/>
+                      <repository url="internal"/>
+                      <repository url="release-dist"/>
+                      <repository url="internal-dist"/>
+                      <repository url="internal-jar"/>
+                      <repository url="release-jar"/>
+                      <repository url="release"/>
+                      <repository url="random"/>
+                      <repository url="jar"/>
+                    </repositories>
+                    """);
+
+        Set<String> repositories = RepositoryLoader.loadRepositories(project);
+        assertThat(repositories)
+                .as("Should maintain the correct order of repositories")
+                .containsExactly(
+                        "release-jar",
+                        "release",
+                        "release-dist",
+                        "jar",
+                        "internal-jar",
+                        "random",
+                        "dist",
+                        "internal",
+                        "internal-dist");
+    }
+
+    private void createMavenRepositoriesFile(Project project, String content) throws IOException {
+        Path path = Path.of(project.getBasePath(), MAVEN_REPOSITORIES_FILE_NAME);
         Files.createDirectories(path.getParent());
         Files.writeString(path, content);
     }
