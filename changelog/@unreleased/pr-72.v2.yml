@@ -1,0 +1,5 @@
+type: improvement
+improvement:
+  description: dynamic reload plugin
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/72
