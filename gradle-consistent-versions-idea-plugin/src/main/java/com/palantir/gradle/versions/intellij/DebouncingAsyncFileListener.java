@@ -37,7 +37,7 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener, Dis
     private final List<VFileEvent> bufferedEvents = new ArrayList<>();
     private boolean isDisposed = false;
 
-    public DebouncingAsyncFileListener(AsyncFileListener delegate, long debounceDelayMillis) {
+    DebouncingAsyncFileListener(AsyncFileListener delegate, long debounceDelayMillis) {
         this.delegate = delegate;
         this.debounceDelayMillis = debounceDelayMillis;
         this.alarm = new Alarm(Alarm.ThreadToUse.POOLED_THREAD, this);

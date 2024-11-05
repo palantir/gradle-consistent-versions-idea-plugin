@@ -16,17 +16,23 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.intellij.ide.AppLifecycleListener;
 import com.intellij.openapi.vfs.AsyncFileListener;
-import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import java.util.List;
+import org.jetbrains.annotations.Nullable;
 
-public final class VersionPropsListenerRegistrar implements AppLifecycleListener {
+public final class VersionPropsListenerRegistrar implements AsyncFileListener {
 
-    @Override
-    public void appFrameCreated(List<String> commandLineArgs) {
+    private final DebouncingAsyncFileListener debouncedListener;
+
+    VersionPropsListenerRegistrar() {
         AsyncFileListener versionPropsListener = new VersionPropsFileListener();
-        DebouncingAsyncFileListener debouncedListener = new DebouncingAsyncFileListener(versionPropsListener, 500);
-        VirtualFileManager.getInstance().addAsyncFileListener(debouncedListener, debouncedListener);
+        debouncedListener = new DebouncingAsyncFileListener(versionPropsListener, 100);
+    }
+
+    @Nullable
+    @Override
+    public ChangeApplier prepareChange(List<? extends VFileEvent> events) {
+        return debouncedListener.prepareChange(events);
     }
 }

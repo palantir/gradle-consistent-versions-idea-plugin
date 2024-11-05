@@ -50,15 +50,9 @@
     <completion.contributor language="VersionProps"
                             implementationClass="com.palantir.gradle.versions.intellij.FolderCompletionContributor"/>
     <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
+    <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsListenerRegistrar"/>
     <annotator language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.CommentAnnotator" />
     <externalSystemTaskNotificationListener implementation="com.palantir.gradle.versions.intellij.LoadCacheOnGradleProjectRefresh" />
     <applicationService serviceImplementation="com.palantir.gradle.versions.intellij.GradleCacheExplorer" />
   </extensions>
-
-  <applicationListeners>
-    <listener class="com.palantir.gradle.versions.intellij.VersionPropsListenerRegistrar"
-              topic="com.intellij.ide.AppLifecycleListener"
-              activeInHeadlessMode="true"
-              activeInTestMode="true"/>
-  </applicationListeners>
 </idea-plugin>
