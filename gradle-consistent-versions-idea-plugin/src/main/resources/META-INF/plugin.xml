@@ -1,4 +1,4 @@
-<idea-plugin url="https://github.com/palantir/gradle-consistent-versions-idea-plugin">
+<idea-plugin url="https://github.com/palantir/gradle-consistent-versions-idea-plugin" require-restart="false">
   <id>gradle-consistent-versions</id>
   <name>gradle-consistent-versions</name>
   <vendor url="https://github.com/palantir/gradle-consistent-versions-idea-plugin">
