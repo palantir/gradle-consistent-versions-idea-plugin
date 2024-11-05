@@ -21,7 +21,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import com.palantir.gradle.versions.intellij.ContentsUtil.HttpException;
+import com.palantir.gradle.versions.intellij.ContentsUtil.ContentResults;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -70,25 +70,22 @@ public class RepositoryExplorer {
             return cachedGroupPartOrPackageName;
         }
 
-        Optional<String> content;
-        try {
-            content = fetchContent(urlString);
-        } catch (HttpException e) {
-            log.debug("Failed to fetch group/part/package", e);
+        ContentResults result = fetchContent(urlString);
 
-            if (e.getErrorCode() == 404) {
-                // We want to cache 404 errors
+        if (result.isEmpty()) {
+            log.debug("Fetch cancelled or failed");
+            return Collections.emptySet();
+        }
+
+        if (result.isError()) {
+            log.error("Content fetch failed with a {} response code", result.responseCode());
+            if (result.responseCode() >= 400 && result.responseCode() < 500) {
                 folderCache.put(urlString, Collections.emptySet());
             }
             return Collections.emptySet();
         }
 
-        if (content.isEmpty()) {
-            log.debug("Fetch cancelled or failed");
-            return Collections.emptySet();
-        }
-
-        Set<GroupPartOrPackageName> parsedGroupPartOrPackageName = fetchFoldersFromContent(content.get());
+        Set<GroupPartOrPackageName> parsedGroupPartOrPackageName = fetchFoldersFromContent(result.content());
         folderCache.put(urlString, parsedGroupPartOrPackageName);
         return parsedGroupPartOrPackageName;
     }
@@ -101,38 +98,35 @@ public class RepositoryExplorer {
             return VersionResults.of(cacheVersions, false);
         }
 
-        Optional<String> content;
-        try {
-            content = fetchContent(urlString);
-        } catch (HttpException e) {
-            log.debug("Failed to fetch versions", e);
+        ContentResults result = fetchContent(urlString);
 
-            if (e.getErrorCode() == 404) {
-                // We want to cache 404 errors
-                shortLivedVersionCache.put(urlString, Collections.emptySet());
-            }
-            return VersionResults.empty(false);
-        }
-
-        if (content.isEmpty()) {
+        if (result.isEmpty()) {
             log.debug("Fetch of metadata cancelled or failed");
             return VersionResults.empty(false);
         }
 
-        Set<DependencyVersion> parsedVersions = parseVersionsFromContent(content.get());
+        if (result.isError()) {
+            log.error("Metadata fetch failed with a {} response code", result.responseCode());
+            if (result.responseCode() >= 400 && result.responseCode() < 500) {
+                folderCache.put(urlString, Collections.emptySet());
+            }
+            return VersionResults.empty(false);
+        }
+
+        Set<DependencyVersion> parsedVersions = parseVersionsFromContent(result.content());
         shortLivedVersionCache.put(urlString, parsedVersions);
 
         // Only want to trigger a refresh if something has been added
         return VersionResults.of(parsedVersions, true);
     }
 
-    private Optional<String> fetchContent(String urlString) throws HttpException {
+    private ContentResults fetchContent(String urlString) {
         try {
             URL url = new URL(urlString);
             return ContentsUtil.fetchPageContents(url);
         } catch (MalformedURLException e) {
             log.error("Malformed URL", e);
-            return Optional.empty();
+            return ContentResults.empty();
         }
     }
 
@@ -200,19 +194,19 @@ public class RepositoryExplorer {
     public abstract static class VersionResults {
         protected abstract Set<DependencyVersion> versions();
 
-        protected abstract Boolean triggerRefresh();
+        protected abstract Boolean contentAdded();
 
-        public static VersionResults of(Set<DependencyVersion> versions, Boolean triggerRefresh) {
+        public static VersionResults of(Set<DependencyVersion> versions, Boolean contentAdded) {
             return ImmutableVersionResults.builder()
                     .versions(versions)
-                    .triggerRefresh(triggerRefresh)
+                    .contentAdded(contentAdded)
                     .build();
         }
 
-        public static VersionResults empty(Boolean triggerRefresh) {
+        public static VersionResults empty(Boolean contentAdded) {
             return ImmutableVersionResults.builder()
                     .versions(Collections.emptySet())
-                    .triggerRefresh(triggerRefresh)
+                    .contentAdded(contentAdded)
                     .build();
         }
     }

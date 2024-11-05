@@ -26,42 +26,42 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import org.immutables.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class ContentsUtil {
     private static final Logger log = LoggerFactory.getLogger(ContentsUtil.class);
 
-    public static Optional<String> fetchPageContents(URL pageUrl) throws HttpException {
+    public static ContentResults fetchPageContents(URL pageUrl) {
         ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
 
         if (indicator == null) {
-            return Optional.empty();
+            return ContentResults.empty();
         }
 
         try {
-            Future<String> future =
+            Future<ContentResults> future =
                     ApplicationManager.getApplication().executeOnPooledThread(fetchContentTask(pageUrl, indicator));
-            String content =
+            ContentResults content =
                     com.intellij.openapi.application.ex.ApplicationUtil.runWithCheckCanceled(future::get, indicator);
-            return Optional.ofNullable(content);
+            if (content == null) {
+                return ContentResults.empty();
+            }
+            return content;
         } catch (InterruptedException | ProcessCanceledException e) {
             log.debug("Fetch operation was cancelled", e);
-            return Optional.empty();
-        } catch (HttpException e) {
-            log.debug("HTTP error while fetching contents", e);
-            throw e; // Propagate the exception
+            return ContentResults.empty();
         } catch (Exception e) {
             log.warn("Failed to fetch contents", e);
-            return Optional.empty();
+            return ContentResults.empty();
         }
     }
 
-    private static Callable<String> fetchContentTask(URL pageUrl, ProgressIndicator indicator) throws HttpException {
+    private static Callable<ContentResults> fetchContentTask(URL pageUrl, ProgressIndicator indicator) {
         return () -> {
             HttpURLConnection connection = null;
             try {
@@ -74,16 +74,15 @@ public final class ContentsUtil {
 
                 int responseCode = connection.getResponseCode();
                 if (responseCode != HttpURLConnection.HTTP_OK) {
-                    throw new HttpException("Failed to fetch contents.", responseCode);
+                    return ContentResults.error(responseCode);
                 }
 
                 BufferedReader in =
                         new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-
-                return in.lines().collect(Collectors.joining("\n"));
+                return ContentResults.of(in.lines().collect(Collectors.joining("\n")));
             } catch (ConnectException e) {
                 log.debug("Connection refused on page {}", pageUrl, e);
-                return null;
+                return ContentResults.empty();
             } finally {
                 if (connection != null) {
                     connection.disconnect();
@@ -94,16 +93,37 @@ public final class ContentsUtil {
 
     private ContentsUtil() {}
 
-    public static class HttpException extends Exception {
-        private final int errorCode;
+    @Value.Immutable
+    public abstract static class ContentResults {
 
-        public HttpException(String message, int errorCode) {
-            super(message);
-            this.errorCode = errorCode;
+        protected abstract String content();
+
+        protected abstract Integer responseCode();
+
+        public final boolean isEmpty() {
+            return (content() == null || content().isEmpty()) && responseCode() == HttpURLConnection.HTTP_OK;
         }
 
-        public final int getErrorCode() {
-            return errorCode;
+        public final boolean isError() {
+            return responseCode() != HttpURLConnection.HTTP_OK;
+        }
+
+        public static ContentResults of(String content) {
+            return ImmutableContentResults.builder()
+                    .content(content)
+                    .responseCode(HttpURLConnection.HTTP_OK)
+                    .build();
+        }
+
+        public static ContentResults error(Integer responseCode) {
+            return ImmutableContentResults.builder()
+                    .content("")
+                    .responseCode(responseCode)
+                    .build();
+        }
+
+        public static ContentResults empty() {
+            return ContentResults.of("");
         }
     }
 }

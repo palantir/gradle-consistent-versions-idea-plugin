@@ -118,7 +118,7 @@ public class VersionCompletionContributor extends CompletionContributor {
                     }
 
                     private void handleVersionResults(VersionResults versionResults) {
-                        if (versionResults.triggerRefresh()) {
+                        if (versionResults.contentAdded()) {
                             triggerRefresh();
                         }
                     }
