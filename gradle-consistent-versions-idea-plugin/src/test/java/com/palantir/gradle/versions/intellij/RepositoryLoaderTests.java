@@ -91,7 +91,7 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
     }
 
     @Test
-    void check_order_is_correct() throws IOException {
+    void check_order_is_corrected() throws IOException {
         Project project = getFixture().getProject();
 
         createMavenRepositoriesFile(
@@ -123,6 +123,30 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
                         "dist",
                         "internal",
                         "internal-dist");
+    }
+
+    @Test
+    void repos_not_sorted_maintain_entry_order() throws IOException {
+        Project project = getFixture().getProject();
+
+        createMavenRepositoriesFile(
+                project,
+                """
+                    <repositories>
+                      <repository url="test1/internal"/>
+                      <repository url="test1/release"/>
+                      <repository url="random1"/>
+                      <repository url="test2/internal"/>
+                      <repository url="random2"/>
+                      <repository url="test2/release"/>
+                    </repositories>
+                    """);
+
+        Set<String> repositories = RepositoryLoader.loadRepositories(project);
+        assertThat(repositories)
+                .as("Should maintain the correct order of repositories")
+                .containsExactly(
+                        "test1/release", "test2/release", "random1", "random2", "test1/internal", "test2/internal");
     }
 
     private void createMavenRepositoriesFile(Project project, String content) throws IOException {
