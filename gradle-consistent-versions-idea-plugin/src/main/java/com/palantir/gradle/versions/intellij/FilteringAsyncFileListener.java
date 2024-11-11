@@ -16,35 +16,40 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.vfs.AsyncFileListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import java.util.List;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public final class VersionPropsListenerRegistrar implements AsyncFileListener, Disposable {
+public class FilteringAsyncFileListener implements AsyncFileListener {
+    private static final Logger log = LoggerFactory.getLogger(FilteringAsyncFileListener.class);
 
-    private final FilteringAsyncFileListener changeListener;
+    private final AsyncFileListener delegate;
+    private final Predicate<VirtualFile> filter;
 
-    VersionPropsListenerRegistrar() {
-
-        Predicate<VirtualFile> filter = virtualFile -> {
-            String fileName = virtualFile.getName();
-            return "versions.props".equals(fileName) || "versions.lock".equals(fileName);
-        };
-
-        this.changeListener = new FilteringAsyncFileListener(
-                new DebouncingAsyncFileListener(new VersionPropsFileListener(), 250, this), filter);
+    FilteringAsyncFileListener(AsyncFileListener delegate, Predicate<VirtualFile> filter) {
+        this.delegate = delegate;
+        this.filter = filter;
     }
 
     @Nullable
     @Override
-    public ChangeApplier prepareChange(List<? extends VFileEvent> events) {
-        return changeListener.prepareChange(events);
-    }
+    public final ChangeApplier prepareChange(List<? extends VFileEvent> events) {
+        List<? extends VFileEvent> filteredEvents = events.stream()
+                .filter(event -> {
+                    VirtualFile file = event.getFile();
+                    return file != null && filter.test(file);
+                })
+                .toList();
 
-    @Override
-    public void dispose() {}
+        if (filteredEvents.isEmpty()) {
+            return null;
+        }
+
+        return delegate.prepareChange(filteredEvents);
+    }
 }
