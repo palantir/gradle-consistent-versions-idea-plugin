@@ -111,19 +111,19 @@ public class VersionCompletionContributor extends CompletionContributor {
                             DependencyGroup group,
                             DependencyName dependencyName) {
                         StreamEx.of(repositoryExplorer.getVersions(group, dependencyName, url))
-                                .peek(this::handleVersionResults)
-                                .flatMap(this::extractVersions)
+                                .peek(this::refreshIfContentAdded)
+                                .flatMap(this::streamVersions)
                                 .map(this::createLookupElement)
                                 .forEach(resultSet::addElement);
                     }
 
-                    private void handleVersionResults(VersionResults versionResults) {
+                    private void refreshIfContentAdded(VersionResults versionResults) {
                         if (versionResults.contentAdded()) {
                             triggerRefresh();
                         }
                     }
 
-                    private Stream<DependencyVersion> extractVersions(VersionResults versionResults) {
+                    private Stream<DependencyVersion> streamVersions(VersionResults versionResults) {
                         return versionResults.versions().stream();
                     }
 
