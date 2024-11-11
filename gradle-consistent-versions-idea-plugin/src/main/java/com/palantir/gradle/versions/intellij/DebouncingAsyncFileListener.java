@@ -20,6 +20,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.vfs.AsyncFileListener;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import com.intellij.util.Alarm;
+import com.intellij.util.SingleAlarm;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
@@ -30,17 +31,16 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener, Dis
     private static final Logger log = LoggerFactory.getLogger(DebouncingAsyncFileListener.class);
 
     private final AsyncFileListener delegate;
-    private final long debounceDelayMillis;
-    private final Alarm alarm;
+    private final SingleAlarm alarm;
     private final Object lock = new Object();
 
     private final List<VFileEvent> bufferedEvents = new ArrayList<>();
     private boolean isDisposed = false;
 
-    DebouncingAsyncFileListener(AsyncFileListener delegate, long debounceDelayMillis) {
+    DebouncingAsyncFileListener(AsyncFileListener delegate, int debounceDelayMillis) {
         this.delegate = delegate;
-        this.debounceDelayMillis = debounceDelayMillis;
-        this.alarm = new Alarm(Alarm.ThreadToUse.POOLED_THREAD, this);
+        this.alarm =
+                new SingleAlarm(this::processEvents, debounceDelayMillis, this, Alarm.ThreadToUse.POOLED_THREAD);
     }
 
     @Nullable
@@ -52,30 +52,25 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener, Dis
             }
             log.debug("Received events: {}", events);
             bufferedEvents.addAll(events);
-            scheduleDelegateInvocation();
+            alarm.request();
         }
         return null;
     }
 
-    private void scheduleDelegateInvocation() {
-        alarm.cancelAllRequests();
-        alarm.addRequest(
-                () -> {
-                    List<VFileEvent> eventsToProcess;
-                    synchronized (lock) {
-                        if (isDisposed) {
-                            return;
-                        }
-                        eventsToProcess = new ArrayList<>(bufferedEvents);
-                        bufferedEvents.clear();
-                    }
-                    log.debug("Processing debounced events: {}", eventsToProcess);
-                    AsyncFileListener.ChangeApplier applier = delegate.prepareChange(eventsToProcess);
-                    if (applier != null) {
-                        applier.afterVfsChange();
-                    }
-                },
-                debounceDelayMillis);
+    private void processEvents() {
+        List<VFileEvent> eventsToProcess;
+        synchronized (lock) {
+            if (isDisposed) {
+                return;
+            }
+            eventsToProcess = new ArrayList<>(bufferedEvents);
+            bufferedEvents.clear();
+        }
+        log.debug("Processing debounced events: {}", eventsToProcess);
+        AsyncFileListener.ChangeApplier applier = delegate.prepareChange(eventsToProcess);
+        if (applier != null) {
+            applier.afterVfsChange();
+        }
     }
 
     @Override
@@ -85,8 +80,7 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener, Dis
                 return;
             }
             isDisposed = true;
+            alarm.cancelAllRequests();
         }
-        alarm.cancelAllRequests();
-        alarm.dispose();
     }
 }

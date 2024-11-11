@@ -27,7 +27,7 @@ public final class VersionPropsListenerRegistrar implements AsyncFileListener {
 
     VersionPropsListenerRegistrar() {
         AsyncFileListener versionPropsListener = new VersionPropsFileListener();
-        debouncedListener = new DebouncingAsyncFileListener(versionPropsListener, 100);
+        debouncedListener = new DebouncingAsyncFileListener(versionPropsListener, 250);
     }
 
     @Nullable
