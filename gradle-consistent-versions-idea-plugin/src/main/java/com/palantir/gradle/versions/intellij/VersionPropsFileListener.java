@@ -65,7 +65,7 @@ public final class VersionPropsFileListener implements AsyncFileListener {
                 .filter(Project::isInitialized)
                 .filter(Predicate.not(ComponentManager::isDisposed))
                 .filter(project -> versionPropsEvents.stream()
-                        .anyMatch(event -> event.getPath().startsWith(project.getBasePath())
+                        .anyMatch(event -> event.getPath().startsWith(project.getBasePath() + "/")
                                 && !isFileMalformed(project, event.getFile())))
                 .toList();
 
