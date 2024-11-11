@@ -39,8 +39,7 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener, Dis
 
     DebouncingAsyncFileListener(AsyncFileListener delegate, int debounceDelayMillis) {
         this.delegate = delegate;
-        this.alarm =
-                new SingleAlarm(this::processEvents, debounceDelayMillis, this, Alarm.ThreadToUse.POOLED_THREAD);
+        this.alarm = new SingleAlarm(this::processEvents, debounceDelayMillis, this, Alarm.ThreadToUse.POOLED_THREAD);
     }
 
     @Nullable
