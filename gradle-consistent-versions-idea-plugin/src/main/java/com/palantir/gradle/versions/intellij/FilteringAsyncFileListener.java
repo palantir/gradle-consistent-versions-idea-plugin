@@ -46,6 +46,8 @@ public class FilteringAsyncFileListener implements AsyncFileListener {
                 })
                 .toList();
 
+        log.debug("Events after filtering {}", filteredEvents);
+
         if (filteredEvents.isEmpty()) {
             return null;
         }
