@@ -16,10 +16,7 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
@@ -27,7 +24,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
 import org.slf4j.Logger;
@@ -37,23 +33,10 @@ public final class ContentsUtil {
     private static final Logger log = LoggerFactory.getLogger(ContentsUtil.class);
 
     public static ContentResults fetchPageContents(URL pageUrl) {
-        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-
-        if (indicator == null) {
-            return ContentResults.empty();
-        }
-
         try {
-            Future<ContentResults> future =
-                    ApplicationManager.getApplication().executeOnPooledThread(fetchContentTask(pageUrl, indicator));
-            ContentResults content =
-                    com.intellij.openapi.application.ex.ApplicationUtil.runWithCheckCanceled(future::get, indicator);
-            if (content == null) {
-                return ContentResults.empty();
-            }
-            return content;
+            return fetchContentTask(pageUrl).call();
         } catch (InterruptedException | ProcessCanceledException e) {
-            log.debug("Fetch operation was cancelled", e);
+            log.warn("Fetch operation was cancelled", e);
             return ContentResults.empty();
         } catch (Exception e) {
             log.warn("Failed to fetch contents", e);
@@ -61,16 +44,12 @@ public final class ContentsUtil {
         }
     }
 
-    private static Callable<ContentResults> fetchContentTask(URL pageUrl, ProgressIndicator indicator) {
+    private static Callable<ContentResults> fetchContentTask(URL pageUrl) {
         return () -> {
             HttpURLConnection connection = null;
             try {
                 connection = (HttpURLConnection) pageUrl.openConnection();
                 connection.setRequestMethod("GET");
-
-                if (indicator.isCanceled()) {
-                    throw new ProcessCanceledException();
-                }
 
                 int responseCode = connection.getResponseCode();
                 if (responseCode != HttpURLConnection.HTTP_OK) {
@@ -81,7 +60,7 @@ public final class ContentsUtil {
                         new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
                 return ContentResults.of(in.lines().collect(Collectors.joining("\n")));
             } catch (ConnectException e) {
-                log.debug("Connection refused on page {}", pageUrl, e);
+                log.warn("Connection refused on page {}", pageUrl, e);
                 return ContentResults.empty();
             } finally {
                 if (connection != null) {

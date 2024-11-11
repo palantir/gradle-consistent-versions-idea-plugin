@@ -17,6 +17,7 @@
 package com.palantir.gradle.versions.intellij;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
@@ -25,17 +26,22 @@ import com.palantir.gradle.versions.intellij.ContentsUtil.ContentResults;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import one.util.streamex.EntryStream;
+import one.util.streamex.StreamEx;
 import org.immutables.value.Value;
+import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -57,10 +63,10 @@ public class RepositoryExplorer {
     // In general, we don't want to be caching version data as it changes often. However, for wildcard complete it
     // can be very expensive to repeatedly get data that realistically doesn't change on a second by second basis so
     // having a short-lived cache is okay
-    private final Cache<String, Set<DependencyVersion>> shortLivedVersionCache = Caffeine.newBuilder()
+    private final AsyncLoadingCache<String, Set<DependencyVersion>> shortLivedVersionCache = Caffeine.newBuilder()
             .expireAfterWrite(2, TimeUnit.MINUTES)
             .maximumSize(10000)
-            .build();
+            .buildAsync(this::blah);
 
     public final Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, String url) {
         String urlString = url + group.asUrlString();
@@ -90,34 +96,63 @@ public class RepositoryExplorer {
         return parsedGroupPartOrPackageName;
     }
 
-    public final VersionResults getVersions(DependencyGroup group, DependencyName dependencyPackage, String url) {
-        String urlString = url + group.asUrlString() + dependencyPackage.name() + "/maven-metadata.xml";
+    public record GroupAndDep(DependencyGroup group, DependencyName dependencyPackage, String url) {}
 
-        Set<DependencyVersion> cacheVersions = shortLivedVersionCache.getIfPresent(urlString);
-        if (cacheVersions != null) {
-            return VersionResults.of(cacheVersions, false);
-        }
+    public final Set<DependencyVersion> getVersions(List<GroupAndDep> groupAndDeps, Runnable onLoadMore) {
+        Map<GroupAndDep, Optional<Set<DependencyVersion>>> alreadyInCacheOrNot = StreamEx.of(groupAndDeps)
+                .toMap(groupAndDep -> {
+                    String urlString = urlFor(groupAndDep);
 
+                    return Optional.ofNullable(
+                            shortLivedVersionCache.synchronous().getIfPresent(urlString));
+                });
+
+        log.warn(
+                "not loaded groups: {}",
+                EntryStream.of(alreadyInCacheOrNot)
+                        .filterValues(Optional::isEmpty)
+                        .keys()
+                        .count());
+
+        EntryStream.of(alreadyInCacheOrNot)
+                .filterValues(Optional::isEmpty)
+                .forKeyValue((groupAndDep, url) -> shortLivedVersionCache
+                        .get(urlFor(groupAndDep))
+                        .thenAccept(versions -> {
+                            onLoadMore.run();
+                        }));
+
+        return EntryStream.of(alreadyInCacheOrNot)
+                .values()
+                .filter(Optional::isPresent)
+                .flatMap(Optional::stream)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+    }
+
+    private Set<DependencyVersion> blah(String urlString) {
         ContentResults result = fetchContent(urlString);
 
         if (result.isEmpty()) {
-            log.debug("Fetch of metadata cancelled or failed");
-            return VersionResults.empty(false);
+            log.warn("Fetch of metadata cancelled or failed: {}", result.responseCode());
+            return Set.of();
         }
 
         if (result.isError()) {
-            log.debug("Metadata fetch failed with a {} response code", result.responseCode());
+            log.warn("Metadata fetch failed with a {} response code", result.responseCode());
             if (result.responseCode() >= 400 && result.responseCode() < 500) {
                 folderCache.put(urlString, Collections.emptySet());
             }
-            return VersionResults.empty(false);
+            return Set.of();
         }
 
-        Set<DependencyVersion> parsedVersions = parseVersionsFromContent(result.content());
-        shortLivedVersionCache.put(urlString, parsedVersions);
+        return parseVersionsFromContent(result.content());
+    }
 
-        // Only want to trigger a refresh if something has been added
-        return VersionResults.of(parsedVersions, true);
+    private static @NotNull String urlFor(GroupAndDep groupAndDep) {
+        String urlString = groupAndDep.url + groupAndDep.group().asUrlString()
+                + groupAndDep.dependencyPackage().name() + "/maven-metadata.xml";
+        return urlString;
     }
 
     private ContentResults fetchContent(String urlString) {

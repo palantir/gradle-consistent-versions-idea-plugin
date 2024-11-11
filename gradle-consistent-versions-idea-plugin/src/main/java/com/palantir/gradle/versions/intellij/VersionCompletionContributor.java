@@ -15,6 +15,7 @@
  */
 package com.palantir.gradle.versions.intellij;
 
+import com.google.common.base.Suppliers;
 import com.intellij.codeInsight.completion.BaseCompletionService;
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
@@ -35,17 +36,25 @@ import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
+import com.palantir.gradle.versions.intellij.RepositoryExplorer.GroupAndDep;
 import com.palantir.gradle.versions.intellij.RepositoryExplorer.VersionResults;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
-import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import one.util.streamex.StreamEx;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VersionCompletionContributor extends CompletionContributor {
 
     private static final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
+    private static final Logger log = LoggerFactory.getLogger(VersionCompletionContributor.class);
 
     VersionCompletionContributor() {
         extend(
@@ -87,38 +96,49 @@ public class VersionCompletionContributor extends CompletionContributor {
 
                         if (!dependencyName.name().contains("*")) {
                             RepositoryLoader.loadRepositories(project)
-                                    .forEach(url -> addToResults(sortedResultSet, url, group, dependencyName));
+                                    .forEach(url -> addToResults(
+                                            sortedResultSet, List.of(new GroupAndDep(group, dependencyName, url))));
                             return;
                         }
 
-                        StreamEx.of(RepositoryLoader.loadRepositories(project))
+                        log.warn("Starting completions");
+
+                        List<GroupAndDep> groupAndDeps = StreamEx.of(RepositoryLoader.loadRepositories(project))
                                 .flatMap(url -> StreamEx.of(repositoryExplorer.getGroupPartOrPackageName(group, url))
                                         .filter(pkgName -> pkgName.name()
                                                 .startsWith(
                                                         dependencyName.name().replace("*", "")))
-                                        .map(pkgName -> new AbstractMap.SimpleEntry<>(url, pkgName)))
-                                .forEach(entry -> {
+                                        .map(pkgName -> new SimpleEntry<>(url, pkgName)))
+                                .map(entry -> {
                                     String url = entry.getKey();
                                     GroupPartOrPackageName pkgName = entry.getValue();
                                     DependencyName depName = DependencyName.of(pkgName.name());
-                                    addToResults(sortedResultSet, url, group, depName);
-                                });
+                                    return new GroupAndDep(group, depName, url);
+                                })
+                                .toList();
+
+                        addToResults(sortedResultSet, groupAndDeps);
                     }
 
-                    private void addToResults(
-                            CompletionResultSet resultSet,
-                            String url,
-                            DependencyGroup group,
-                            DependencyName dependencyName) {
-                        StreamEx.of(repositoryExplorer.getVersions(group, dependencyName, url))
-                                .peek(this::refreshIfContentAdded)
-                                .flatMap(this::streamVersions)
+                    private void addToResults(CompletionResultSet resultSet, List<GroupAndDep> groupAndDeps) {
+                        Supplier<Void> refreshOnce = Suppliers.memoize(() -> {
+                            triggerRefresh();
+                            return null;
+                        });
+
+                        Set<DependencyVersion> versionResults =
+                                repositoryExplorer.getVersions(groupAndDeps, refreshOnce::get);
+
+                        List<LookupElement> collect = versionResults.stream()
                                 .map(this::createLookupElement)
-                                .forEach(resultSet::addElement);
+                                .collect(Collectors.toList());
+
+                        resultSet.addAllElements(collect);
                     }
 
                     private void refreshIfContentAdded(VersionResults versionResults) {
                         if (versionResults.contentAdded()) {
+                            log.warn("Content added, refreshing");
                             triggerRefresh();
                         }
                     }
@@ -161,6 +181,7 @@ public class VersionCompletionContributor extends CompletionContributor {
             }
 
             CompletionProgressIndicator completionProgressIndicator = (CompletionProgressIndicator) completionProgress;
+            log.warn("Scheduling restarting completion");
             completionProgressIndicator.scheduleRestart();
         });
     }
