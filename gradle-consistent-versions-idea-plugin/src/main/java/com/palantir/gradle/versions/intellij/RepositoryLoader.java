@@ -27,8 +27,11 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
@@ -56,12 +59,33 @@ public final class RepositoryLoader {
                     // This is a temporary workaround to ignore localhost and file system from maven local - long term
                     // we should fix localhost on the GCV side, and we should be able to explore the maven local repo
                     .filter(url -> !url.contains("localhost") && !url.startsWith("file:"))
+                    .sorted(new RepositoryComparator())
                     .collect(Collectors.toCollection(LinkedHashSet::new));
         } catch (IOException e) {
             log.error("Failed to load repositories", e);
         }
 
         return Set.of(DEFAULT);
+    }
+
+    private static final class RepositoryComparator implements Comparator<String> {
+        private static final Map<String, Integer> KEYWORD_SCORES = Map.of(
+                "release", 15,
+                "jar", 10,
+                "dist", -5,
+                "internal", -10);
+
+        @Override
+        public int compare(String repo1, String repo2) {
+            return Integer.compare(getScore(repo2.toLowerCase(Locale.ROOT)), getScore(repo1.toLowerCase(Locale.ROOT)));
+        }
+
+        private int getScore(String repo) {
+            return KEYWORD_SCORES.entrySet().stream()
+                    .filter(entry -> repo.contains(entry.getKey()))
+                    .mapToInt(Map.Entry::getValue)
+                    .sum();
+        }
     }
 
     @Value.Immutable
