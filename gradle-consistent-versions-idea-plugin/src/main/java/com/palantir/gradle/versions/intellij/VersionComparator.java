@@ -102,8 +102,9 @@ public record VersionComparator(boolean latest, List<Integer> numericParts, List
 
                     return Integer.compare(index1, index2); // Lower index = higher priority
                 })
-                .findFirst(result -> result != 0)
-                .orElseGet(() -> Integer.compare(qualifiers2.size(), qualifiers1.size()));
+                .findFirst(result -> result != 0) // Find the first non-zero comparison
+                .orElseGet(() -> Integer.compare(
+                        qualifiers2.size(), qualifiers1.size())); // if all zero compare lengths of qualifier lists
     }
 
     private static Qualifier parseQualifier(String raw) {

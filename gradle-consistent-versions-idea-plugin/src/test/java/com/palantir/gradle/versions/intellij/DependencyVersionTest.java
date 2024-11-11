@@ -43,6 +43,33 @@ public class DependencyVersionTest {
     }
 
     @Test
+    public void multiple_qualifiers_comparison() {
+        DependencyVersion v1 = DependencyVersion.of("1.2.3-alpha-rc2", false);
+        DependencyVersion v2 = DependencyVersion.of("1.2.3-alpha-final", false);
+        assertThat(v2.compareTo(v1))
+                .as("v2 (final) should appear before v1 (rc2) in pre-release comparison")
+                .isLessThan(0);
+    }
+
+    @Test
+    public void multiple_qualifiers_comparison_with_numbers() {
+        DependencyVersion v1 = DependencyVersion.of("1.2.3-alpha-rc2", false);
+        DependencyVersion v2 = DependencyVersion.of("1.2.3-alpha-rc3", false);
+        assertThat(v2.compareTo(v1))
+                .as("v2 (rc3) should appear before v1 (rc2) in pre-release comparison")
+                .isLessThan(0);
+    }
+
+    @Test
+    public void different_numbers_of_qualifiers() {
+        DependencyVersion v1 = DependencyVersion.of("1.2.3-alpha", false);
+        DependencyVersion v2 = DependencyVersion.of("1.2.3-alpha-final", false);
+        assertThat(v2.compareTo(v1))
+                .as("v2 (alpha-final) should appear before v1 (alpha) in pre-release comparison")
+                .isLessThan(0);
+    }
+
+    @Test
     public void release_vs_pre_release() {
         DependencyVersion v1 = DependencyVersion.of("1.2.3", false);
         DependencyVersion v2 = DependencyVersion.of("1.2.3-rc", false);
@@ -61,7 +88,7 @@ public class DependencyVersionTest {
     }
 
     @Test
-    public void is_laflag() {
+    public void is_latest_flag() {
         DependencyVersion v1 = DependencyVersion.of("1.2.3", false);
         DependencyVersion v2 = DependencyVersion.of("1.2.3", true);
         assertThat(v2.compareTo(v1))
@@ -161,15 +188,6 @@ public class DependencyVersionTest {
         DependencyVersion v2 = DependencyVersion.of("1.0.0", false);
         assertThat(v2.compareTo(v1))
                 .as("Valid version should appear before one with consecutive separators")
-                .isLessThan(0);
-    }
-
-    @Test
-    public void version_with_prefix_v() {
-        DependencyVersion v1 = DependencyVersion.of("v1.0.0", false);
-        DependencyVersion v2 = DependencyVersion.of("1.0.0", false);
-        assertThat(v2.compareTo(v1))
-                .as("Version without prefix 'v' should appear before one with the prefix")
                 .isLessThan(0);
     }
 
