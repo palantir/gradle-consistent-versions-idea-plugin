@@ -114,9 +114,9 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
         assertThat(repositories)
                 .as("Should maintain the correct order of repositories")
                 .containsExactly(
-                        "release-jar",
+                        "release-JAR",
                         "release",
-                        "release-dist",
+                        "RELEASE-dist",
                         "jar",
                         "internal-jar",
                         "random",
