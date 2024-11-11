@@ -23,6 +23,7 @@ import com.intellij.util.Alarm;
 import com.intellij.util.SingleAlarm;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +33,7 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener {
 
     private final AsyncFileListener delegate;
     private final SingleAlarm alarm;
-    private final Object lock = new Object();
-
-    private final List<VFileEvent> bufferedEvents = new ArrayList<>();
+    private final LinkedBlockingQueue<VFileEvent> bufferedEvents = new LinkedBlockingQueue<>();
 
     DebouncingAsyncFileListener(AsyncFileListener delegate, int debounceDelayMillis, Disposable parentDisposable) {
         this.delegate = delegate;
@@ -45,20 +44,19 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener {
     @Nullable
     @Override
     public ChangeApplier prepareChange(List<? extends VFileEvent> events) {
-        synchronized (lock) {
-            log.debug("Received events: {}", events);
-            bufferedEvents.addAll(events);
-            alarm.request();
-        }
+        log.debug("Received events: {}", events);
+        bufferedEvents.addAll(events);
+        alarm.request();
         return null;
     }
 
     private void processEvents() {
-        List<VFileEvent> eventsToProcess;
-        synchronized (lock) {
-            eventsToProcess = new ArrayList<>(bufferedEvents);
-            bufferedEvents.clear();
+        List<VFileEvent> eventsToProcess = new ArrayList<>();
+        int drained = bufferedEvents.drainTo(eventsToProcess);
+        if (drained == 0) {
+            return;
         }
+
         log.debug("Processing debounced events: {}", eventsToProcess);
         AsyncFileListener.ChangeApplier applier = delegate.prepareChange(eventsToProcess);
         if (applier != null) {
