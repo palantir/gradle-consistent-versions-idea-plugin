@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -76,7 +77,7 @@ public final class RepositoryLoader {
 
         @Override
         public int compare(String repo1, String repo2) {
-            return Integer.compare(getScore(repo2), getScore(repo1));
+            return Integer.compare(getScore(repo2.toLowerCase(Locale.ROOT)), getScore(repo1.toLowerCase(Locale.ROOT)));
         }
 
         private int getScore(String repo) {

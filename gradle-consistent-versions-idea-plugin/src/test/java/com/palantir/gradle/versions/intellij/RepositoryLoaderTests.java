@@ -100,10 +100,10 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
                     <repositories>
                       <repository url="dist"/>
                       <repository url="internal"/>
-                      <repository url="release-dist"/>
+                      <repository url="RELEASE-dist"/>
                       <repository url="internal-dist"/>
                       <repository url="internal-jar"/>
-                      <repository url="release-jar"/>
+                      <repository url="release-JAR"/>
                       <repository url="release"/>
                       <repository url="random"/>
                       <repository url="jar"/>
