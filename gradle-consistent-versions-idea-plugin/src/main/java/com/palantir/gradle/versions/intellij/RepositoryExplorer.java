@@ -78,7 +78,7 @@ public class RepositoryExplorer {
         }
 
         if (result.isError()) {
-            log.error("Content fetch failed with a {} response code", result.responseCode());
+            log.debug("Content fetch failed with a {} response code", result.responseCode());
             if (result.responseCode() >= 400 && result.responseCode() < 500) {
                 folderCache.put(urlString, Collections.emptySet());
             }
@@ -106,7 +106,7 @@ public class RepositoryExplorer {
         }
 
         if (result.isError()) {
-            log.error("Metadata fetch failed with a {} response code", result.responseCode());
+            log.debug("Metadata fetch failed with a {} response code", result.responseCode());
             if (result.responseCode() >= 400 && result.responseCode() < 500) {
                 folderCache.put(urlString, Collections.emptySet());
             }
