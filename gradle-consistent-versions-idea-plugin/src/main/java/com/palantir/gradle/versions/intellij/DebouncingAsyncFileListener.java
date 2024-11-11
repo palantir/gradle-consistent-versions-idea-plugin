@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class DebouncingAsyncFileListener implements AsyncFileListener, Disposable {
+public final class DebouncingAsyncFileListener implements AsyncFileListener {
     private static final Logger log = LoggerFactory.getLogger(DebouncingAsyncFileListener.class);
 
     private final AsyncFileListener delegate;
@@ -35,20 +35,17 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener, Dis
     private final Object lock = new Object();
 
     private final List<VFileEvent> bufferedEvents = new ArrayList<>();
-    private boolean isDisposed = false;
 
-    DebouncingAsyncFileListener(AsyncFileListener delegate, int debounceDelayMillis) {
+    DebouncingAsyncFileListener(AsyncFileListener delegate, int debounceDelayMillis, Disposable parentDisposable) {
         this.delegate = delegate;
-        this.alarm = new SingleAlarm(this::processEvents, debounceDelayMillis, this, Alarm.ThreadToUse.POOLED_THREAD);
+        this.alarm = new SingleAlarm(
+                this::processEvents, debounceDelayMillis, parentDisposable, Alarm.ThreadToUse.POOLED_THREAD);
     }
 
     @Nullable
     @Override
     public ChangeApplier prepareChange(List<? extends VFileEvent> events) {
         synchronized (lock) {
-            if (isDisposed) {
-                return null;
-            }
             log.debug("Received events: {}", events);
             bufferedEvents.addAll(events);
             alarm.request();
@@ -59,9 +56,6 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener, Dis
     private void processEvents() {
         List<VFileEvent> eventsToProcess;
         synchronized (lock) {
-            if (isDisposed) {
-                return;
-            }
             eventsToProcess = new ArrayList<>(bufferedEvents);
             bufferedEvents.clear();
         }
@@ -69,17 +63,6 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener, Dis
         AsyncFileListener.ChangeApplier applier = delegate.prepareChange(eventsToProcess);
         if (applier != null) {
             applier.afterVfsChange();
-        }
-    }
-
-    @Override
-    public void dispose() {
-        synchronized (lock) {
-            if (isDisposed) {
-                return;
-            }
-            isDisposed = true;
-            alarm.cancelAllRequests();
         }
     }
 }
