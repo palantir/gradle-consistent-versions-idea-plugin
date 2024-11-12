@@ -21,7 +21,6 @@ import com.intellij.openapi.vfs.AsyncFileListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import java.util.List;
-import java.util.function.Predicate;
 import org.jetbrains.annotations.Nullable;
 
 public final class VersionPropsListenerRegistrar implements AsyncFileListener, Disposable {
@@ -29,14 +28,13 @@ public final class VersionPropsListenerRegistrar implements AsyncFileListener, D
     private final FilteringAsyncFileListener changeListener;
 
     VersionPropsListenerRegistrar() {
-
-        Predicate<VirtualFile> filter = virtualFile -> {
-            String fileName = virtualFile.getName();
-            return "versions.props".equals(fileName) || "versions.lock".equals(fileName);
-        };
-
         this.changeListener = new FilteringAsyncFileListener(
-                new DebouncingAsyncFileListener(new VersionPropsFileListener(), 250, this), filter);
+                new DebouncingAsyncFileListener(new VersionPropsFileListener(), 250, this), this::isRelevantFile);
+    }
+
+    private boolean isRelevantFile(VirtualFile virtualFile) {
+        String fileName = virtualFile.getName();
+        return "versions.props".equals(fileName) || "versions.lock".equals(fileName);
     }
 
     @Nullable

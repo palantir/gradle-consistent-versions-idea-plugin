@@ -23,6 +23,7 @@ import com.intellij.util.Alarm;
 import com.intellij.util.SingleAlarm;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -33,7 +34,7 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener {
 
     private final AsyncFileListener delegate;
     private final SingleAlarm alarm;
-    private final LinkedBlockingQueue<VFileEvent> bufferedEvents = new LinkedBlockingQueue<>();
+    private final BlockingQueue<VFileEvent> bufferedEvents = new LinkedBlockingQueue<>();
 
     DebouncingAsyncFileListener(AsyncFileListener delegate, int debounceDelayMillis, Disposable parentDisposable) {
         this.delegate = delegate;
