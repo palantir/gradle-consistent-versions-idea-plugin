@@ -41,12 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import one.util.streamex.StreamEx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class VersionCompletionContributor extends CompletionContributor {
-    private static final Logger log = LoggerFactory.getLogger(VersionCompletionContributor.class);
-
     private static final GroupPartOrPackageNameExplorer GROUP_PART_OR_PACKAGE_NAME_EXPLORER =
             new GroupPartOrPackageNameExplorer();
     private static final VersionExplorer VERSION_EXPLORER = new VersionExplorer();
