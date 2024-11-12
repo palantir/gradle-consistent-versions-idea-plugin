@@ -16,7 +16,6 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.google.common.base.Suppliers;
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
@@ -29,13 +28,13 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
-import java.util.function.Supplier;
 
-public class FolderCompletionContributor extends CompletionContributor {
+public class GroupPartOrPackageNameCompletionContributor extends CompletionContributor {
 
-    private final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
+    private static final GroupPartOrPackageNameExplorer GROUP_PART_OR_PACKAGE_NAME_EXPLORER =
+            new GroupPartOrPackageNameExplorer();
 
-    public FolderCompletionContributor() {
+    public GroupPartOrPackageNameCompletionContributor() {
         cacheCompletion(VersionPropsTypes.GROUP_PART);
         cacheCompletion(VersionPropsTypes.NAME_KEY);
         remoteCompletion(VersionPropsTypes.GROUP_PART);
@@ -52,14 +51,11 @@ public class FolderCompletionContributor extends CompletionContributor {
 
                 Project project = parameters.getOriginalFile().getProject();
 
-                Supplier<Void> refreshOnce = Suppliers.memoize(() -> {
-                    VersionCompletionContributor.triggerRefresh();
-                    return null;
-                });
-
                 RepositoryLoader.loadRepositories(project).stream()
                         .flatMap(url ->
-                                repositoryExplorer.getGroupPartOrPackageName(group, url, refreshOnce::get).stream())
+                                GROUP_PART_OR_PACKAGE_NAME_EXPLORER
+                                        .getGroupPartOrPackageName(group, url, null)
+                                        .stream())
                         .map(LookupElementBuilder::create)
                         .forEach(resultSet::addElement);
             }

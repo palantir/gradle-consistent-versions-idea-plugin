@@ -27,39 +27,26 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import one.util.streamex.EntryStream;
 import one.util.streamex.StreamEx;
-import org.immutables.value.Value;
 import org.jetbrains.annotations.NotNull;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RepositoryExplorer {
-    private static final Logger log = LoggerFactory.getLogger(RepositoryExplorer.class);
+public class VersionExplorer {
+    private static final Logger log = LoggerFactory.getLogger(VersionExplorer.class);
 
     private static final Pattern UNSTABLE_VERSION_PATTERN = Pattern.compile(
             ".*(-rc(-?\\d+)?|-SNAPSHOT|-M\\d+|-alpha(-?\\d+)?|-beta(-?\\d+)?)$", Pattern.CASE_INSENSITIVE);
-
-    private final AsyncLoadingCache<String, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
-            .expireAfterWrite(10, TimeUnit.MINUTES)
-            .maximumSize(100)
-            .buildAsync(urlString -> fetchAndParseFromUrl(urlString, this::parseGroupPartOrPackageNameFromContent));
 
     // In general, we don't want to be caching version data as it changes often. However, for wildcard complete it
     // can be very expensive to repeatedly get data that realistically doesn't change on a second by second basis so
@@ -67,24 +54,7 @@ public class RepositoryExplorer {
     private final AsyncLoadingCache<String, Set<DependencyVersion>> shortLivedVersionCache = Caffeine.newBuilder()
             .expireAfterWrite(2, TimeUnit.MINUTES)
             .maximumSize(10000)
-            .buildAsync(urlString -> fetchAndParseFromUrl(urlString, this::parseVersionsFromContent));
-
-    public final Set<GroupPartOrPackageName> getGroupPartOrPackageName(
-            DependencyGroup group, String url, Runnable onLoadMore) {
-        String urlString = url + group.asUrlString();
-
-        // Check if the data is already in the cache synchronously
-        Optional<Set<GroupPartOrPackageName>> cachedGroupParts =
-                Optional.ofNullable(folderCache.synchronous().getIfPresent(urlString));
-
-        if (cachedGroupParts.isPresent()) {
-            return cachedGroupParts.get();
-        }
-        folderCache.get(urlString).thenAccept(result -> {
-            onLoadMore.run();
-        });
-        return Collections.emptySet();
-    }
+            .buildAsync(this::fetchAndParseFromUrl );
 
     public record GroupAndDep(DependencyGroup group, DependencyName dependencyPackage, String url) {}
 
@@ -120,7 +90,7 @@ public class RepositoryExplorer {
                 .collect(Collectors.toSet());
     }
 
-    private <T> Set<T> fetchAndParseFromUrl(String urlString, Function<String, Set<T>> parser) {
+    private Set<DependencyVersion> fetchAndParseFromUrl(String urlString) {
         ContentResults result = fetchContent(urlString);
 
         if (result.isEmpty()) {
@@ -130,13 +100,10 @@ public class RepositoryExplorer {
 
         if (result.isError()) {
             log.warn("Content fetch failed with a {} response code", result.responseCode());
-            if (result.responseCode() >= 400 && result.responseCode() < 500) {
-                folderCache.put(urlString, CompletableFuture.completedFuture(Collections.emptySet()));
-            }
             return Set.of();
         }
 
-        return parser.apply(result.content());
+        return parseVersionsFromContent(result.content());
     }
 
     private static @NotNull String urlFor(GroupAndDep groupAndDep) {
@@ -152,21 +119,6 @@ public class RepositoryExplorer {
             log.error("Malformed URL", e);
             return ContentResults.empty();
         }
-    }
-
-    private Set<GroupPartOrPackageName> parseGroupPartOrPackageNameFromContent(String contents) {
-        Set<GroupPartOrPackageName> groupPartsOrPackageNames = new HashSet<>();
-
-        Document doc = Jsoup.parse(contents);
-        Elements links = doc.select("a[href]");
-
-        for (Element link : links) {
-            String href = link.attr("href");
-            if (href.endsWith("/") && !href.contains(".")) {
-                groupPartsOrPackageNames.add(GroupPartOrPackageName.of(href.substring(0, href.length() - 1)));
-            }
-        }
-        return groupPartsOrPackageNames;
     }
 
     private Set<DependencyVersion> parseVersionsFromContent(String content) {
@@ -212,26 +164,5 @@ public class RepositoryExplorer {
         return !UNSTABLE_VERSION_PATTERN
                 .matcher(version.toLowerCase(Locale.ROOT))
                 .matches();
-    }
-
-    @Value.Immutable
-    public abstract static class VersionResults {
-        protected abstract Set<DependencyVersion> versions();
-
-        protected abstract Boolean contentAdded();
-
-        public static VersionResults of(Set<DependencyVersion> versions, Boolean contentAdded) {
-            return ImmutableVersionResults.builder()
-                    .versions(versions)
-                    .contentAdded(contentAdded)
-                    .build();
-        }
-
-        public static VersionResults empty(Boolean contentAdded) {
-            return ImmutableVersionResults.builder()
-                    .versions(Collections.emptySet())
-                    .contentAdded(contentAdded)
-                    .build();
-        }
     }
 }

@@ -26,7 +26,7 @@ public class RepositoryExplorerTests {
 
     @Test
     void test_gets_release_from_metadata() {
-        RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
+        GroupPartOrPackageNameExplorer repositoryExplorer = new GroupPartOrPackageNameExplorer();
 
         Versioning versioning = Versioning.builder()
                 .release("2.0.0")
@@ -52,7 +52,7 @@ public class RepositoryExplorerTests {
 
     @Test
     void test_gets_latest_from_metadata_if_release_missing() {
-        RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
+        GroupPartOrPackageNameExplorer repositoryExplorer = new GroupPartOrPackageNameExplorer();
 
         Versioning versioning = Versioning.builder()
                 .release("")
@@ -78,7 +78,7 @@ public class RepositoryExplorerTests {
 
     @Test
     void test_unstable_versions_are_skipped() {
-        RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
+        GroupPartOrPackageNameExplorer repositoryExplorer = new GroupPartOrPackageNameExplorer();
 
         Versioning versioning = Versioning.builder()
                 .release("2.1.0-SNAPSHOT")
@@ -117,7 +117,7 @@ public class RepositoryExplorerTests {
 
     @Test
     void test_rc_in_name_is_matched() {
-        RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
+        GroupPartOrPackageNameExplorer repositoryExplorer = new GroupPartOrPackageNameExplorer();
 
         Versioning versioning = Versioning.builder()
                 .release("2.1.0-SNAPSHOT")

@@ -48,7 +48,7 @@
     <completion.contributor language="VersionProps"
                             implementationClass="com.palantir.gradle.versions.intellij.VersionCompletionContributor" order="last"/>
     <completion.contributor language="VersionProps"
-                            implementationClass="com.palantir.gradle.versions.intellij.FolderCompletionContributor"/>
+                            implementationClass="com.palantir.gradle.versions.intellij.GroupPartOrPackageNameCompletionContributor"/>
     <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
     <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsFileListener"/>
     <annotator language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.CommentAnnotator" />
