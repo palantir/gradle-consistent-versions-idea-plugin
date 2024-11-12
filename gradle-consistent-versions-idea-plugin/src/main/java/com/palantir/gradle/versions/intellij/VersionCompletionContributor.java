@@ -139,7 +139,6 @@ public class VersionCompletionContributor extends CompletionContributor {
                             return existingCount;
                         }));
 
-        // Create LookupElements with counts in the typeText
         List<LookupElement> lookupElements = versionCounts.entrySet().stream()
                 .map(entry ->
                         createLookupElement(entry.getKey(), entry.getValue().get(), groupAndDeps.size()))

@@ -45,7 +45,6 @@ public class GroupPartOrPackageNameExplorer {
             DependencyGroup group, String url, Runnable onLoadMore) {
         String urlString = url + group.asUrlString();
 
-        // Check if the data is already in the cache synchronously
         Optional<Set<GroupPartOrPackageName>> cachedGroupParts =
                 Optional.ofNullable(groupPartOrPackageNameCache.synchronous().getIfPresent(urlString));
 
