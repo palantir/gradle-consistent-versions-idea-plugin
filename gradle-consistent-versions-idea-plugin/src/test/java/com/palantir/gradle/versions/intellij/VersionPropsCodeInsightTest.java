@@ -70,31 +70,34 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_group_completion() {
+    public void test_group_completion() throws InterruptedException {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.baseline.<caret>");
         fixture.complete(CompletionType.BASIC);
+        Thread.sleep(500);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
         UsefulTestCase.assertContainsElements(lookupElementStrings, "baseline-error-prone", "baseline-null-away");
     }
 
     @Test
-    public void test_package_completion() {
+    public void test_package_completion() throws InterruptedException {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.baseline:<caret>");
         fixture.complete(CompletionType.BASIC);
+        Thread.sleep(500);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
         UsefulTestCase.assertContainsElements(lookupElementStrings, "baseline-error-prone", "baseline-null-away");
     }
 
     @Test
-    public void test_other_file_names() {
+    public void test_other_file_names() throws InterruptedException {
         JavaCodeInsightTestFixture fixture = getFixture();
         fixture.configureByText("notVersions.props", "com.palantir.baseline:<caret>");
+        Thread.sleep(500);
         fixture.complete(CompletionType.BASIC);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         UsefulTestCase.assertEmpty(lookupElementStrings);
