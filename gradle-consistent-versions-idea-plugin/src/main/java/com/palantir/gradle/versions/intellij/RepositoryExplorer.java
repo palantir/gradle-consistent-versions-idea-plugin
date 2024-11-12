@@ -18,7 +18,6 @@ package com.palantir.gradle.versions.intellij;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
-import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -35,7 +34,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import one.util.streamex.EntryStream;
@@ -55,10 +56,10 @@ public class RepositoryExplorer {
     private static final Pattern UNSTABLE_VERSION_PATTERN = Pattern.compile(
             ".*(-rc(-?\\d+)?|-SNAPSHOT|-M\\d+|-alpha(-?\\d+)?|-beta(-?\\d+)?)$", Pattern.CASE_INSENSITIVE);
 
-    private final Cache<String, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
+    private final AsyncLoadingCache<String, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .maximumSize(100)
-            .build();
+            .buildAsync(urlString -> fetchAndParseFromUrl(urlString, this::parseGroupPartOrPackageNameFromContent));
 
     // In general, we don't want to be caching version data as it changes often. However, for wildcard complete it
     // can be very expensive to repeatedly get data that realistically doesn't change on a second by second basis so
@@ -66,34 +67,23 @@ public class RepositoryExplorer {
     private final AsyncLoadingCache<String, Set<DependencyVersion>> shortLivedVersionCache = Caffeine.newBuilder()
             .expireAfterWrite(2, TimeUnit.MINUTES)
             .maximumSize(10000)
-            .buildAsync(this::blah);
+            .buildAsync(urlString -> fetchAndParseFromUrl(urlString, this::parseVersionsFromContent));
 
-    public final Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, String url) {
+    public final Set<GroupPartOrPackageName> getGroupPartOrPackageName(
+            DependencyGroup group, String url, Runnable onLoadMore) {
         String urlString = url + group.asUrlString();
 
-        Set<GroupPartOrPackageName> cachedGroupPartOrPackageName = folderCache.getIfPresent(urlString);
-        if (cachedGroupPartOrPackageName != null) {
-            return cachedGroupPartOrPackageName;
+        // Check if the data is already in the cache synchronously
+        Optional<Set<GroupPartOrPackageName>> cachedGroupParts =
+                Optional.ofNullable(folderCache.synchronous().getIfPresent(urlString));
+
+        if (cachedGroupParts.isPresent()) {
+            return cachedGroupParts.get();
         }
-
-        ContentResults result = fetchContent(urlString);
-
-        if (result.isEmpty()) {
-            log.debug("Fetch cancelled or failed");
-            return Collections.emptySet();
-        }
-
-        if (result.isError()) {
-            log.debug("Content fetch failed with a {} response code", result.responseCode());
-            if (result.responseCode() >= 400 && result.responseCode() < 500) {
-                folderCache.put(urlString, Collections.emptySet());
-            }
-            return Collections.emptySet();
-        }
-
-        Set<GroupPartOrPackageName> parsedGroupPartOrPackageName = fetchFoldersFromContent(result.content());
-        folderCache.put(urlString, parsedGroupPartOrPackageName);
-        return parsedGroupPartOrPackageName;
+        folderCache.get(urlString).thenAccept(result -> {
+            onLoadMore.run();
+        });
+        return Collections.emptySet();
     }
 
     public record GroupAndDep(DependencyGroup group, DependencyName dependencyPackage, String url) {}
@@ -130,29 +120,28 @@ public class RepositoryExplorer {
                 .collect(Collectors.toSet());
     }
 
-    private Set<DependencyVersion> blah(String urlString) {
+    private <T> Set<T> fetchAndParseFromUrl(String urlString, Function<String, Set<T>> parser) {
         ContentResults result = fetchContent(urlString);
 
         if (result.isEmpty()) {
-            log.warn("Fetch of metadata cancelled or failed: {}", result.responseCode());
+            log.warn("Fetch of content cancelled or failed: {}", result.responseCode());
             return Set.of();
         }
 
         if (result.isError()) {
-            log.warn("Metadata fetch failed with a {} response code", result.responseCode());
+            log.warn("Content fetch failed with a {} response code", result.responseCode());
             if (result.responseCode() >= 400 && result.responseCode() < 500) {
-                folderCache.put(urlString, Collections.emptySet());
+                folderCache.put(urlString, CompletableFuture.completedFuture(Collections.emptySet()));
             }
             return Set.of();
         }
 
-        return parseVersionsFromContent(result.content());
+        return parser.apply(result.content());
     }
 
     private static @NotNull String urlFor(GroupAndDep groupAndDep) {
-        String urlString = groupAndDep.url + groupAndDep.group().asUrlString()
+        return groupAndDep.url + groupAndDep.group().asUrlString()
                 + groupAndDep.dependencyPackage().name() + "/maven-metadata.xml";
-        return urlString;
     }
 
     private ContentResults fetchContent(String urlString) {
@@ -165,8 +154,8 @@ public class RepositoryExplorer {
         }
     }
 
-    private Set<GroupPartOrPackageName> fetchFoldersFromContent(String contents) {
-        Set<GroupPartOrPackageName> folders = new HashSet<>();
+    private Set<GroupPartOrPackageName> parseGroupPartOrPackageNameFromContent(String contents) {
+        Set<GroupPartOrPackageName> groupPartsOrPackageNames = new HashSet<>();
 
         Document doc = Jsoup.parse(contents);
         Elements links = doc.select("a[href]");
@@ -174,10 +163,10 @@ public class RepositoryExplorer {
         for (Element link : links) {
             String href = link.attr("href");
             if (href.endsWith("/") && !href.contains(".")) {
-                folders.add(GroupPartOrPackageName.of(href.substring(0, href.length() - 1)));
+                groupPartsOrPackageNames.add(GroupPartOrPackageName.of(href.substring(0, href.length() - 1)));
             }
         }
-        return folders;
+        return groupPartsOrPackageNames;
     }
 
     private Set<DependencyVersion> parseVersionsFromContent(String content) {

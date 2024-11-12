@@ -37,7 +37,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.RepositoryExplorer.GroupAndDep;
-import com.palantir.gradle.versions.intellij.RepositoryExplorer.VersionResults;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
@@ -46,7 +45,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import one.util.streamex.StreamEx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,8 +101,14 @@ public class VersionCompletionContributor extends CompletionContributor {
 
                         log.warn("Starting completions");
 
+                        Supplier<Void> refreshOnce = Suppliers.memoize(() -> {
+                            triggerRefresh();
+                            return null;
+                        });
+
                         List<GroupAndDep> groupAndDeps = StreamEx.of(RepositoryLoader.loadRepositories(project))
-                                .flatMap(url -> StreamEx.of(repositoryExplorer.getGroupPartOrPackageName(group, url))
+                                .flatMap(url -> StreamEx.of(repositoryExplorer.getGroupPartOrPackageName(
+                                                group, url, refreshOnce::get))
                                         .filter(pkgName -> pkgName.name()
                                                 .startsWith(
                                                         dependencyName.name().replace("*", "")))
@@ -136,17 +140,6 @@ public class VersionCompletionContributor extends CompletionContributor {
                         resultSet.addAllElements(collect);
                     }
 
-                    private void refreshIfContentAdded(VersionResults versionResults) {
-                        if (versionResults.contentAdded()) {
-                            log.warn("Content added, refreshing");
-                            triggerRefresh();
-                        }
-                    }
-
-                    private Stream<DependencyVersion> streamVersions(VersionResults versionResults) {
-                        return versionResults.versions().stream();
-                    }
-
                     private LookupElement createLookupElement(DependencyVersion version) {
                         if (version.isLatest()) {
                             return LookupElementBuilder.create(version)
@@ -167,7 +160,7 @@ public class VersionCompletionContributor extends CompletionContributor {
         return true;
     }
 
-    private void triggerRefresh() {
+    public static void triggerRefresh() {
         ApplicationManager.getApplication().invokeLater(() -> {
             CompletionService completionService = CompletionService.getCompletionService();
             if (completionService == null) {
