@@ -42,7 +42,9 @@ import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import one.util.streamex.StreamEx;
@@ -101,7 +103,7 @@ public class VersionCompletionContributor extends CompletionContributor {
                             return;
                         }
 
-                        log.warn("Starting completions");
+                        log.debug("Starting completions");
 
                         Supplier<Void> refreshOnce = Suppliers.memoize(() -> {
                             triggerRefresh();
@@ -133,23 +135,33 @@ public class VersionCompletionContributor extends CompletionContributor {
                             return null;
                         });
 
-                        Set<DependencyVersion> versionResults =
-                                VERSION_EXPLORER.getVersions(groupAndDeps, refreshOnce::get);
+                        Map<DependencyVersion, AtomicInteger> versionCounts = StreamEx.of(groupAndDeps)
+                                .parallel()
+                                .flatMap(groupAndDep ->
+                                        VERSION_EXPLORER.getVersions(groupAndDep, refreshOnce::get).stream())
+                                .collect(Collectors.toConcurrentMap(
+                                        Function.identity(), v -> new AtomicInteger(1), (existingCount, newCount) -> {
+                                            existingCount.addAndGet(newCount.get());
+                                            return existingCount;
+                                        }));
 
-                        List<LookupElement> collect = versionResults.stream()
-                                .map(this::createLookupElement)
+                        // Create LookupElements with counts in the typeText
+                        List<LookupElement> lookupElements = versionCounts.entrySet().stream()
+                                .map(entry -> createLookupElement(
+                                        entry.getKey(), entry.getValue().get(), groupAndDeps.size()))
                                 .collect(Collectors.toList());
 
-                        resultSet.addAllElements(collect);
+                        resultSet.addAllElements(lookupElements);
                     }
 
-                    private LookupElement createLookupElement(DependencyVersion version) {
+                    private LookupElement createLookupElement(DependencyVersion version, int count, int total) {
+                        String typeText = (total > 1) ? count + "/" + total : "";
                         if (version.isLatest()) {
-                            return LookupElementBuilder.create(version)
-                                    .withTypeText("Possible Latest", true)
-                                    .withLookupString("latest");
+                            typeText += " (latest)";
                         }
-                        return LookupElementBuilder.create(version);
+                        return LookupElementBuilder.create(version)
+                                .withTypeText(typeText, true)
+                                .withLookupString(version.toString());
                     }
                 });
     }
@@ -177,7 +189,7 @@ public class VersionCompletionContributor extends CompletionContributor {
             }
 
             CompletionProgressIndicator completionProgressIndicator = (CompletionProgressIndicator) completionProgress;
-            log.warn("Scheduling restarting completion");
+            log.debug("Scheduling restarting completion");
             completionProgressIndicator.scheduleRestart();
         });
     }

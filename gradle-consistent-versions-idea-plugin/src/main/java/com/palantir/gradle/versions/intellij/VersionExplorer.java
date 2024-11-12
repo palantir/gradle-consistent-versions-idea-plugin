@@ -22,22 +22,16 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.palantir.gradle.versions.intellij.ContentsUtil.ContentResults;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import one.util.streamex.EntryStream;
-import one.util.streamex.StreamEx;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,44 +48,29 @@ public class VersionExplorer {
     private final AsyncLoadingCache<String, Set<DependencyVersion>> shortLivedVersionCache = Caffeine.newBuilder()
             .expireAfterWrite(2, TimeUnit.MINUTES)
             .maximumSize(10000)
-            .buildAsync(this::fetchAndParseFromUrl );
+            .buildAsync(this::fetchAndParseFromUrl);
 
     public record GroupAndDep(DependencyGroup group, DependencyName dependencyPackage, String url) {}
 
-    public final Set<DependencyVersion> getVersions(List<GroupAndDep> groupAndDeps, Runnable onLoadMore) {
-        Map<GroupAndDep, Optional<Set<DependencyVersion>>> alreadyInCacheOrNot = StreamEx.of(groupAndDeps)
-                .toMap(groupAndDep -> {
-                    String urlString = urlFor(groupAndDep);
+    public final Set<DependencyVersion> getVersions(GroupAndDep groupAndDep, Runnable onLoadMore) {
+        String urlString = urlFor(groupAndDep);
 
-                    return Optional.ofNullable(
-                            shortLivedVersionCache.synchronous().getIfPresent(urlString));
-                });
+        Optional<Set<DependencyVersion>> versionsOptional =
+                Optional.ofNullable(shortLivedVersionCache.synchronous().getIfPresent(urlString));
 
-        log.warn(
-                "not loaded groups: {}",
-                EntryStream.of(alreadyInCacheOrNot)
-                        .filterValues(Optional::isEmpty)
-                        .keys()
-                        .count());
+        if (versionsOptional.isEmpty()) {
+            log.debug("Not loaded group: {}", groupAndDep);
+            shortLivedVersionCache.get(urlString).thenAccept(versions -> {
+                onLoadMore.run();
+            });
+        }
 
-        EntryStream.of(alreadyInCacheOrNot)
-                .filterValues(Optional::isEmpty)
-                .forKeyValue((groupAndDep, url) -> shortLivedVersionCache
-                        .get(urlFor(groupAndDep))
-                        .thenAccept(versions -> {
-                            onLoadMore.run();
-                        }));
-
-        return EntryStream.of(alreadyInCacheOrNot)
-                .values()
-                .filter(Optional::isPresent)
-                .flatMap(Optional::stream)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
+        // Return the versions we have in the cache (if any)
+        return versionsOptional.orElseGet(Collections::emptySet);
     }
 
     private Set<DependencyVersion> fetchAndParseFromUrl(String urlString) {
-        ContentResults result = fetchContent(urlString);
+        ContentResults result = ContentsUtil.fetchPageContents(urlString);
 
         if (result.isEmpty()) {
             log.warn("Fetch of content cancelled or failed: {}", result.responseCode());
@@ -109,16 +88,6 @@ public class VersionExplorer {
     private static @NotNull String urlFor(GroupAndDep groupAndDep) {
         return groupAndDep.url + groupAndDep.group().asUrlString()
                 + groupAndDep.dependencyPackage().name() + "/maven-metadata.xml";
-    }
-
-    private ContentResults fetchContent(String urlString) {
-        try {
-            URL url = new URL(urlString);
-            return ContentsUtil.fetchPageContents(url);
-        } catch (MalformedURLException e) {
-            log.error("Malformed URL", e);
-            return ContentResults.empty();
-        }
     }
 
     private Set<DependencyVersion> parseVersionsFromContent(String content) {

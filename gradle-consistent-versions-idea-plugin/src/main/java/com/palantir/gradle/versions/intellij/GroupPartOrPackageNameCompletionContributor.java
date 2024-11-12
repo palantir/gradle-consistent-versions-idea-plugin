@@ -35,8 +35,8 @@ public class GroupPartOrPackageNameCompletionContributor extends CompletionContr
             new GroupPartOrPackageNameExplorer();
 
     public GroupPartOrPackageNameCompletionContributor() {
-        cacheCompletion(VersionPropsTypes.GROUP_PART);
-        cacheCompletion(VersionPropsTypes.NAME_KEY);
+        //        cacheCompletion(VersionPropsTypes.GROUP_PART);
+        //        cacheCompletion(VersionPropsTypes.NAME_KEY);
         remoteCompletion(VersionPropsTypes.GROUP_PART);
         remoteCompletion(VersionPropsTypes.NAME_KEY);
     }

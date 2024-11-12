@@ -35,10 +35,11 @@ import org.slf4j.LoggerFactory;
 public class GroupPartOrPackageNameExplorer {
     private static final Logger log = LoggerFactory.getLogger(GroupPartOrPackageNameExplorer.class);
 
-    private final AsyncLoadingCache<String, Set<GroupPartOrPackageName>> folderCache = Caffeine.newBuilder()
-            .expireAfterWrite(10, TimeUnit.MINUTES)
-            .maximumSize(100)
-            .buildAsync(this::fetchAndParseFromUrl);
+    private final AsyncLoadingCache<String, Set<GroupPartOrPackageName>> groupPartOrPackageNameCache =
+            Caffeine.newBuilder()
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .maximumSize(100)
+                    .buildAsync(this::fetchAndParseFromUrl);
 
     public final Set<GroupPartOrPackageName> getGroupPartOrPackageName(
             DependencyGroup group, String url, Runnable onLoadMore) {
@@ -46,12 +47,12 @@ public class GroupPartOrPackageNameExplorer {
 
         // Check if the data is already in the cache synchronously
         Optional<Set<GroupPartOrPackageName>> cachedGroupParts =
-                Optional.ofNullable(folderCache.synchronous().getIfPresent(urlString));
+                Optional.ofNullable(groupPartOrPackageNameCache.synchronous().getIfPresent(urlString));
 
         if (cachedGroupParts.isPresent()) {
             return cachedGroupParts.get();
         }
-        folderCache.get(urlString).thenAccept(result -> {
+        groupPartOrPackageNameCache.get(urlString).thenAccept(result -> {
             onLoadMore.run();
         });
         return Collections.emptySet();
@@ -68,7 +69,7 @@ public class GroupPartOrPackageNameExplorer {
         if (result.isError()) {
             log.warn("Content fetch failed with a {} response code", result.responseCode());
             if (result.responseCode() >= 400 && result.responseCode() < 500) {
-                folderCache.put(urlString, CompletableFuture.completedFuture(Collections.emptySet()));
+                groupPartOrPackageNameCache.put(urlString, CompletableFuture.completedFuture(Collections.emptySet()));
             }
             return Set.of();
         }
