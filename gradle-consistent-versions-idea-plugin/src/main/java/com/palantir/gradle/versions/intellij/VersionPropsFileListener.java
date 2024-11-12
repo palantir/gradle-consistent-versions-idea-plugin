@@ -17,6 +17,7 @@
 package com.palantir.gradle.versions.intellij;
 
 import com.intellij.execution.executors.DefaultRunExecutor;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ComponentManager;
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder;
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings;
@@ -25,6 +26,7 @@ import com.intellij.openapi.externalSystem.task.TaskCallback;
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.AsyncFileListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent;
@@ -56,6 +58,12 @@ public final class VersionPropsFileListener implements AsyncFileListener {
                 .filter(event -> "versions.props".equals(event.getFile().getName()))
                 .toList();
 
+        List<VFileContentChangeEvent> versionLockEvents = events.stream()
+                .filter(event -> event instanceof VFileContentChangeEvent)
+                .map(event -> (VFileContentChangeEvent) event)
+                .filter(event -> "versions.lock".equals(event.getFile().getName()))
+                .toList();
+
         if (versionPropsEvents.isEmpty()) {
             return null;
         }
@@ -64,9 +72,12 @@ public final class VersionPropsFileListener implements AsyncFileListener {
                         ProjectManager.getInstance().getOpenProjects())
                 .filter(Project::isInitialized)
                 .filter(Predicate.not(ComponentManager::isDisposed))
+                .filter(project -> project.getBasePath() != null)
                 .filter(project -> versionPropsEvents.stream()
                         .anyMatch(event -> event.getPath().startsWith(project.getBasePath() + "/")
                                 && !isFileMalformed(project, event.getFile())))
+                .filter(project -> versionLockEvents.stream()
+                        .noneMatch(event -> event.getPath().startsWith(project.getBasePath())))
                 .toList();
 
         return new ChangeApplier() {
@@ -138,12 +149,14 @@ public final class VersionPropsFileListener implements AsyncFileListener {
     }
 
     private static boolean isFileMalformed(Project project, VirtualFile file) {
-        PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
+        return ApplicationManager.getApplication().runReadAction((Computable<Boolean>) () -> {
+            PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
 
-        if (psiFile == null || !(psiFile.getFileType() instanceof VersionPropsFileType)) {
-            return true;
-        }
+            if (psiFile == null || !(psiFile.getFileType() instanceof VersionPropsFileType)) {
+                return true;
+            }
 
-        return PsiTreeUtil.hasErrorElements(psiFile);
+            return PsiTreeUtil.hasErrorElements(psiFile);
+        });
     }
 }

@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: Don't write locks if both the locks and props change
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/67
