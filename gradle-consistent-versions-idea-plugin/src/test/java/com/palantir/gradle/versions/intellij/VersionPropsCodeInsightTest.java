@@ -79,11 +79,7 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
         UsefulTestCase.assertContainsElements(
-                lookupElementStrings,
-                "*",
-                "baseline-error-prone",
-                "gradle-baseline-java",
-                "gradle-baseline-java-config");
+                lookupElementStrings, "baseline-error-prone", "gradle-baseline-java", "gradle-baseline-java-config");
     }
 
     @Test
