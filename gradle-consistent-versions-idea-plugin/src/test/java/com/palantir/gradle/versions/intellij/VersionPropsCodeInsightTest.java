@@ -37,11 +37,12 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_version_completion() {
+    public void test_version_completion() throws InterruptedException {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.goethe:goethe = <caret>");
         fixture.complete(CompletionType.BASIC);
+        Thread.sleep(500);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
         assertThat(lookupElementStrings)
@@ -52,11 +53,12 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_wild_card_version_completion() {
+    public void test_wild_card_version_completion() throws InterruptedException {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.tokens:* = <caret>");
         fixture.complete(CompletionType.BASIC);
+        Thread.sleep(500);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
         assertThat(lookupElementStrings)
