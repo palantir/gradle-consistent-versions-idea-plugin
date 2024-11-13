@@ -54,5 +54,7 @@
     <annotator language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.CommentAnnotator" />
     <externalSystemTaskNotificationListener implementation="com.palantir.gradle.versions.intellij.LoadCacheOnGradleProjectRefresh" />
     <applicationService serviceImplementation="com.palantir.gradle.versions.intellij.GradleCacheExplorer" />
+    <applicationService serviceImplementation="com.palantir.gradle.versions.intellij.VersionExplorer" />
+    <applicationService serviceImplementation="com.palantir.gradle.versions.intellij.GroupPartOrPackageNameExplorer" />
   </extensions>
 </idea-plugin>

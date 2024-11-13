@@ -18,6 +18,7 @@ package com.palantir.gradle.versions.intellij;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.intellij.openapi.application.ApplicationManager;
 import com.palantir.gradle.versions.intellij.ContentsUtil.ContentResults;
 import java.util.Collections;
 import java.util.HashSet;
@@ -90,4 +91,10 @@ public class GroupPartOrPackageNameExplorer {
         }
         return groupPartsOrPackageNames;
     }
+
+    static GroupPartOrPackageNameExplorer getInstance() {
+        return ApplicationManager.getApplication().getService(GroupPartOrPackageNameExplorer.class);
+    }
+
+    private GroupPartOrPackageNameExplorer() {}
 }

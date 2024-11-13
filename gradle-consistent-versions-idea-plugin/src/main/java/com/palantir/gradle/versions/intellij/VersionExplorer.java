@@ -21,6 +21,7 @@ import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.intellij.openapi.application.ApplicationManager;
 import com.palantir.gradle.versions.intellij.ContentsUtil.ContentResults;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -134,4 +135,10 @@ public class VersionExplorer {
                 .matcher(version.toLowerCase(Locale.ROOT))
                 .matches();
     }
+
+    static VersionExplorer getInstance() {
+        return ApplicationManager.getApplication().getService(VersionExplorer.class);
+    }
+
+    private VersionExplorer() {}
 }

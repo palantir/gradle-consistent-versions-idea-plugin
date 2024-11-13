@@ -43,10 +43,6 @@ import java.util.stream.Collectors;
 import one.util.streamex.StreamEx;
 
 public class VersionCompletionContributor extends CompletionContributor {
-    private static final GroupPartOrPackageNameExplorer GROUP_PART_OR_PACKAGE_NAME_EXPLORER =
-            new GroupPartOrPackageNameExplorer();
-    private static final VersionExplorer VERSION_EXPLORER = new VersionExplorer();
-
     VersionCompletionContributor() {
         extend(
                 CompletionType.BASIC,
@@ -116,8 +112,9 @@ public class VersionCompletionContributor extends CompletionContributor {
             Project project, DependencyGroup group, DependencyName dependencyName) {
         String dependencyNamePrefix = dependencyName.name().replace("*", "");
         return StreamEx.of(RepositoryLoader.loadRepositories(project))
-                .flatMap(url -> StreamEx.of(GROUP_PART_OR_PACKAGE_NAME_EXPLORER.getGroupPartOrPackageName(
-                                group, url, CompletionRefreshUtil.refreshOnceSupplier()::get))
+                .flatMap(url -> StreamEx.of(GroupPartOrPackageNameExplorer.getInstance()
+                                .getGroupPartOrPackageName(
+                                        group, url, CompletionRefreshUtil.refreshOnceSupplier()::get))
                         .filter(pkgName -> pkgName.name().startsWith(dependencyNamePrefix))
                         .map(pkgName -> new SimpleEntry<>(url, pkgName)))
                 .map(entry -> {
@@ -131,8 +128,8 @@ public class VersionCompletionContributor extends CompletionContributor {
 
     private void addToResults(CompletionResultSet resultSet, List<GroupAndDep> groupAndDeps) {
         Map<DependencyVersion, AtomicInteger> versionCounts = StreamEx.of(groupAndDeps)
-                .flatMap(groupAndDep ->
-                        VERSION_EXPLORER
+                .flatMap(
+                        groupAndDep -> VersionExplorer.getInstance()
                                 .getVersions(groupAndDep, CompletionRefreshUtil.refreshOnceSupplier()::get)
                                 .stream())
                 .collect(Collectors.toConcurrentMap(
