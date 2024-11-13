@@ -26,8 +26,8 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RefreshUtil {
-    private static final Logger log = LoggerFactory.getLogger(RefreshUtil.class);
+public class CompletionRefreshUtil {
+    private static final Logger log = LoggerFactory.getLogger(CompletionRefreshUtil.class);
 
     public static Supplier<Void> refreshOnceSupplier() {
         return Suppliers.memoize(() -> {
@@ -55,5 +55,5 @@ public class RefreshUtil {
         });
     }
 
-    private RefreshUtil() {}
+    private CompletionRefreshUtil() {}
 }

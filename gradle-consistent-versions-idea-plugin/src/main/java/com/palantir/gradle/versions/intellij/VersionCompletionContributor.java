@@ -117,7 +117,7 @@ public class VersionCompletionContributor extends CompletionContributor {
         String dependencyNamePrefix = dependencyName.name().replace("*", "");
         return StreamEx.of(RepositoryLoader.loadRepositories(project))
                 .flatMap(url -> StreamEx.of(GROUP_PART_OR_PACKAGE_NAME_EXPLORER.getGroupPartOrPackageName(
-                                group, url, RefreshUtil.refreshOnceSupplier()::get))
+                                group, url, CompletionRefreshUtil.refreshOnceSupplier()::get))
                         .filter(pkgName -> pkgName.name().startsWith(dependencyNamePrefix))
                         .map(pkgName -> new SimpleEntry<>(url, pkgName)))
                 .map(entry -> {
@@ -132,7 +132,9 @@ public class VersionCompletionContributor extends CompletionContributor {
     private void addToResults(CompletionResultSet resultSet, List<GroupAndDep> groupAndDeps) {
         Map<DependencyVersion, AtomicInteger> versionCounts = StreamEx.of(groupAndDeps)
                 .flatMap(groupAndDep ->
-                        VERSION_EXPLORER.getVersions(groupAndDep, RefreshUtil.refreshOnceSupplier()::get).stream())
+                        VERSION_EXPLORER
+                                .getVersions(groupAndDep, CompletionRefreshUtil.refreshOnceSupplier()::get)
+                                .stream())
                 .collect(Collectors.toConcurrentMap(
                         Function.identity(), v -> new AtomicInteger(1), (existingCount, newCount) -> {
                             existingCount.addAndGet(newCount.get());
