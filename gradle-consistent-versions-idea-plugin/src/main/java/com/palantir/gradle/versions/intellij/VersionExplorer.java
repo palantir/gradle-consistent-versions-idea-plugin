@@ -23,6 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
+import com.intellij.openapi.components.Service.Level;
 import com.palantir.gradle.versions.intellij.ContentsUtil.ContentResults;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Service
+@Service(Level.APP)
 public final class VersionExplorer {
     private static final Logger log = LoggerFactory.getLogger(VersionExplorer.class);
 
