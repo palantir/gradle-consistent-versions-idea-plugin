@@ -59,18 +59,18 @@ public final class VersionExplorer {
     public Set<DependencyVersion> getVersions(GroupAndDep groupAndDep, Runnable onLoadMore) {
         String urlString = urlFor(groupAndDep);
 
-        Optional<Set<DependencyVersion>> versionsOptional =
+        Optional<Set<DependencyVersion>> cachedVersions =
                 Optional.ofNullable(shortLivedVersionCache.synchronous().getIfPresent(urlString));
 
-        if (versionsOptional.isEmpty()) {
-            log.debug("Not loaded group: {}", groupAndDep);
-            shortLivedVersionCache.get(urlString).thenAccept(versions -> {
-                onLoadMore.run();
-            });
+        if (cachedVersions.isPresent()) {
+            return cachedVersions.get();
         }
 
-        // Return the versions we have in the cache (if any)
-        return versionsOptional.orElseGet(Collections::emptySet);
+        shortLivedVersionCache.get(urlString).thenAccept(result -> {
+            onLoadMore.run();
+        });
+
+        return Collections.emptySet();
     }
 
     private Set<DependencyVersion> fetchAndParseFromUrl(String urlString) {
