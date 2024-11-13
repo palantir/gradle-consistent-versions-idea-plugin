@@ -26,8 +26,6 @@ public class RepositoryExplorerTests {
 
     @Test
     void test_gets_release_from_metadata() {
-        VersionExplorer repositoryExplorer = new VersionExplorer();
-
         Versioning versioning = Versioning.builder()
                 .release("2.0.0")
                 .latest("1.0.0")
@@ -41,7 +39,7 @@ public class RepositoryExplorerTests {
                 .versioning(versioning)
                 .build();
 
-        Set<DependencyVersion> versions = repositoryExplorer.parseVersionsFromContent(metadata);
+        Set<DependencyVersion> versions = VersionExplorer.parseVersionsFromContent(metadata);
 
         assertThat(versions).as("Check that versions set is not empty").isNotEmpty();
 
@@ -52,8 +50,6 @@ public class RepositoryExplorerTests {
 
     @Test
     void test_gets_latest_from_metadata_if_release_missing() {
-        VersionExplorer repositoryExplorer = new VersionExplorer();
-
         Versioning versioning = Versioning.builder()
                 .release("")
                 .latest("2.0.0")
@@ -67,7 +63,7 @@ public class RepositoryExplorerTests {
                 .versioning(versioning)
                 .build();
 
-        Set<DependencyVersion> versions = repositoryExplorer.parseVersionsFromContent(metadata);
+        Set<DependencyVersion> versions = VersionExplorer.parseVersionsFromContent(metadata);
 
         assertThat(versions).as("Check that versions set is not empty").isNotEmpty();
 
@@ -78,8 +74,6 @@ public class RepositoryExplorerTests {
 
     @Test
     void test_unstable_versions_are_skipped() {
-        VersionExplorer repositoryExplorer = new VersionExplorer();
-
         Versioning versioning = Versioning.builder()
                 .release("2.1.0-SNAPSHOT")
                 .latest("2.1.0-SNAPSHOT")
@@ -106,7 +100,7 @@ public class RepositoryExplorerTests {
                 .versioning(versioning)
                 .build();
 
-        Set<DependencyVersion> versions = repositoryExplorer.parseVersionsFromContent(metadata);
+        Set<DependencyVersion> versions = VersionExplorer.parseVersionsFromContent(metadata);
 
         assertThat(versions).as("Check that versions set is not empty").isNotEmpty();
 
@@ -117,8 +111,6 @@ public class RepositoryExplorerTests {
 
     @Test
     void test_rc_in_name_is_matched() {
-        VersionExplorer repositoryExplorer = new VersionExplorer();
-
         Versioning versioning = Versioning.builder()
                 .release("2.1.0-SNAPSHOT")
                 .latest("2.1.0-SNAPSHOT")
@@ -132,7 +124,7 @@ public class RepositoryExplorerTests {
                 .versioning(versioning)
                 .build();
 
-        Set<DependencyVersion> versions = repositoryExplorer.parseVersionsFromContent(metadata);
+        Set<DependencyVersion> versions = VersionExplorer.parseVersionsFromContent(metadata);
 
         assertThat(versions).as("Check that versions set is not empty").isNotEmpty();
 

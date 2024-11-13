@@ -19,6 +19,8 @@ package com.palantir.gradle.versions.intellij;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.Service;
+import com.intellij.openapi.components.Service.Level;
 import com.palantir.gradle.versions.intellij.ContentsUtil.ContentResults;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,7 +35,8 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GroupPartOrPackageNameExplorer {
+@Service(Level.APP)
+public final class GroupPartOrPackageNameExplorer {
     private static final Logger log = LoggerFactory.getLogger(GroupPartOrPackageNameExplorer.class);
 
     private final AsyncLoadingCache<String, Set<GroupPartOrPackageName>> groupPartOrPackageNameCache =
@@ -42,7 +45,7 @@ public class GroupPartOrPackageNameExplorer {
                     .maximumSize(100)
                     .buildAsync(this::fetchAndParseFromUrl);
 
-    public final Set<GroupPartOrPackageName> getGroupPartOrPackageName(
+    public Set<GroupPartOrPackageName> getGroupPartOrPackageName(
             DependencyGroup group, String url, Runnable onLoadMore) {
         String urlString = url + group.asUrlString();
 

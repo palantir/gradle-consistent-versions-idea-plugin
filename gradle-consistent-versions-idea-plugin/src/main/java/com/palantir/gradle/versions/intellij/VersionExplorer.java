@@ -22,6 +22,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.Service;
 import com.palantir.gradle.versions.intellij.ContentsUtil.ContentResults;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,7 +38,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class VersionExplorer {
+@Service
+public final class VersionExplorer {
     private static final Logger log = LoggerFactory.getLogger(VersionExplorer.class);
 
     private static final Pattern UNSTABLE_VERSION_PATTERN = Pattern.compile(
@@ -53,7 +55,7 @@ public class VersionExplorer {
 
     public record GroupAndDep(DependencyGroup group, DependencyName dependencyPackage, String url) {}
 
-    public final Set<DependencyVersion> getVersions(GroupAndDep groupAndDep, Runnable onLoadMore) {
+    public Set<DependencyVersion> getVersions(GroupAndDep groupAndDep, Runnable onLoadMore) {
         String urlString = urlFor(groupAndDep);
 
         Optional<Set<DependencyVersion>> versionsOptional =
@@ -104,7 +106,7 @@ public class VersionExplorer {
     }
 
     @VisibleForTesting
-    final Set<DependencyVersion> parseVersionsFromContent(Metadata metadata) {
+    static Set<DependencyVersion> parseVersionsFromContent(Metadata metadata) {
         List<String> allVersions = new ArrayList<>(metadata.versioning().versions());
 
         if (allVersions.isEmpty()) {
@@ -119,9 +121,9 @@ public class VersionExplorer {
         // Check if the releaseOrLatestVersion is stable, it not find first stable version, if no stable versions return
         // the releaseOrLatestVersion
         String latestStableVersion = Optional.of(releaseOrLatestVersion)
-                .filter(this::isStableVersion)
+                .filter(VersionExplorer::isStableVersion)
                 .or(() -> Lists.reverse(allVersions).stream()
-                        .filter(this::isStableVersion)
+                        .filter(VersionExplorer::isStableVersion)
                         .findFirst())
                 .orElse(releaseOrLatestVersion);
 
@@ -130,7 +132,7 @@ public class VersionExplorer {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private boolean isStableVersion(String version) {
+    private static boolean isStableVersion(String version) {
         return !UNSTABLE_VERSION_PATTERN
                 .matcher(version.toLowerCase(Locale.ROOT))
                 .matches();

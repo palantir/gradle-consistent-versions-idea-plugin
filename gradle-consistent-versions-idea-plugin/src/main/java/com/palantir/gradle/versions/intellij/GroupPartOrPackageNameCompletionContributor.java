@@ -30,6 +30,10 @@ import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 
 public class GroupPartOrPackageNameCompletionContributor extends CompletionContributor {
+
+    private final GroupPartOrPackageNameExplorer groupPartOrPackageNameExplorer =
+            GroupPartOrPackageNameExplorer.getInstance();
+
     public GroupPartOrPackageNameCompletionContributor() {
         cacheCompletion(VersionPropsTypes.GROUP_PART);
         cacheCompletion(VersionPropsTypes.NAME_KEY);
@@ -49,9 +53,7 @@ public class GroupPartOrPackageNameCompletionContributor extends CompletionContr
 
                 RepositoryLoader.loadRepositories(project).stream()
                         .flatMap(url ->
-                                GroupPartOrPackageNameExplorer.getInstance()
-                                        .getGroupPartOrPackageName(group, url, null)
-                                        .stream())
+                                groupPartOrPackageNameExplorer.getGroupPartOrPackageName(group, url, null).stream())
                         .map(LookupElementBuilder::create)
                         .forEach(resultSet::addElement);
             }
