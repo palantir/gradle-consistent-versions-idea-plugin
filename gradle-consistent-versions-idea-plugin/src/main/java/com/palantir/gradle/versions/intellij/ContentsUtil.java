@@ -44,7 +44,7 @@ public final class ContentsUtil {
         try {
             return fetchContentTask(pageUrl).call();
         } catch (Exception e) {
-            log.warn("Failed to fetch contents", e);
+            log.debug("Failed to fetch contents", e);
             return ContentResults.empty();
         }
     }

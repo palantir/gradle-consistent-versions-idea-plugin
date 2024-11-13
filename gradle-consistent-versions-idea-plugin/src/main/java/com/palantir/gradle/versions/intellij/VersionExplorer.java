@@ -77,12 +77,12 @@ public final class VersionExplorer {
         ContentResults result = ContentsUtil.fetchPageContents(urlString);
 
         if (result.isEmpty()) {
-            log.warn("Fetch of content cancelled or failed: {}", result.responseCode());
+            log.debug("Fetch of content cancelled or failed: {}", result.responseCode());
             return Set.of();
         }
 
         if (result.isError()) {
-            log.warn("Content fetch failed with a {} response code", result.responseCode());
+            log.debug("Content fetch failed with a {} response code", result.responseCode());
             return Set.of();
         }
 

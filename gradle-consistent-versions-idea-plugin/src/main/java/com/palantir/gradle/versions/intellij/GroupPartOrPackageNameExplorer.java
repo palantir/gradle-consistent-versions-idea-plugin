@@ -61,7 +61,7 @@ public final class GroupPartOrPackageNameExplorer {
         } catch (ProcessCanceledException e) {
             log.debug("progress cancelled", e);
         } catch (Exception e) {
-            log.warn("Failed to fetch contents", e);
+            log.debug("Failed to fetch contents", e);
         }
         return Collections.emptySet();
     }

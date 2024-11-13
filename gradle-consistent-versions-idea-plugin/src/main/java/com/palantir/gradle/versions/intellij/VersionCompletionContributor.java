@@ -151,9 +151,9 @@ public class VersionCompletionContributor extends CompletionContributor {
     }
 
     private LookupElement createLookupElement(DependencyVersion version, int count, int total) {
-        String typeText = (total > 1) ? count + "/" + total : "";
+        String typeText = ((total > 1) ? count + "/" + total + " packages" : "");
         if (version.isLatest()) {
-            typeText += " (latest)";
+            typeText = ((total > 1) ? "latest for " : "latest") + typeText;
             return LookupElementBuilder.create(version)
                     .withLookupString("latest")
                     .withTypeText(typeText, true);
