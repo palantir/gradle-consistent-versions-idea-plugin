@@ -54,9 +54,9 @@ public final class VersionExplorer {
             .maximumSize(10000)
             .buildAsync(this::fetchAndParseFromUrl);
 
-    public record GroupAndDep(DependencyGroup group, DependencyName dependencyPackage, String url) {}
+    public record PackageInRepo(DependencyGroup group, DependencyName dependencyPackage, String repositoryUrl) {}
 
-    public Set<DependencyVersion> getVersions(GroupAndDep groupAndDep, Runnable onLoadMore) {
+    public Set<DependencyVersion> getVersions(PackageInRepo groupAndDep, Runnable onLoadMore) {
         String urlString = urlFor(groupAndDep);
 
         Optional<Set<DependencyVersion>> cachedVersions =
@@ -76,7 +76,8 @@ public final class VersionExplorer {
     private Set<DependencyVersion> fetchAndParseFromUrl(String urlString) {
         ContentResults result = ContentsUtil.fetchPageContents(urlString);
 
-        if (result.isEmpty()) {
+        if (result.isE
+        qmpty()) {
             log.warn("Fetch of content cancelled or failed: {}", result.responseCode());
             return Set.of();
         }
@@ -89,8 +90,8 @@ public final class VersionExplorer {
         return parseVersionsFromContent(result.content());
     }
 
-    private static @NotNull String urlFor(GroupAndDep groupAndDep) {
-        return groupAndDep.url + groupAndDep.group().asUrlString()
+    private static @NotNull String urlFor(PackageInRepo groupAndDep) {
+        return groupAndDep.repositoryUrl + groupAndDep.group().asUrlString()
                 + groupAndDep.dependencyPackage().name() + "/maven-metadata.xml";
     }
 

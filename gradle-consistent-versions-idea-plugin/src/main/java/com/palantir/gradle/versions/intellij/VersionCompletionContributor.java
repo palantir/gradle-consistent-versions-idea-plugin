@@ -30,7 +30,7 @@ import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
-import com.palantir.gradle.versions.intellij.VersionExplorer.GroupAndDep;
+import com.palantir.gradle.versions.intellij.VersionExplorer.PackageInRepo;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
@@ -71,7 +71,7 @@ public class VersionCompletionContributor extends CompletionContributor {
                             return;
                         }
 
-                        List<GroupAndDep> groupAndDeps = collectGroupAndDeps(project, group, dependencyName);
+                        List<PackageInRepo> groupAndDeps = collectGroupAndDeps(project, group, dependencyName);
                         addToResults(sortedResultSet, groupAndDeps);
                     }
                 });
@@ -109,10 +109,10 @@ public class VersionCompletionContributor extends CompletionContributor {
             DependencyGroup group,
             DependencyName dependencyName) {
         RepositoryLoader.loadRepositories(project)
-                .forEach(url -> addToResults(sortedResultSet, List.of(new GroupAndDep(group, dependencyName, url))));
+                .forEach(url -> addToResults(sortedResultSet, List.of(new PackageInRepo(group, dependencyName, url))));
     }
 
-    private List<GroupAndDep> collectGroupAndDeps(
+    private List<PackageInRepo> collectGroupAndDeps(
             Project project, DependencyGroup group, DependencyName dependencyName) {
         String dependencyNamePrefix = dependencyName.name().replace("*", "");
         return StreamEx.of(RepositoryLoader.loadRepositories(project))
@@ -124,12 +124,12 @@ public class VersionCompletionContributor extends CompletionContributor {
                     String url = entry.getKey();
                     GroupPartOrPackageName pkgName = entry.getValue();
                     DependencyName depName = DependencyName.of(pkgName.name());
-                    return new GroupAndDep(group, depName, url);
+                    return new PackageInRepo(group, depName, url);
                 })
                 .toList();
     }
 
-    private void addToResults(CompletionResultSet resultSet, List<GroupAndDep> groupAndDeps) {
+    private void addToResults(CompletionResultSet resultSet, List<PackageInRepo> groupAndDeps) {
         Map<DependencyVersion, AtomicInteger> versionCounts = StreamEx.of(groupAndDeps)
                 .flatMap(groupAndDep ->
                         versionExplorer
