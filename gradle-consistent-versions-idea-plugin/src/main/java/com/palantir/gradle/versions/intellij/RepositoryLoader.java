@@ -40,9 +40,9 @@ public final class RepositoryLoader {
 
     private static final ObjectMapper XML_MAPPER = new XmlMapper().registerModule(new GuavaModule());
     private static final String MAVEN_REPOSITORIES_FILE_NAME = ".idea/gcv-maven-repositories.xml";
-    private static final String DEFAULT = "https://repo.maven.apache.org/maven2/";
+    private static final RepositoryUrl DEFAULT = RepositoryUrl.of("https://repo.maven.apache.org/maven2/");
 
-    public static Set<String> loadRepositories(Project project) {
+    public static Set<RepositoryUrl> loadRepositories(Project project) {
         File mavenRepoFile = new File(project.getBasePath(), MAVEN_REPOSITORIES_FILE_NAME);
 
         if (!mavenRepoFile.exists()) {
@@ -55,7 +55,8 @@ public final class RepositoryLoader {
                     .map(RepositoryConfig::url)
                     // This is a temporary workaround to ignore localhost and file system from maven local - long term
                     // we should fix localhost on the GCV side, and we should be able to explore the maven local repo
-                    .filter(url -> !url.contains("localhost") && !url.startsWith("file:"))
+                    .filter(url ->
+                            !url.url().contains("localhost") && !url.url().startsWith("file:"))
                     .collect(Collectors.toCollection(LinkedHashSet::new));
         } catch (IOException e) {
             log.error("Failed to load repositories", e);
@@ -71,7 +72,7 @@ public final class RepositoryLoader {
 
         @Value.Parameter
         @JacksonXmlProperty(isAttribute = true)
-        String url();
+        RepositoryUrl url();
     }
 
     @Value.Immutable

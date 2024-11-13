@@ -54,7 +54,7 @@ public final class VersionExplorer {
             .maximumSize(10000)
             .buildAsync(this::fetchAndParseFromUrl);
 
-    public record PackageInRepo(DependencyGroup group, DependencyName dependencyPackage, String repositoryUrl) {}
+    public record PackageInRepo(DependencyGroup group, DependencyName dependencyPackage, RepositoryUrl repositoryUrl) {}
 
     public Set<DependencyVersion> getVersions(PackageInRepo groupAndDep, Runnable onLoadMore) {
         String urlString = urlFor(groupAndDep);
@@ -90,7 +90,7 @@ public final class VersionExplorer {
     }
 
     private static @NotNull String urlFor(PackageInRepo groupAndDep) {
-        return groupAndDep.repositoryUrl + groupAndDep.group().asUrlString()
+        return groupAndDep.repositoryUrl().url() + groupAndDep.group().asUrlString()
                 + groupAndDep.dependencyPackage().name() + "/maven-metadata.xml";
     }
 

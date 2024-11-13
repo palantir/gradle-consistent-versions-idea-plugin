@@ -114,6 +114,7 @@ public class VersionCompletionContributor extends CompletionContributor {
 
     private List<PackageInRepo> collectGroupAndDeps(
             Project project, DependencyGroup group, DependencyName dependencyName) {
+
         String dependencyNamePrefix = dependencyName.name().replace("*", "");
         return StreamEx.of(RepositoryLoader.loadRepositories(project))
                 .flatMap(url -> StreamEx.of(
@@ -121,7 +122,7 @@ public class VersionCompletionContributor extends CompletionContributor {
                         .filter(pkgName -> pkgName.name().startsWith(dependencyNamePrefix))
                         .map(pkgName -> new SimpleEntry<>(url, pkgName)))
                 .map(entry -> {
-                    String url = entry.getKey();
+                    RepositoryUrl url = entry.getKey();
                     GroupPartOrPackageName pkgName = entry.getValue();
                     DependencyName depName = DependencyName.of(pkgName.name());
                     return new PackageInRepo(group, depName, url);

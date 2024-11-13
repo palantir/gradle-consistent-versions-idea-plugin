@@ -47,7 +47,7 @@ public final class GroupPartOrPackageNameExplorer {
             .maximumSize(10000)
             .build(this::fetchAndParseFromUrl);
 
-    public Set<GroupPartOrPackageName> getCancelableGroupPartOrPackageName(DependencyGroup group, String url) {
+    public Set<GroupPartOrPackageName> getCancelableGroupPartOrPackageName(DependencyGroup group, RepositoryUrl url) {
         ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
 
         if (indicator == null) {
@@ -66,8 +66,8 @@ public final class GroupPartOrPackageNameExplorer {
         return Collections.emptySet();
     }
 
-    public Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, String url) {
-        String urlString = url + group.asUrlString();
+    public Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, RepositoryUrl url) {
+        String urlString = url.url() + group.asUrlString();
 
         try {
             return groupPartOrPackageNameCache.get(urlString);
