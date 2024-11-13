@@ -1,0 +1,6 @@
+type: fix
+fix:
+  description: Prevent projects with the same start to there name writing locks on
+    each other
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/75

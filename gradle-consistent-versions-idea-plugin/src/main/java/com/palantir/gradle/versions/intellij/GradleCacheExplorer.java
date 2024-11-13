@@ -61,7 +61,8 @@ public class GradleCacheExplorer {
 
         Set<String> results = cache.get().stream()
                 .map(url -> extractGroupAndArtifactFromUrl(repoUrls, url))
-                .flatMap(Optional::stream)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toSet());
 
         Set<String> resultsWithStarsIncluded =
