@@ -16,7 +16,6 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.intellij.openapi.progress.ProcessCanceledException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
@@ -45,9 +44,6 @@ public final class ContentsUtil {
     public static ContentResults fetchPageContents(URL pageUrl) {
         try {
             return fetchContentTask(pageUrl).call();
-        } catch (InterruptedException | ProcessCanceledException e) {
-            log.warn("Fetch operation was cancelled", e);
-            return ContentResults.empty();
         } catch (Exception e) {
             log.warn("Failed to fetch contents", e);
             return ContentResults.empty();
@@ -70,7 +66,7 @@ public final class ContentsUtil {
                         new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
                 return ContentResults.of(in.lines().collect(Collectors.joining("\n")));
             } catch (ConnectException e) {
-                log.warn("Connection refused on page {}", pageUrl, e);
+                log.debug("Connection refused on page {}", pageUrl, e);
                 return ContentResults.empty();
             } finally {
                 if (connection != null) {
