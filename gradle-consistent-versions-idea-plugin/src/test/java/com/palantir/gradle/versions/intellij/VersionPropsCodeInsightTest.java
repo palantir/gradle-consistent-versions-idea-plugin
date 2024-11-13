@@ -15,7 +15,9 @@
  */
 package com.palantir.gradle.versions.intellij;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.testFramework.UsefulTestCase;
@@ -37,12 +39,18 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_version_completion() throws InterruptedException {
+    public void test_version_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.goethe:goethe = <caret>");
         fixture.complete(CompletionType.BASIC);
-        Thread.sleep(500);
+
+        await().atMost(60, SECONDS).until(() -> {
+            List<String> lookupElementStrings = fixture.getLookupElementStrings();
+            // By default, the loading element is in lookupElementStrings so we must wait till more elements are present
+            return lookupElementStrings != null && lookupElementStrings.size() > 1;
+        });
+
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
         assertThat(lookupElementStrings)
@@ -53,12 +61,18 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_wild_card_version_completion() throws InterruptedException {
+    public void test_wild_card_version_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.tokens:* = <caret>");
         fixture.complete(CompletionType.BASIC);
-        Thread.sleep(500);
+
+        await().atMost(60, SECONDS).until(() -> {
+            List<String> lookupElementStrings = fixture.getLookupElementStrings();
+            // By default, the loading element is in lookupElementStrings so we must wait till more elements are present
+            return lookupElementStrings != null && lookupElementStrings.size() > 1;
+        });
+
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
         assertThat(lookupElementStrings)
@@ -70,12 +84,17 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_group_completion() throws InterruptedException {
+    public void test_group_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.baseline.<caret>");
         fixture.complete(CompletionType.BASIC);
-        Thread.sleep(500);
+
+        await().atMost(60, SECONDS).until(() -> {
+            List<String> lookupElementStrings = fixture.getLookupElementStrings();
+            return lookupElementStrings != null;
+        });
+
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
         UsefulTestCase.assertContainsElements(
@@ -83,12 +102,17 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_package_completion() throws InterruptedException {
+    public void test_package_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.baseline:<caret>");
         fixture.complete(CompletionType.BASIC);
-        Thread.sleep(500);
+
+        await().atMost(60, SECONDS).until(() -> {
+            List<String> lookupElementStrings = fixture.getLookupElementStrings();
+            return lookupElementStrings != null;
+        });
+
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
         UsefulTestCase.assertContainsElements(
@@ -100,10 +124,9 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_other_file_names() throws InterruptedException {
+    public void test_other_file_names() {
         JavaCodeInsightTestFixture fixture = getFixture();
         fixture.configureByText("notVersions.props", "com.palantir.baseline:<caret>");
-        Thread.sleep(500);
         fixture.complete(CompletionType.BASIC);
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         UsefulTestCase.assertEmpty(lookupElementStrings);

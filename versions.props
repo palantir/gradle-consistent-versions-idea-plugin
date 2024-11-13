@@ -5,6 +5,7 @@ org.immutables:value = 2.10.1
 org.junit.jupiter:junit-jupiter = 5.11.3
 org.jetbrains:annotations = 26.0.1
 com.github.ben-manes.caffeine:caffeine = 3.1.8
+org.awaitility:awaitility = 4.2.2
 
 # Unnecessary once we have lock files
 com.google.code.findbugs:jsr305 = 3.0.2
