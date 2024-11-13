@@ -16,7 +16,7 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import java.io.BufferedReader;
+import com.google.common.io.CharStreams;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -24,7 +24,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 import org.immutables.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,9 +61,9 @@ public final class ContentsUtil {
                     return ContentResults.error(responseCode);
                 }
 
-                BufferedReader in =
-                        new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-                return ContentResults.of(in.lines().collect(Collectors.joining("\n")));
+                InputStreamReader inputStreamReader =
+                        new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
+                return ContentResults.of(CharStreams.toString(inputStreamReader));
             } catch (ConnectException e) {
                 log.debug("Connection refused on page {}", pageUrl, e);
                 return ContentResults.empty();
