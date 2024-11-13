@@ -151,8 +151,11 @@ public class VersionCompletionContributor extends CompletionContributor {
         String typeText = (total > 1) ? count + "/" + total : "";
         if (version.isLatest()) {
             typeText += " (latest)";
+            return LookupElementBuilder.create(version)
+                    .withLookupString("latest")
+                    .withTypeText(typeText, true);
         }
-        return LookupElementBuilder.create(version).withTypeText(typeText, true).withLookupString(version.toString());
+        return LookupElementBuilder.create(version).withTypeText(typeText, true);
     }
 
     private VersionPropsProperty findParentProperty(VersionPropsDependencyVersion versionElement) {
