@@ -16,17 +16,20 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ex.ApplicationUtil;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.Service.Level;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.palantir.gradle.versions.intellij.ContentsUtil.ContentResults;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -39,42 +42,52 @@ import org.slf4j.LoggerFactory;
 public final class GroupPartOrPackageNameExplorer {
     private static final Logger log = LoggerFactory.getLogger(GroupPartOrPackageNameExplorer.class);
 
-    private final AsyncLoadingCache<String, Set<GroupPartOrPackageName>> groupPartOrPackageNameCache =
-            Caffeine.newBuilder()
-                    .expireAfterWrite(10, TimeUnit.MINUTES)
-                    .maximumSize(100)
-                    .buildAsync(this::fetchAndParseFromUrl);
+    private final LoadingCache<String, Set<GroupPartOrPackageName>> groupPartOrPackageNameCache = Caffeine.newBuilder()
+            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .maximumSize(10000)
+            .build(this::fetchAndParseFromUrl);
 
-    public Set<GroupPartOrPackageName> getGroupPartOrPackageName(
-            DependencyGroup group, String url, Runnable onLoadMore) {
+    public Set<GroupPartOrPackageName> getCancelableGroupPartOrPackageName(DependencyGroup group, String url) {
+        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+
+        if (indicator == null) {
+            return Collections.emptySet();
+        }
+
+        try {
+            Future<Set<GroupPartOrPackageName>> future = ApplicationManager.getApplication()
+                    .executeOnPooledThread(() -> getGroupPartOrPackageName(group, url));
+            return ApplicationUtil.runWithCheckCanceled(future::get, indicator);
+        } catch (ProcessCanceledException e) {
+            log.debug("progress cancelled", e);
+        } catch (Exception e) {
+            log.warn("Failed to fetch contents", e);
+        }
+        return Collections.emptySet();
+    }
+
+    public Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, String url) {
         String urlString = url + group.asUrlString();
 
-        Optional<Set<GroupPartOrPackageName>> cachedGroupParts =
-                Optional.ofNullable(groupPartOrPackageNameCache.synchronous().getIfPresent(urlString));
-
-        if (cachedGroupParts.isPresent()) {
-            return cachedGroupParts.get();
+        try {
+            return groupPartOrPackageNameCache.get(urlString);
+        } catch (Exception e) {
+            log.debug("Failed to get group parts or package names for URL: {}", urlString, e);
+            return Collections.emptySet();
         }
-        groupPartOrPackageNameCache.get(urlString).thenAccept(result -> {
-            onLoadMore.run();
-        });
-        return Collections.emptySet();
     }
 
     private Set<GroupPartOrPackageName> fetchAndParseFromUrl(String urlString) {
         ContentResults result = ContentsUtil.fetchPageContents(urlString);
 
         if (result.isEmpty()) {
-            log.warn("Fetch of content cancelled or failed: {}", result.responseCode());
-            return Set.of();
+            log.debug("Fetch of content cancelled or failed: {}", result.responseCode());
+            return Collections.emptySet();
         }
 
         if (result.isError()) {
-            log.warn("Content fetch failed with a {} response code", result.responseCode());
-            if (result.responseCode() >= 400 && result.responseCode() < 500) {
-                groupPartOrPackageNameCache.put(urlString, CompletableFuture.completedFuture(Collections.emptySet()));
-            }
-            return Set.of();
+            log.debug("Content fetch failed with a {} response code", result.responseCode());
+            return Collections.emptySet();
         }
 
         return parseGroupPartOrPackageNameFromContent(result.content());

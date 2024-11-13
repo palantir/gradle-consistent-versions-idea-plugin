@@ -53,7 +53,7 @@ public class GroupPartOrPackageNameCompletionContributor extends CompletionContr
 
                 RepositoryLoader.loadRepositories(project).stream()
                         .flatMap(url ->
-                                groupPartOrPackageNameExplorer.getGroupPartOrPackageName(group, url, null).stream())
+                                groupPartOrPackageNameExplorer.getCancelableGroupPartOrPackageName(group, url).stream())
                         .map(LookupElementBuilder::create)
                         .forEach(resultSet::addElement);
             }

@@ -116,8 +116,8 @@ public class VersionCompletionContributor extends CompletionContributor {
             Project project, DependencyGroup group, DependencyName dependencyName) {
         String dependencyNamePrefix = dependencyName.name().replace("*", "");
         return StreamEx.of(RepositoryLoader.loadRepositories(project))
-                .flatMap(url -> StreamEx.of(groupPartOrPackageNameExplorer.getGroupPartOrPackageName(
-                                group, url, CompletionRefreshUtil.refreshOnceSupplier()::get))
+                .flatMap(url -> StreamEx.of(
+                                groupPartOrPackageNameExplorer.getCancelableGroupPartOrPackageName(group, url))
                         .filter(pkgName -> pkgName.name().startsWith(dependencyNamePrefix))
                         .map(pkgName -> new SimpleEntry<>(url, pkgName)))
                 .map(entry -> {
