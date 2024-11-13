@@ -43,9 +43,9 @@ public final class RepositoryLoader {
 
     private static final ObjectMapper XML_MAPPER = new XmlMapper().registerModule(new GuavaModule());
     private static final String MAVEN_REPOSITORIES_FILE_NAME = ".idea/gcv-maven-repositories.xml";
-    private static final String DEFAULT = "https://repo.maven.apache.org/maven2/";
+    private static final RepositoryUrl DEFAULT = RepositoryUrl.of("https://repo.maven.apache.org/maven2/");
 
-    public static Set<String> loadRepositories(Project project) {
+    public static Set<RepositoryUrl> loadRepositories(Project project) {
         File mavenRepoFile = new File(project.getBasePath(), MAVEN_REPOSITORIES_FILE_NAME);
 
         if (!mavenRepoFile.exists()) {
@@ -58,7 +58,8 @@ public final class RepositoryLoader {
                     .map(RepositoryConfig::url)
                     // This is a temporary workaround to ignore localhost and file system from maven local - long term
                     // we should fix localhost on the GCV side, and we should be able to explore the maven local repo
-                    .filter(url -> !url.contains("localhost") && !url.startsWith("file:"))
+                    .filter(url ->
+                            !url.url().contains("localhost") && !url.url().startsWith("file:"))
                     .sorted(new RepositoryComparator())
                     .collect(Collectors.toCollection(LinkedHashSet::new));
         } catch (IOException e) {
@@ -68,7 +69,7 @@ public final class RepositoryLoader {
         return Set.of(DEFAULT);
     }
 
-    private static final class RepositoryComparator implements Comparator<String> {
+    private static final class RepositoryComparator implements Comparator<RepositoryUrl> {
         private static final Map<String, Integer> KEYWORD_SCORES = Map.of(
                 "release", 15,
                 "jar", 10,
@@ -76,8 +77,10 @@ public final class RepositoryLoader {
                 "internal", -10);
 
         @Override
-        public int compare(String repo1, String repo2) {
-            return Integer.compare(getScore(repo2.toLowerCase(Locale.ROOT)), getScore(repo1.toLowerCase(Locale.ROOT)));
+        public int compare(RepositoryUrl repo1, RepositoryUrl repo2) {
+            return Integer.compare(
+                    getScore(repo2.url().toLowerCase(Locale.ROOT)),
+                    getScore(repo1.url().toLowerCase(Locale.ROOT)));
         }
 
         private int getScore(String repo) {
@@ -95,7 +98,7 @@ public final class RepositoryLoader {
 
         @Value.Parameter
         @JacksonXmlProperty(isAttribute = true)
-        String url();
+        RepositoryUrl url();
     }
 
     @Value.Immutable

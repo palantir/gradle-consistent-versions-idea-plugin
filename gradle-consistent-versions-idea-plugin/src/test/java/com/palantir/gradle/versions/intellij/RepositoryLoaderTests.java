@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 {
 
     private static final String MAVEN_REPOSITORIES_FILE_NAME = ".idea/gcv-maven-repositories.xml";
-    private static final String DEFAULT = "https://repo.maven.apache.org/maven2/";
+    private static final RepositoryUrl DEFAULT = RepositoryUrl.of("https://repo.maven.apache.org/maven2/");
 
     @Override
     protected final String getRelativePath() {
@@ -45,7 +45,7 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
     void file_does_not_exist_return_default() {
         Project project = getFixture().getProject();
 
-        Set<String> repositories = RepositoryLoader.loadRepositories(project);
+        Set<RepositoryUrl> repositories = RepositoryLoader.loadRepositories(project);
         assertThat(repositories)
                 .as("Should return default repository when file does not exist")
                 .containsExactly(DEFAULT);
@@ -64,10 +64,12 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
                     </repositories>
                     """);
 
-        Set<String> repositories = RepositoryLoader.loadRepositories(project);
+        Set<RepositoryUrl> repositories = RepositoryLoader.loadRepositories(project);
         assertThat(repositories)
                 .as("Should load repositories from file")
-                .containsExactlyInAnyOrder("https://repo1.maven.org/maven2/", "https://repo2.maven.org/maven2/");
+                .containsExactlyInAnyOrder(
+                        RepositoryUrl.of("https://repo1.maven.org/maven2/"),
+                        RepositoryUrl.of("https://repo2.maven.org/maven2/"));
     }
 
     @Test
@@ -84,10 +86,10 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
                     </repositories>
                     """);
 
-        Set<String> repositories = RepositoryLoader.loadRepositories(project);
+        Set<RepositoryUrl> repositories = RepositoryLoader.loadRepositories(project);
         assertThat(repositories)
                 .as("Should ignore localhost and file repositories")
-                .containsExactly("https://repo1.maven.org/maven2/");
+                .containsExactly(RepositoryUrl.of("https://repo1.maven.org/maven2/"));
     }
 
     @Test
@@ -110,19 +112,19 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
                     </repositories>
                     """);
 
-        Set<String> repositories = RepositoryLoader.loadRepositories(project);
+        Set<RepositoryUrl> repositories = RepositoryLoader.loadRepositories(project);
         assertThat(repositories)
                 .as("Should maintain the correct order of repositories")
                 .containsExactly(
-                        "release-JAR",
-                        "release",
-                        "RELEASE-dist",
-                        "jar",
-                        "internal-jar",
-                        "random",
-                        "dist",
-                        "internal",
-                        "internal-dist");
+                        RepositoryUrl.of("release-JAR"),
+                        RepositoryUrl.of("release"),
+                        RepositoryUrl.of("RELEASE-dist"),
+                        RepositoryUrl.of("jar"),
+                        RepositoryUrl.of("internal-jar"),
+                        RepositoryUrl.of("random"),
+                        RepositoryUrl.of("dist"),
+                        RepositoryUrl.of("internal"),
+                        RepositoryUrl.of("internal-dist"));
     }
 
     @Test
@@ -142,11 +144,16 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
                     </repositories>
                     """);
 
-        Set<String> repositories = RepositoryLoader.loadRepositories(project);
+        Set<RepositoryUrl> repositories = RepositoryLoader.loadRepositories(project);
         assertThat(repositories)
                 .as("Should maintain the correct order of repositories")
                 .containsExactly(
-                        "test1/release", "test2/release", "random1", "random2", "test1/internal", "test2/internal");
+                        RepositoryUrl.of("test1/release"),
+                        RepositoryUrl.of("test2/release"),
+                        RepositoryUrl.of("random1"),
+                        RepositoryUrl.of("random2"),
+                        RepositoryUrl.of("test1/internal"),
+                        RepositoryUrl.of("test2/internal"));
     }
 
     private void createMavenRepositoriesFile(Project project, String content) throws IOException {

@@ -75,7 +75,9 @@ class GradleCacheExplorerTest {
     @Test
     void test_extract_group_artifact_from_url_correctly() {
         explorer = new GradleCacheExplorer();
-        Set<String> projectUrls = Set.of("https://repo.maven.apache.org/maven2/", "https://jcenter.bintray.com/");
+        Set<RepositoryUrl> projectUrls = Set.of(
+                RepositoryUrl.of("https://repo.maven.apache.org/maven2/"),
+                RepositoryUrl.of("https://jcenter.bintray.com/"));
 
         assertThat(explorer.extractGroupAndArtifactFromUrl(
                                 projectUrls,
@@ -103,7 +105,8 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_get_completion_no_match() {
-        Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
+        Set<RepositoryUrl> repoUrls =
+                Set.of(RepositoryUrl.of("https://example.one/"), RepositoryUrl.of("https://example.two/"));
         Set<String> cache = Set.of(
                 "https://example.one/exampleOne/nameOne/version/artifact.pom",
                 "https://example.two/exampleTwo/nameTwo/version/artifact.pom",
@@ -118,7 +121,8 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_get_completion_match_all() {
-        Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
+        Set<RepositoryUrl> repoUrls =
+                Set.of(RepositoryUrl.of("https://example.one/"), RepositoryUrl.of("https://example.two/"));
         Set<String> cache = Set.of(
                 "https://example.one/exampleOne/nameOne/version/artifact.pom",
                 "https://example.two/exampleTwo/nameTwo/version/artifact.pom");
@@ -132,7 +136,7 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_ignore_if_not_in_repo_list() {
-        Set<String> repoUrls = Set.of("https://example.one/");
+        Set<RepositoryUrl> repoUrls = Set.of(RepositoryUrl.of("https://example.one/"));
         Set<String> cache = Set.of(
                 "https://example.one/exampleOne/nameOne/version/artifact.pom",
                 "https://example.two/exampleTwo/nameTwo/version/artifact.pom");
@@ -146,7 +150,7 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_long_urls_correctly_parsed() {
-        Set<String> repoUrls = Set.of("https://example.one/");
+        Set<RepositoryUrl> repoUrls = Set.of(RepositoryUrl.of("https://example.one/"));
         Set<String> cache = Set.of("https://example.one/this/is/a/very/long/url/version/artifact.pom");
 
         explorer = new GradleCacheExplorer(cache);
@@ -158,7 +162,7 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_two_packages_with_same_group_suggests_one_wildcard() {
-        Set<String> repoUrls = Set.of("https://example.one/");
+        Set<RepositoryUrl> repoUrls = Set.of(RepositoryUrl.of("https://example.one/"));
         Set<String> cache = Set.of(
                 "https://example.one/same/group/nameOne/version/artifact.pom",
                 "https://example.one/same/group/nameTwo/version/artifact.pom");
@@ -172,7 +176,8 @@ class GradleCacheExplorerTest {
 
     @Test
     void test_matches_based_on_group_and_wildcard_suggested_across_urls() {
-        Set<String> repoUrls = Set.of("https://example.one/", "https://example.two/");
+        Set<RepositoryUrl> repoUrls =
+                Set.of(RepositoryUrl.of("https://example.one/"), RepositoryUrl.of("https://example.two/"));
         Set<String> cache = Set.of(
                 "https://example.one/same/group/nameOne/version/artifact.pom",
                 "https://example.one/different/group/differentNameOne/version/artifact.pom",

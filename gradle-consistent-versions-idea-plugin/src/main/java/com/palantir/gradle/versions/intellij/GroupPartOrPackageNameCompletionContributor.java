@@ -29,11 +29,12 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 
-public class FolderCompletionContributor extends CompletionContributor {
+public class GroupPartOrPackageNameCompletionContributor extends CompletionContributor {
 
-    private final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
+    private final GroupPartOrPackageNameExplorer groupPartOrPackageNameExplorer =
+            GroupPartOrPackageNameExplorer.getInstance();
 
-    public FolderCompletionContributor() {
+    public GroupPartOrPackageNameCompletionContributor() {
         cacheCompletion(VersionPropsTypes.GROUP_PART);
         cacheCompletion(VersionPropsTypes.NAME_KEY);
         remoteCompletion(VersionPropsTypes.GROUP_PART);
@@ -51,7 +52,8 @@ public class FolderCompletionContributor extends CompletionContributor {
                 Project project = parameters.getOriginalFile().getProject();
 
                 RepositoryLoader.loadRepositories(project).stream()
-                        .flatMap(url -> repositoryExplorer.getGroupPartOrPackageName(group, url).stream())
+                        .flatMap(url ->
+                                groupPartOrPackageNameExplorer.getCancelableGroupPartOrPackageName(group, url).stream())
                         .map(LookupElementBuilder::create)
                         .forEach(resultSet::addElement);
             }
@@ -82,6 +84,6 @@ public class FolderCompletionContributor extends CompletionContributor {
 
     @Override
     public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
-        return typeChar == ':';
+        return true;
     }
 }

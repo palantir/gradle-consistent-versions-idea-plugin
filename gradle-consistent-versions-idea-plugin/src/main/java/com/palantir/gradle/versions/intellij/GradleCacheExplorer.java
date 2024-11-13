@@ -54,7 +54,7 @@ public class GradleCacheExplorer {
         cache.set(extractStrings());
     }
 
-    public final Set<String> getCompletions(Set<String> repoUrls, DependencyGroup input, boolean isPackageName) {
+    public final Set<String> getCompletions(Set<RepositoryUrl> repoUrls, DependencyGroup input, boolean isPackageName) {
         Stopwatch stopWatch = Stopwatch.createStarted();
 
         String parsedInput = String.join(".", input.parts());
@@ -160,30 +160,33 @@ public class GradleCacheExplorer {
      * @return an {@link Optional} containing a string in the format "group:artifact" if extraction is successful,
      *         or {@link Optional#empty()} if no matching project URL is found or the URL does not have the expected structure.
      */
-    Optional<String> extractGroupAndArtifactFromUrl(Set<String> repoUrls, String url) {
-        return repoUrls.stream().filter(url::startsWith).findFirst().flatMap(projectUrl -> {
-            String mavenLayout = url.substring(projectUrl.length());
+    Optional<String> extractGroupAndArtifactFromUrl(Set<RepositoryUrl> repoUrls, String url) {
+        return repoUrls.stream()
+                .filter(repoUrl -> url.startsWith(repoUrl.url()))
+                .findFirst()
+                .flatMap(projectUrl -> {
+                    String mavenLayout = url.substring(projectUrl.url().length());
 
-            int lastSlashIndex = mavenLayout.lastIndexOf('/');
-            if (lastSlashIndex == -1) {
-                return Optional.empty();
-            }
+                    int lastSlashIndex = mavenLayout.lastIndexOf('/');
+                    if (lastSlashIndex == -1) {
+                        return Optional.empty();
+                    }
 
-            int secondLastSlashIndex = mavenLayout.lastIndexOf('/', lastSlashIndex - 1);
-            if (secondLastSlashIndex == -1) {
-                return Optional.empty();
-            }
+                    int secondLastSlashIndex = mavenLayout.lastIndexOf('/', lastSlashIndex - 1);
+                    if (secondLastSlashIndex == -1) {
+                        return Optional.empty();
+                    }
 
-            int thirdLastSlashIndex = mavenLayout.lastIndexOf('/', secondLastSlashIndex - 1);
-            if (thirdLastSlashIndex == -1) {
-                return Optional.empty();
-            }
+                    int thirdLastSlashIndex = mavenLayout.lastIndexOf('/', secondLastSlashIndex - 1);
+                    if (thirdLastSlashIndex == -1) {
+                        return Optional.empty();
+                    }
 
-            String group = mavenLayout.substring(0, thirdLastSlashIndex).replace('/', '.');
-            String artifact = mavenLayout.substring(thirdLastSlashIndex + 1, secondLastSlashIndex);
+                    String group = mavenLayout.substring(0, thirdLastSlashIndex).replace('/', '.');
+                    String artifact = mavenLayout.substring(thirdLastSlashIndex + 1, secondLastSlashIndex);
 
-            return Optional.of(String.format("%s:%s", group, artifact));
-        });
+                    return Optional.of(String.format("%s:%s", group, artifact));
+                });
     }
 
     static GradleCacheExplorer getInstance() {

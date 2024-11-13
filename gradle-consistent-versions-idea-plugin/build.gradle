@@ -26,6 +26,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-guava'
     implementation 'com.github.ben-manes.caffeine:caffeine'
+    implementation 'org.awaitility:awaitility'
     annotationProcessor 'org.immutables:value'
     compileOnly 'org.immutables:value::annotations'
     testImplementation 'org.junit.jupiter:junit-jupiter'

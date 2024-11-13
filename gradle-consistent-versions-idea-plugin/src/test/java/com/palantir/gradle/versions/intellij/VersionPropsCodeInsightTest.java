@@ -15,7 +15,9 @@
  */
 package com.palantir.gradle.versions.intellij;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.testFramework.UsefulTestCase;
@@ -42,6 +44,13 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.goethe:goethe = <caret>");
         fixture.complete(CompletionType.BASIC);
+
+        await().atMost(60, SECONDS).until(() -> {
+            List<String> lookupElementStrings = fixture.getLookupElementStrings();
+            // By default, the loading element is in lookupElementStrings so we must wait till more elements are present
+            return lookupElementStrings != null && lookupElementStrings.size() > 1;
+        });
+
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
         assertThat(lookupElementStrings)
@@ -52,29 +61,66 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
     }
 
     @Test
-    public void test_group_completion() throws Exception {
+    public void test_wild_card_version_completion() {
+        JavaCodeInsightTestFixture fixture = getFixture();
+        // The file name is required for context but does not need to exist on the filesystem
+        fixture.configureByText("versions.props", "com.palantir.tokens:* = <caret>");
+        fixture.complete(CompletionType.BASIC);
+
+        await().atMost(60, SECONDS).until(() -> {
+            List<String> lookupElementStrings = fixture.getLookupElementStrings();
+            // By default, the loading element is in lookupElementStrings so we must wait till more elements are present
+            return lookupElementStrings != null && lookupElementStrings.size() > 1;
+        });
+
+        List<String> lookupElementStrings = fixture.getLookupElementStrings();
+        assertThat(lookupElementStrings).isNotNull();
+        assertThat(lookupElementStrings)
+                .as("Lookup elements should be returned with this order")
+                .containsSubsequence(
+                        "3.18.0", "3.17.0", "3.16.0", "3.15.0", "3.14.0", "3.13.0", "3.12.0", "3.11.0", "3.10.0",
+                        "3.9.0", "3.8.1", "3.8.0", "3.7.0", "3.6.2", "3.6.1", "3.6.0", "3.5.2", "3.5.1", "3.5.0",
+                        "3.4.0", "3.3.0", "3.2.1", "3.1.0", "3.0.3", "3.0.1", "3.0.0");
+    }
+
+    @Test
+    public void test_group_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.baseline.<caret>");
         fixture.complete(CompletionType.BASIC);
+
+        await().atMost(60, SECONDS).until(() -> {
+            List<String> lookupElementStrings = fixture.getLookupElementStrings();
+            return lookupElementStrings != null;
+        });
+
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
-        UsefulTestCase.assertContainsElements(lookupElementStrings, "baseline-error-prone", "baseline-null-away");
+        UsefulTestCase.assertContainsElements(
+                lookupElementStrings, "baseline-error-prone", "gradle-baseline-java", "gradle-baseline-java-config");
     }
 
     @Test
-    public void test_package_completion() throws Exception {
+    public void test_package_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
         // The file name is required for context but does not need to exist on the filesystem
         fixture.configureByText("versions.props", "com.palantir.baseline:<caret>");
         fixture.complete(CompletionType.BASIC);
+
+        await().atMost(60, SECONDS).until(() -> {
+            List<String> lookupElementStrings = fixture.getLookupElementStrings();
+            return lookupElementStrings != null;
+        });
+
         List<String> lookupElementStrings = fixture.getLookupElementStrings();
         assertThat(lookupElementStrings).isNotNull();
-        UsefulTestCase.assertContainsElements(lookupElementStrings, "baseline-error-prone", "baseline-null-away");
+        UsefulTestCase.assertContainsElements(
+                lookupElementStrings, "baseline-error-prone", "gradle-baseline-java", "gradle-baseline-java-config");
     }
 
     @Test
-    public void test_other_file_names() throws Exception {
+    public void test_other_file_names() {
         JavaCodeInsightTestFixture fixture = getFixture();
         fixture.configureByText("notVersions.props", "com.palantir.baseline:<caret>");
         fixture.complete(CompletionType.BASIC);

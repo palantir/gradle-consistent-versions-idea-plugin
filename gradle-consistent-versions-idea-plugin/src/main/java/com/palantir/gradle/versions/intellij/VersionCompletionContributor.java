@@ -19,6 +19,7 @@ import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.CompletionSorter;
 import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.completion.PrioritizedLookupElement;
 import com.intellij.codeInsight.lookup.LookupElement;
@@ -29,15 +30,22 @@ import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
+import com.palantir.gradle.versions.intellij.VersionExplorer.PackageInRepo;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
-import java.util.stream.IntStream;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import one.util.streamex.StreamEx;
 
 public class VersionCompletionContributor extends CompletionContributor {
-
-    private static final RepositoryExplorer repositoryExplorer = new RepositoryExplorer();
+    private final GroupPartOrPackageNameExplorer groupPartOrPackageNameExplorer =
+            GroupPartOrPackageNameExplorer.getInstance();
+    private final VersionExplorer versionExplorer = VersionExplorer.getInstance();
 
     VersionCompletionContributor() {
         extend(
@@ -47,37 +55,110 @@ public class VersionCompletionContributor extends CompletionContributor {
                     @Override
                     public void addCompletions(
                             CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
-
-                        VersionPropsDependencyVersion versionElement =
-                                ReadAction.compute(() -> (VersionPropsDependencyVersion)
-                                        parameters.getPosition().getParent());
-
-                        VersionPropsProperty property = ReadAction.compute(() -> findParentProperty(versionElement));
-
-                        DependencyGroup group = DependencyGroup.fromString(
-                                property.getDependencyGroup().getText());
-                        DependencyName dependencyPackage =
-                                DependencyName.of(property.getDependencyName().getText());
+                        DependencyInfo dependencyInfo = getDependencyInfo(parameters);
+                        DependencyGroup group = dependencyInfo.group();
+                        DependencyName dependencyName = dependencyInfo.dependencyName();
 
                         Project project = parameters.getOriginalFile().getProject();
 
-                        StreamEx.of(RepositoryLoader.loadRepositories(project))
-                                .flatMap(url -> repositoryExplorer.getVersions(group, dependencyPackage, url).stream())
-                                .zipWith(IntStream.iterate(0, i -> i + 1).boxed())
-                                .mapKeyValue(this::getLookupElement)
-                                .forEach(resultSet::addElement);
-                    }
+                        CompletionSorter sorter = CompletionSorter.emptySorter().weigh(new VersionWeigher());
+                        CompletionResultSet sortedResultSet = resultSet.withRelevanceSorter(sorter);
 
-                    private LookupElement getLookupElement(DependencyVersion version, Integer priority) {
-                        return version.isLatest()
-                                ? PrioritizedLookupElement.withPriority(
-                                        LookupElementBuilder.create(version)
-                                                .withTypeText("Latest", true)
-                                                .withLookupString("latest"),
-                                        Double.MAX_VALUE)
-                                : PrioritizedLookupElement.withPriority(LookupElementBuilder.create(version), priority);
+                        addLoadingElement(sortedResultSet);
+
+                        if (!dependencyName.name().contains("*")) {
+                            handleDependencyWithoutWildcard(sortedResultSet, project, group, dependencyName);
+                            return;
+                        }
+
+                        List<PackageInRepo> groupAndDeps = collectGroupAndDeps(project, group, dependencyName);
+                        addToResults(sortedResultSet, groupAndDeps);
                     }
                 });
+    }
+
+    private DependencyInfo getDependencyInfo(CompletionParameters parameters) {
+        VersionPropsDependencyVersion versionElement = ReadAction.compute(
+                () -> (VersionPropsDependencyVersion) parameters.getPosition().getParent());
+
+        VersionPropsProperty property = ReadAction.compute(() -> findParentProperty(versionElement));
+
+        DependencyGroup group =
+                DependencyGroup.fromString(property.getDependencyGroup().getText());
+        DependencyName dependencyName =
+                DependencyName.of(property.getDependencyName().getText());
+
+        return new DependencyInfo(group, dependencyName);
+    }
+
+    private void addLoadingElement(CompletionResultSet sortedResultSet) {
+        LookupElement loadingElement = PrioritizedLookupElement.withPriority(
+                LookupElementBuilder.create("Loading Versions...").withInsertHandler((elementContext, item) -> {
+                    // Prevent insertion
+                    elementContext
+                            .getDocument()
+                            .deleteString(elementContext.getStartOffset(), elementContext.getTailOffset());
+                }),
+                Double.MIN_VALUE);
+        sortedResultSet.addElement(loadingElement);
+    }
+
+    private void handleDependencyWithoutWildcard(
+            CompletionResultSet sortedResultSet,
+            Project project,
+            DependencyGroup group,
+            DependencyName dependencyName) {
+        RepositoryLoader.loadRepositories(project)
+                .forEach(url -> addToResults(sortedResultSet, List.of(new PackageInRepo(group, dependencyName, url))));
+    }
+
+    private List<PackageInRepo> collectGroupAndDeps(
+            Project project, DependencyGroup group, DependencyName dependencyName) {
+
+        String dependencyNamePrefix = dependencyName.name().replace("*", "");
+        return StreamEx.of(RepositoryLoader.loadRepositories(project))
+                .flatMap(url -> StreamEx.of(
+                                groupPartOrPackageNameExplorer.getCancelableGroupPartOrPackageName(group, url))
+                        .filter(pkgName -> pkgName.name().startsWith(dependencyNamePrefix))
+                        .map(pkgName -> new SimpleEntry<>(url, pkgName)))
+                .map(entry -> {
+                    RepositoryUrl url = entry.getKey();
+                    GroupPartOrPackageName pkgName = entry.getValue();
+                    DependencyName depName = DependencyName.of(pkgName.name());
+                    return new PackageInRepo(group, depName, url);
+                })
+                .toList();
+    }
+
+    private void addToResults(CompletionResultSet resultSet, List<PackageInRepo> groupAndDeps) {
+        Map<DependencyVersion, AtomicInteger> versionCounts = StreamEx.of(groupAndDeps)
+                .flatMap(groupAndDep ->
+                        versionExplorer
+                                .getVersions(groupAndDep, CompletionRefreshUtil.refreshOnceSupplier()::get)
+                                .stream())
+                .collect(Collectors.toConcurrentMap(
+                        Function.identity(), v -> new AtomicInteger(1), (existingCount, newCount) -> {
+                            existingCount.addAndGet(newCount.get());
+                            return existingCount;
+                        }));
+
+        List<LookupElement> lookupElements = versionCounts.entrySet().stream()
+                .map(entry ->
+                        createLookupElement(entry.getKey(), entry.getValue().get(), groupAndDeps.size()))
+                .collect(Collectors.toList());
+
+        resultSet.addAllElements(lookupElements);
+    }
+
+    private LookupElement createLookupElement(DependencyVersion version, int count, int total) {
+        String typeText = ((total > 1) ? count + "/" + total + " packages" : "");
+        if (version.isLatest()) {
+            typeText = ((total > 1) ? "latest for " : "latest") + typeText;
+            return LookupElementBuilder.create(version)
+                    .withLookupString("latest")
+                    .withTypeText(typeText, true);
+        }
+        return LookupElementBuilder.create(version).withTypeText(typeText, true);
     }
 
     private VersionPropsProperty findParentProperty(VersionPropsDependencyVersion versionElement) {
@@ -86,6 +167,8 @@ public class VersionCompletionContributor extends CompletionContributor {
 
     @Override
     public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
-        return typeChar == '=';
+        return true;
     }
+
+    private record DependencyInfo(DependencyGroup group, DependencyName dependencyName) {}
 }

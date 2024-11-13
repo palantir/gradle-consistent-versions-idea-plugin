@@ -16,65 +16,57 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.progress.ProcessCanceledException;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import java.io.BufferedReader;
+import com.google.common.io.CharStreams;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
+import org.immutables.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class ContentsUtil {
     private static final Logger log = LoggerFactory.getLogger(ContentsUtil.class);
 
-    public static Optional<String> fetchPageContents(URL pageUrl) {
-        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-
-        if (indicator == null) {
-            return Optional.empty();
-        }
-
+    public static ContentResults fetchPageContents(String urlString) {
         try {
-            Future<String> future =
-                    ApplicationManager.getApplication().executeOnPooledThread(fetchContentTask(pageUrl, indicator));
-            String content =
-                    com.intellij.openapi.application.ex.ApplicationUtil.runWithCheckCanceled(future::get, indicator);
-            return Optional.ofNullable(content);
-        } catch (InterruptedException | ProcessCanceledException e) {
-            log.debug("Fetch operation was cancelled", e);
-        } catch (Exception e) {
-            log.warn("Failed to fetch contents", e);
+            URL url = new URL(urlString);
+            return ContentsUtil.fetchPageContents(url);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
-        return Optional.empty();
     }
 
-    private static Callable<String> fetchContentTask(URL pageUrl, ProgressIndicator indicator) {
+    public static ContentResults fetchPageContents(URL pageUrl) {
+        try {
+            return fetchContentTask(pageUrl).call();
+        } catch (Exception e) {
+            log.debug("Failed to fetch contents", e);
+            return ContentResults.empty();
+        }
+    }
+
+    private static Callable<ContentResults> fetchContentTask(URL pageUrl) {
         return () -> {
             HttpURLConnection connection = null;
             try {
                 connection = (HttpURLConnection) pageUrl.openConnection();
                 connection.setRequestMethod("GET");
 
-                if (indicator.isCanceled() || connection.getResponseCode() != 200) {
-                    throw new ProcessCanceledException();
+                int responseCode = connection.getResponseCode();
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    return ContentResults.error(responseCode);
                 }
 
-                BufferedReader in =
-                        new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-
-                return in.lines().collect(Collectors.joining("\n"));
+                InputStreamReader inputStreamReader =
+                        new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
+                return ContentResults.of(CharStreams.toString(inputStreamReader));
             } catch (ConnectException e) {
                 log.debug("Connection refused on page {}", pageUrl, e);
-                return null;
+                return ContentResults.empty();
             } finally {
                 if (connection != null) {
                     connection.disconnect();
@@ -84,4 +76,38 @@ public final class ContentsUtil {
     }
 
     private ContentsUtil() {}
+
+    @Value.Immutable
+    public abstract static class ContentResults {
+
+        protected abstract String content();
+
+        protected abstract Integer responseCode();
+
+        public final boolean isEmpty() {
+            return (content() == null || content().isEmpty()) && responseCode() == HttpURLConnection.HTTP_OK;
+        }
+
+        public final boolean isError() {
+            return responseCode() != HttpURLConnection.HTTP_OK;
+        }
+
+        public static ContentResults of(String content) {
+            return ImmutableContentResults.builder()
+                    .content(content)
+                    .responseCode(HttpURLConnection.HTTP_OK)
+                    .build();
+        }
+
+        public static ContentResults error(Integer responseCode) {
+            return ImmutableContentResults.builder()
+                    .content("")
+                    .responseCode(responseCode)
+                    .build();
+        }
+
+        public static ContentResults empty() {
+            return ContentResults.of("");
+        }
+    }
 }
