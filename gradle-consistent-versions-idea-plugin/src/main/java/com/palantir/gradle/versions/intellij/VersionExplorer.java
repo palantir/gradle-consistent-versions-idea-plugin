@@ -76,8 +76,7 @@ public final class VersionExplorer {
     private Set<DependencyVersion> fetchAndParseFromUrl(String urlString) {
         ContentResults result = ContentsUtil.fetchPageContents(urlString);
 
-        if (result.isE
-        qmpty()) {
+        if (result.isEmpty()) {
             log.warn("Fetch of content cancelled or failed: {}", result.responseCode());
             return Set.of();
         }
