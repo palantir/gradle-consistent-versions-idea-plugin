@@ -40,10 +40,14 @@ public class CompletionRefreshUtil {
         ApplicationManager.getApplication().invokeLater(() -> {
             CompletionService completionService = CompletionService.getCompletionService();
             if (completionService == null) {
-                return;
+                throw new IllegalStateException("Expected completionService to exist");
             }
 
-            BaseCompletionService baseCompletionService = (BaseCompletionService) completionService;
+            if (!(completionService instanceof BaseCompletionService baseCompletionService)) {
+                throw new IllegalStateException(
+                        "Expected completionService to be an instance of BaseCompletionService");
+            }
+
             CompletionProcess completionProgress = baseCompletionService.getCurrentCompletion();
             if (completionProgress == null) {
                 return;

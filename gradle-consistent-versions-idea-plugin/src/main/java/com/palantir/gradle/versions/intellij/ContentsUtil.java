@@ -38,8 +38,7 @@ public final class ContentsUtil {
             URL url = new URL(urlString);
             return ContentsUtil.fetchPageContents(url);
         } catch (MalformedURLException e) {
-            log.error("Malformed URL", e);
-            return ContentResults.empty();
+            throw new RuntimeException(e);
         }
     }
 
