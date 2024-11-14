@@ -19,9 +19,9 @@ package com.palantir.gradle.versions.intellij;
 import com.google.common.base.Suppliers;
 import com.intellij.codeInsight.completion.BaseCompletionService;
 import com.intellij.codeInsight.completion.CompletionProcess;
-import com.intellij.codeInsight.completion.CompletionProgressIndicator;
 import com.intellij.codeInsight.completion.CompletionService;
 import com.intellij.openapi.application.ApplicationManager;
+import java.lang.reflect.InvocationTargetException;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,9 +53,15 @@ public class CompletionRefreshUtil {
                 return;
             }
 
-            CompletionProgressIndicator completionProgressIndicator = (CompletionProgressIndicator) completionProgress;
             log.debug("Scheduling restarting completion");
-            completionProgressIndicator.scheduleRestart();
+            try {
+                completionProgress
+                        .getClass()
+                        .getDeclaredMethod("scheduleRestart")
+                        .invoke(completionProgress);
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 
