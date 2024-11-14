@@ -47,9 +47,9 @@ COMMENT=("#")[^\r\n]*
 
 %%
 
-<YYINITIAL> {WHITE_SPACE}*{COMMENT}              { yybegin(YYINITIAL); return VersionPropsTypes.COMMENT; }
-<YYINITIAL> {IDENTIFIER}                         { yybegin(YYINITIAL); return VersionPropsTypes.GROUP_PART; }
-<YYINITIAL> {DOT}                                { yybegin(YYINITIAL); return VersionPropsTypes.DOT; }
+<YYINITIAL> {WHITE_SPACE}*{COMMENT}              { return VersionPropsTypes.COMMENT; }
+<YYINITIAL> {IDENTIFIER}                         { return VersionPropsTypes.GROUP_PART; }
+<YYINITIAL> {DOT}                                { return VersionPropsTypes.DOT; }
 <YYINITIAL> {COLON}                              { yybegin(WAITING_NAME); return VersionPropsTypes.COLON; }
 
 <WAITING_NAME> {IDENTIFIER}                      { yybegin(WAITING_VERSION); return VersionPropsTypes.NAME_KEY; }
@@ -60,8 +60,7 @@ COMMENT=("#")[^\r\n]*
 <WAITING_VERSION> {VERSION}                      { yybegin(WAITING_COMMENT); return VersionPropsTypes.VERSION; }
 
 <WAITING_COMMENT> {WHITE_SPACE}*{COMMENT}        { return VersionPropsTypes.COMMENT; }
-<WAITING_COMMENT> [^\n]+                         { return TokenType.BAD_CHARACTER; }
 
-{CRLF}+                                          { yybegin(YYINITIAL); return TokenType.WHITE_SPACE; }
+{CRLF}+                                          { yybegin(YYINITIAL); return  VersionPropsTypes.CRLF; }
 
 [^]                                              { return TokenType.BAD_CHARACTER; }

@@ -31,10 +31,12 @@
 
 simpleFile ::= item_*
 
-private item_ ::= (property | incomplete | COMMENT | CRLF)
+private item_ ::= (property | COMMENT | CRLF)
 
-incomplete ::= dependencyGroup COLON dependencyName EQUALS
-property ::= dependencyGroup COLON dependencyName EQUALS dependencyVersion
+property ::= dependencyGroup COLON dependencyName EQUALS dependencyVersion { recoverWhile="propertyRecover" }
+
+private propertyRecover ::= !(CRLF)
+
 
 dependencyGroup ::= GROUP_PART (DOT GROUP_PART)*
 dependencyName ::= NAME_KEY
