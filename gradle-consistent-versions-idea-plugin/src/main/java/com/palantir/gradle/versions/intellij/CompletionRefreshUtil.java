@@ -53,6 +53,21 @@ public class CompletionRefreshUtil {
                 return;
             }
 
+            // For completing versions, our needs are slightly different to "normal" completion. For normal completion,
+            // you enter some text and generally have some idea about what you want to enter and the ordering of the
+            // completions does not matter. For versions, the order really does matter - we want the latest to be
+            // at the top and then the rest of the versions in descending order. Even changing the default sorter,
+            // when you add new versions one by one, IntelliJ will often keep the same top 5 options at the top rather
+            // than re-sorting them. This is exactly what we do not want. We can't wait until we've loaded all the
+            // versions as this can take 10s of seconds as it involves doing network requests to Artifactory virtual
+            // repos that can be very slow as they have many upstreams. So we refresh the completion ourselves each
+            // time a new set of versions are loaded, which gives us the opportunity to add all the versions currently
+            // loaded in the right order without IntelliJ messing with it.
+            // To do this, we use an internal IntelliJ method to restart the completion. Imo this should be part of
+            // the public API. Since we don't expect users to type anything for this "completion", we can't use the
+            // restart rules in CompletionProcessBase#addWatchedPrefix without doing something horrible like entering
+            // a special character and quickly deleting it. Unfortunately, to do this without the plugin being rejected
+            // by the IntelliJ plugin analyser, we need to use reflection.
             log.debug("Scheduling restarting completion");
             try {
                 completionProgress
