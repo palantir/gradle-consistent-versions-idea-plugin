@@ -52,8 +52,7 @@ public class VersionCompletionContributor extends CompletionContributor {
             GroupPartOrPackageNameExplorer.getInstance();
     private final VersionExplorer versionExplorer = VersionExplorer.getInstance();
 
-    private static final int MAX_SIZE = 100;
-    private final Queue<DependencyInfo> loadedDependencies = EvictingQueue.create(MAX_SIZE);
+    private final Queue<DependencyInfo> loadedDependencies = EvictingQueue.create(100);
 
     VersionCompletionContributor() {
         extend(
@@ -152,7 +151,7 @@ public class VersionCompletionContributor extends CompletionContributor {
         if (!pendingFutures.isEmpty()) {
             CompletableFuture.anyOf(pendingFutures.toArray(new CompletableFuture[0]))
                     .thenAccept(completedFuture -> {
-                        CompletionRefreshUtil.triggerRefresh();
+                        CompletionRefreshUtil.scheduleRefresh();
                     });
         }
 
@@ -184,7 +183,7 @@ public class VersionCompletionContributor extends CompletionContributor {
 
     private void addAndRefresh(DependencyInfo key) {
         if (!loadedDependencies.contains(key)) {
-            CompletionRefreshUtil.triggerRefresh();
+            CompletionRefreshUtil.scheduleRefresh();
             loadedDependencies.add(key);
         }
     }

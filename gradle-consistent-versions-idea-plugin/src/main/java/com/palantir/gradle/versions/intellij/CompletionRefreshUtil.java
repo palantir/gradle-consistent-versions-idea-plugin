@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public class CompletionRefreshUtil {
     private static final Logger log = LoggerFactory.getLogger(CompletionRefreshUtil.class);
 
-    public static void triggerRefresh() {
+    public static void scheduleRefresh() {
         ApplicationManager.getApplication().invokeLater(() -> {
             CompletionService completionService = CompletionService.getCompletionService();
             if (completionService == null) {
