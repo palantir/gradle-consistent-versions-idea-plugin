@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CompletionRefreshUtil {
+public final class CompletionRefreshUtil {
     private static final Logger log = LoggerFactory.getLogger(CompletionRefreshUtil.class);
 
     public static Supplier<Void> refreshOnceSupplier() {
