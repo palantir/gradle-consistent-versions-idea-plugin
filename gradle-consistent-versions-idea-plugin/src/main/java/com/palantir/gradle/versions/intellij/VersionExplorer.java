@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -54,23 +55,20 @@ public final class VersionExplorer {
             .maximumSize(10000)
             .buildAsync(this::fetchAndParseFromUrl);
 
-    public record PackageInRepo(DependencyGroup group, DependencyName dependencyPackage, RepositoryUrl repositoryUrl) {}
+    public record PackageInRepo(DependencyGroup group, DependencyName dependencyName, RepositoryUrl repositoryUrl) {}
 
-    public Set<DependencyVersion> getVersions(PackageInRepo groupAndDep, Runnable onLoadMore) {
-        String urlString = urlFor(groupAndDep);
+    public record VersionResults(Set<DependencyVersion> versions, CompletableFuture<Set<DependencyVersion>> future) {}
+
+    public VersionResults getVersions(PackageInRepo packageInRepo) {
+        String urlString = urlFor(packageInRepo);
 
         Optional<Set<DependencyVersion>> cachedVersions =
                 Optional.ofNullable(shortLivedVersionCache.synchronous().getIfPresent(urlString));
 
-        if (cachedVersions.isPresent()) {
-            return cachedVersions.get();
-        }
-
-        shortLivedVersionCache.get(urlString).thenAccept(result -> {
-            onLoadMore.run();
-        });
-
-        return Collections.emptySet();
+        return cachedVersions
+                .map(dependencyVersions ->
+                        new VersionResults(dependencyVersions, CompletableFuture.completedFuture(dependencyVersions)))
+                .orElseGet(() -> new VersionResults(Collections.emptySet(), shortLivedVersionCache.get(urlString)));
     }
 
     private Set<DependencyVersion> fetchAndParseFromUrl(String urlString) {
@@ -91,7 +89,7 @@ public final class VersionExplorer {
 
     private static @NotNull String urlFor(PackageInRepo groupAndDep) {
         return groupAndDep.repositoryUrl().url() + groupAndDep.group().asUrlString()
-                + groupAndDep.dependencyPackage().name() + "/maven-metadata.xml";
+                + groupAndDep.dependencyName().name() + "/maven-metadata.xml";
     }
 
     private Set<DependencyVersion> parseVersionsFromContent(String content) {

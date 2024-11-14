@@ -16,27 +16,18 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.google.common.base.Suppliers;
 import com.intellij.codeInsight.completion.BaseCompletionService;
 import com.intellij.codeInsight.completion.CompletionProcess;
 import com.intellij.codeInsight.completion.CompletionProgressIndicator;
 import com.intellij.codeInsight.completion.CompletionService;
 import com.intellij.openapi.application.ApplicationManager;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CompletionRefreshUtil {
     private static final Logger log = LoggerFactory.getLogger(CompletionRefreshUtil.class);
 
-    public static Supplier<Void> refreshOnceSupplier() {
-        return Suppliers.memoize(() -> {
-            triggerRefresh();
-            return null;
-        });
-    }
-
-    private static void triggerRefresh() {
+    public static void triggerRefresh() {
         ApplicationManager.getApplication().invokeLater(() -> {
             CompletionService completionService = CompletionService.getCompletionService();
             if (completionService == null) {

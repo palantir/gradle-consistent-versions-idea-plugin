@@ -15,6 +15,7 @@
  */
 package com.palantir.gradle.versions.intellij;
 
+import com.google.common.collect.EvictingQueue;
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
@@ -31,13 +32,17 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.VersionExplorer.PackageInRepo;
+import com.palantir.gradle.versions.intellij.VersionExplorer.VersionResults;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import one.util.streamex.StreamEx;
@@ -47,6 +52,9 @@ public class VersionCompletionContributor extends CompletionContributor {
             GroupPartOrPackageNameExplorer.getInstance();
     private final VersionExplorer versionExplorer = VersionExplorer.getInstance();
 
+    private static final int MAX_SIZE = 100;
+    private final Queue<DependencyInfo> loadedDependencies = EvictingQueue.create(MAX_SIZE);
+
     VersionCompletionContributor() {
         extend(
                 CompletionType.BASIC,
@@ -55,24 +63,25 @@ public class VersionCompletionContributor extends CompletionContributor {
                     @Override
                     public void addCompletions(
                             CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
+
                         DependencyInfo dependencyInfo = getDependencyInfo(parameters);
-                        DependencyGroup group = dependencyInfo.group();
-                        DependencyName dependencyName = dependencyInfo.dependencyName();
 
                         Project project = parameters.getOriginalFile().getProject();
 
                         CompletionSorter sorter = CompletionSorter.emptySorter().weigh(new VersionWeigher());
                         CompletionResultSet sortedResultSet = resultSet.withRelevanceSorter(sorter);
 
-                        addLoadingElement(sortedResultSet);
+                        if (!loadedDependencies.contains(dependencyInfo)) {
+                            addDisplayElement(sortedResultSet, "Loading Versions...");
+                        }
 
-                        if (!dependencyName.name().contains("*")) {
-                            handleDependencyWithoutWildcard(sortedResultSet, project, group, dependencyName);
+                        if (!dependencyInfo.dependencyName().name().contains("*")) {
+                            handleDependencyWithoutWildcard(sortedResultSet, project, dependencyInfo);
                             return;
                         }
 
-                        List<PackageInRepo> groupAndDeps = collectGroupAndDeps(project, group, dependencyName);
-                        addToResults(sortedResultSet, groupAndDeps);
+                        List<PackageInRepo> packageInRepo = collectPackageInRepo(project, dependencyInfo);
+                        addToResults(sortedResultSet, packageInRepo, dependencyInfo);
                     }
                 });
     }
@@ -91,9 +100,9 @@ public class VersionCompletionContributor extends CompletionContributor {
         return new DependencyInfo(group, dependencyName);
     }
 
-    private void addLoadingElement(CompletionResultSet sortedResultSet) {
+    private void addDisplayElement(CompletionResultSet sortedResultSet, String elementText) {
         LookupElement loadingElement = PrioritizedLookupElement.withPriority(
-                LookupElementBuilder.create("Loading Versions...").withInsertHandler((elementContext, item) -> {
+                LookupElementBuilder.create(elementText).withInsertHandler((elementContext, item) -> {
                     // Prevent insertion
                     elementContext
                             .getDocument()
@@ -104,50 +113,80 @@ public class VersionCompletionContributor extends CompletionContributor {
     }
 
     private void handleDependencyWithoutWildcard(
-            CompletionResultSet sortedResultSet,
-            Project project,
-            DependencyGroup group,
-            DependencyName dependencyName) {
-        RepositoryLoader.loadRepositories(project)
-                .forEach(url -> addToResults(sortedResultSet, List.of(new PackageInRepo(group, dependencyName, url))));
+            CompletionResultSet sortedResultSet, Project project, DependencyInfo dependencyInfo) {
+
+        List<PackageInRepo> allPackages = RepositoryLoader.loadRepositories(project).stream()
+                .map(url -> new PackageInRepo(dependencyInfo.group(), dependencyInfo.dependencyName(), url))
+                .collect(Collectors.toList());
+        addToResults(sortedResultSet, allPackages, dependencyInfo);
     }
 
-    private List<PackageInRepo> collectGroupAndDeps(
-            Project project, DependencyGroup group, DependencyName dependencyName) {
+    private List<PackageInRepo> collectPackageInRepo(Project project, DependencyInfo dependencyInfo) {
 
-        String dependencyNamePrefix = dependencyName.name().replace("*", "");
+        String dependencyNamePrefix = dependencyInfo.dependencyName().name().replace("*", "");
         return StreamEx.of(RepositoryLoader.loadRepositories(project))
-                .flatMap(url -> StreamEx.of(
-                                groupPartOrPackageNameExplorer.getCancelableGroupPartOrPackageName(group, url))
+                .flatMap(url -> StreamEx.of(groupPartOrPackageNameExplorer.getCancelableGroupPartOrPackageName(
+                                dependencyInfo.group(), url))
                         .filter(pkgName -> pkgName.name().startsWith(dependencyNamePrefix))
                         .map(pkgName -> new SimpleEntry<>(url, pkgName)))
                 .map(entry -> {
                     RepositoryUrl url = entry.getKey();
                     GroupPartOrPackageName pkgName = entry.getValue();
                     DependencyName depName = DependencyName.of(pkgName.name());
-                    return new PackageInRepo(group, depName, url);
+                    return new PackageInRepo(dependencyInfo.group(), depName, url);
                 })
                 .toList();
     }
 
-    private void addToResults(CompletionResultSet resultSet, List<PackageInRepo> groupAndDeps) {
-        Map<DependencyVersion, AtomicInteger> versionCounts = StreamEx.of(groupAndDeps)
-                .flatMap(groupAndDep ->
-                        versionExplorer
-                                .getVersions(groupAndDep, CompletionRefreshUtil.refreshOnceSupplier()::get)
-                                .stream())
-                .collect(Collectors.toConcurrentMap(
-                        Function.identity(), v -> new AtomicInteger(1), (existingCount, newCount) -> {
-                            existingCount.addAndGet(newCount.get());
-                            return existingCount;
-                        }));
+    private void addToResults(CompletionResultSet resultSet, List<PackageInRepo> packageInRepo, DependencyInfo key) {
+
+        Set<VersionResults> versionResults =
+                packageInRepo.stream().map(versionExplorer::getVersions).collect(Collectors.toSet());
+
+        List<CompletableFuture<?>> pendingFutures = versionResults.stream()
+                .filter(results -> results.versions().isEmpty())
+                .map(VersionResults::future)
+                .filter(future -> !future.isDone())
+                .collect(Collectors.toList());
+
+        if (!pendingFutures.isEmpty()) {
+            CompletableFuture.anyOf(pendingFutures.toArray(new CompletableFuture[0]))
+                    .thenAccept(completedFuture -> {
+                        CompletionRefreshUtil.triggerRefresh();
+                    });
+        }
+
+        Map<DependencyVersion, Integer> versionCounts = StreamEx.of(versionResults)
+                .flatMap(result -> result.versions().stream())
+                .collect(Collectors.toMap(Function.identity(), v -> 1, Integer::sum));
+
+        if (pendingFutures.isEmpty() && versionCounts.isEmpty()) {
+            addDisplayElement(resultSet, "No versions found");
+            addAndRefresh(key);
+        }
+
+        if (!versionCounts.isEmpty()) {
+            addAndRefresh(key);
+        }
+
+        Integer packageCount = packageInRepo.stream()
+                .map(PackageInRepo::dependencyName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.collectingAndThen(Collectors.counting(), Long::intValue));
 
         List<LookupElement> lookupElements = versionCounts.entrySet().stream()
-                .map(entry ->
-                        createLookupElement(entry.getKey(), entry.getValue().get(), groupAndDeps.size()))
+                .map(entry -> createLookupElement(entry.getKey(), entry.getValue(), packageCount))
                 .collect(Collectors.toList());
 
         resultSet.addAllElements(lookupElements);
+    }
+
+    private void addAndRefresh(DependencyInfo key) {
+        if (!loadedDependencies.contains(key)) {
+            CompletionRefreshUtil.triggerRefresh();
+            loadedDependencies.add(key);
+        }
     }
 
     private LookupElement createLookupElement(DependencyVersion version, int count, int total) {
