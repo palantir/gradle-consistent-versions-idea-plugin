@@ -33,38 +33,33 @@ import com.intellij.psi.TokenType;
 %eof}
 
 // Define lexer states
-%state WAITING_NAME, WAITING_VERSION, WAITING_VALUE, WAITING_COMMENT, INVALID_VALUE
+%state WAITING_NAME, WAITING_VERSION, WAITING_COMMENT
 
 // Define token patterns
 CRLF=\R
-WHITE_SPACE=[\ \n\t\f]
-VALUE=[^ \n\f#]+
+WHITE_SPACE=[\ \t\f]
+VERSION=[^= \n\f#]+
 COLON=[:]
 EQUALS=[=]
 DOT=[.]
-KEY=[^:=\ \n\t\f]+
-GROUP_PART=[^.:=\ \n\t\f]+
+IDENTIFIER = [^.:=\ \n\t\f]+
 COMMENT=("#")[^\r\n]*
 
 %%
 
-<YYINITIAL> {WHITE_SPACE}*{COMMENT}                            { yybegin(YYINITIAL); return VersionPropsTypes.COMMENT; }
-<YYINITIAL> {GROUP_PART}                         { yybegin(YYINITIAL); return VersionPropsTypes.GROUP_PART; }
+<YYINITIAL> {WHITE_SPACE}*{COMMENT}              { yybegin(YYINITIAL); return VersionPropsTypes.COMMENT; }
+<YYINITIAL> {IDENTIFIER}                         { yybegin(YYINITIAL); return VersionPropsTypes.GROUP_PART; }
 <YYINITIAL> {DOT}                                { yybegin(YYINITIAL); return VersionPropsTypes.DOT; }
-<YYINITIAL> {WHITE_SPACE}*{DOT}{WHITE_SPACE}*    { yybegin(INVALID_VALUE); return TokenType.BAD_CHARACTER; }
 <YYINITIAL> {COLON}                              { yybegin(WAITING_NAME); return VersionPropsTypes.COLON; }
-<YYINITIAL> {WHITE_SPACE}*{COLON}{WHITE_SPACE}*  { yybegin(INVALID_VALUE); return TokenType.BAD_CHARACTER; }
 
-<WAITING_NAME> {KEY}                             { yybegin(WAITING_VERSION); return VersionPropsTypes.NAME_KEY; }
-<WAITING_NAME> {WHITE_SPACE}+                    { return TokenType.WHITE_SPACE; }
+<WAITING_NAME> {IDENTIFIER}                      { yybegin(WAITING_VERSION); return VersionPropsTypes.NAME_KEY; }
 
-<WAITING_VERSION> {EQUALS}                       { yybegin(WAITING_VALUE); return VersionPropsTypes.EQUALS; }
 <WAITING_VERSION> {WHITE_SPACE}+                 { return TokenType.WHITE_SPACE; }
+<WAITING_VERSION> {EQUALS}                       { return VersionPropsTypes.EQUALS; }
+<WAITING_VERSION> {WHITE_SPACE}+                 { return TokenType.WHITE_SPACE; }
+<WAITING_VERSION> {VERSION}                      { yybegin(WAITING_COMMENT); return VersionPropsTypes.VERSION; }
 
-<WAITING_VALUE> {WHITE_SPACE}+                   { return TokenType.WHITE_SPACE; }
-<WAITING_VALUE> {VALUE}                          { yybegin(WAITING_COMMENT); return VersionPropsTypes.VERSION; }
-
-<WAITING_COMMENT> {WHITE_SPACE}*{COMMENT}        { yybegin(INVALID_VALUE); return VersionPropsTypes.COMMENT; }
+<WAITING_COMMENT> {WHITE_SPACE}*{COMMENT}        { return VersionPropsTypes.COMMENT; }
 <WAITING_COMMENT> [^\n]+                         { return TokenType.BAD_CHARACTER; }
 
 {CRLF}+                                          { yybegin(YYINITIAL); return TokenType.WHITE_SPACE; }

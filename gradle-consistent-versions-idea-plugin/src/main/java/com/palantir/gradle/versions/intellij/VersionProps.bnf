@@ -31,8 +31,9 @@
 
 simpleFile ::= item_*
 
-private item_ ::= (property | COMMENT | CRLF)
+private item_ ::= (property | incomplete | COMMENT | CRLF)
 
+incomplete ::= dependencyGroup COLON dependencyName EQUALS
 property ::= dependencyGroup COLON dependencyName EQUALS dependencyVersion
 
 dependencyGroup ::= GROUP_PART (DOT GROUP_PART)*
