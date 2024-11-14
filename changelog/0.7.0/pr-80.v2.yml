@@ -1,0 +1,6 @@
+type: fix
+fix:
+  description: Manage when `Loading versions...` is displayed and alert the user to
+    when no versions are found
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/80
