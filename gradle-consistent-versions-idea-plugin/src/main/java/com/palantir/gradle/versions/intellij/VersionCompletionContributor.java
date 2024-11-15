@@ -138,8 +138,6 @@ public class VersionCompletionContributor extends CompletionContributor {
 
         results.scheduleRunnableOnCompletion(CompletionRefreshUtil::scheduleRefresh);
 
-        Map<DependencyVersion, Long> versionCounts = results.getVersionCounts();
-
         if (results.hasNoVersions()) {
             addDisplayElement(resultSet, "No versions found");
             addAndRefresh(key);
@@ -154,6 +152,8 @@ public class VersionCompletionContributor extends CompletionContributor {
                 .filter(Objects::nonNull)
                 .distinct()
                 .count();
+
+        Map<DependencyVersion, Long> versionCounts = results.getVersionCounts();
 
         List<LookupElement> lookupElements = versionCounts.entrySet().stream()
                 .map(entry -> createLookupElement(entry.getKey(), entry.getValue(), packageCount))
