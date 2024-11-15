@@ -35,8 +35,12 @@ public abstract class VersionsResults {
         return getIncompleteFutures().isEmpty();
     }
 
+    public final boolean hasSomeVersions() {
+        return !getVersionCounts().isEmpty();
+    }
+
     public final boolean hasNoVersions() {
-        return isAllComplete() && getVersionCounts().isEmpty();
+        return isAllComplete() && !hasSomeVersions();
     }
 
     public final Map<DependencyVersion, Long> getVersionCounts() {

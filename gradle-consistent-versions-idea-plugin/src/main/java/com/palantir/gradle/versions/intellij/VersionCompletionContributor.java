@@ -145,7 +145,7 @@ public class VersionCompletionContributor extends CompletionContributor {
             addAndRefresh(key);
         }
 
-        if (!versionCounts.isEmpty()) {
+        if (results.hasSomeVersions()) {
             addAndRefresh(key);
         }
 
