@@ -42,8 +42,12 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.stream.Collectors;
 import one.util.streamex.StreamEx;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VersionCompletionContributor extends CompletionContributor {
+    private static final Logger log = LoggerFactory.getLogger(VersionCompletionContributor.class);
+
     private final GroupPartOrPackageNameExplorer groupPartOrPackageNameExplorer =
             GroupPartOrPackageNameExplorer.getInstance();
     private final VersionExplorer versionExplorer = VersionExplorer.getInstance();
@@ -135,6 +139,8 @@ public class VersionCompletionContributor extends CompletionContributor {
 
     private void addToResults(CompletionResultSet resultSet, List<PackageInRepo> packageInRepo, DependencyInfo key) {
         VersionsResults results = versionExplorer.getVersions(packageInRepo);
+
+        log.debug("{} of {} futures pending", results.pendingCount(), results.computedCount() + results.pendingCount());
 
         results.scheduleRunnableOnCompletion(CompletionRefreshUtil::scheduleRefresh);
 

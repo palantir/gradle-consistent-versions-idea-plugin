@@ -43,6 +43,14 @@ public abstract class VersionsResults {
         return isAllComplete() && !hasSomeVersions();
     }
 
+    public final long computedCount() {
+        return alreadyLoadedVersions().size();
+    }
+
+    public final long pendingCount() {
+        return stillLoadingVersions().size();
+    }
+
     public final Map<DependencyVersion, Long> getVersionCounts() {
         return alreadyLoadedVersions().stream()
                 .collect(Collectors.flatMapping(
