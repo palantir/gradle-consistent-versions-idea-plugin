@@ -55,20 +55,24 @@ public final class VersionExplorer {
             .maximumSize(10000)
             .buildAsync(this::fetchAndParseFromUrl);
 
-    public record PackageInRepo(DependencyGroup group, DependencyName dependencyName, RepositoryUrl repositoryUrl) {}
+    public VersionsResultAggregate getVersions(List<PackageInRepo> packagesInRepo) {
+        List<VersionsResult> versionsResults =
+                packagesInRepo.stream().map(this::getVersions).collect(Collectors.toList());
+        return VersionsResultAggregate.of(versionsResults);
+    }
 
-    public record VersionResults(Set<DependencyVersion> versions, CompletableFuture<Set<DependencyVersion>> future) {}
-
-    public VersionResults getVersions(PackageInRepo packageInRepo) {
+    public VersionsResult getVersions(PackageInRepo packageInRepo) {
         String urlString = urlFor(packageInRepo);
 
-        Optional<Set<DependencyVersion>> cachedVersions =
-                Optional.ofNullable(shortLivedVersionCache.synchronous().getIfPresent(urlString));
+        Set<DependencyVersion> cachedVersions =
+                shortLivedVersionCache.synchronous().getIfPresent(urlString);
 
-        return cachedVersions
-                .map(dependencyVersions ->
-                        new VersionResults(dependencyVersions, CompletableFuture.completedFuture(dependencyVersions)))
-                .orElseGet(() -> new VersionResults(Collections.emptySet(), shortLivedVersionCache.get(urlString)));
+        if (cachedVersions != null) {
+            return new AlreadyLoadedVersions(cachedVersions);
+        } else {
+            CompletableFuture<Set<DependencyVersion>> future = shortLivedVersionCache.get(urlString);
+            return new StillLoadingVersions(future);
+        }
     }
 
     private Set<DependencyVersion> fetchAndParseFromUrl(String urlString) {
@@ -142,4 +146,12 @@ public final class VersionExplorer {
     }
 
     private VersionExplorer() {}
+
+    public record PackageInRepo(DependencyGroup group, DependencyName dependencyName, RepositoryUrl repositoryUrl) {}
+
+    public sealed interface VersionsResult permits AlreadyLoadedVersions, StillLoadingVersions {}
+
+    record AlreadyLoadedVersions(Set<DependencyVersion> versions) implements VersionsResult {}
+
+    record StillLoadingVersions(CompletableFuture<Set<DependencyVersion>> future) implements VersionsResult {}
 }

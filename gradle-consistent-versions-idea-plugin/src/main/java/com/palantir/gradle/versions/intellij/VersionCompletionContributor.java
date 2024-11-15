@@ -32,7 +32,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import com.palantir.gradle.versions.intellij.VersionExplorer.PackageInRepo;
-import com.palantir.gradle.versions.intellij.VersionExplorer.VersionResults;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
@@ -41,9 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import one.util.streamex.StreamEx;
 
@@ -138,28 +134,13 @@ public class VersionCompletionContributor extends CompletionContributor {
     }
 
     private void addToResults(CompletionResultSet resultSet, List<PackageInRepo> packageInRepo, DependencyInfo key) {
+        VersionsResultAggregate results = versionExplorer.getVersions(packageInRepo);
 
-        Set<VersionResults> versionResults =
-                packageInRepo.stream().map(versionExplorer::getVersions).collect(Collectors.toSet());
+        results.scheduleRefreshOnCompletion(CompletionRefreshUtil::scheduleRefresh);
 
-        List<CompletableFuture<?>> pendingFutures = versionResults.stream()
-                .filter(results -> results.versions().isEmpty())
-                .map(VersionResults::future)
-                .filter(future -> !future.isDone())
-                .collect(Collectors.toList());
+        Map<DependencyVersion, Long> versionCounts = results.getVersionCounts();
 
-        if (!pendingFutures.isEmpty()) {
-            CompletableFuture.anyOf(pendingFutures.toArray(new CompletableFuture[0]))
-                    .thenAccept(completedFuture -> {
-                        CompletionRefreshUtil.scheduleRefresh();
-                    });
-        }
-
-        Map<DependencyVersion, Integer> versionCounts = StreamEx.of(versionResults)
-                .flatMap(result -> result.versions().stream())
-                .collect(Collectors.toMap(Function.identity(), v -> 1, Integer::sum));
-
-        if (pendingFutures.isEmpty() && versionCounts.isEmpty()) {
+        if (results.hasNoVersions()) {
             addDisplayElement(resultSet, "No versions found");
             addAndRefresh(key);
         }
@@ -168,11 +149,11 @@ public class VersionCompletionContributor extends CompletionContributor {
             addAndRefresh(key);
         }
 
-        Integer packageCount = packageInRepo.stream()
+        long packageCount = packageInRepo.stream()
                 .map(PackageInRepo::dependencyName)
                 .filter(Objects::nonNull)
                 .distinct()
-                .collect(Collectors.collectingAndThen(Collectors.counting(), Long::intValue));
+                .count();
 
         List<LookupElement> lookupElements = versionCounts.entrySet().stream()
                 .map(entry -> createLookupElement(entry.getKey(), entry.getValue(), packageCount))
@@ -181,6 +162,7 @@ public class VersionCompletionContributor extends CompletionContributor {
         resultSet.addAllElements(lookupElements);
     }
 
+
     private void addAndRefresh(DependencyInfo key) {
         if (!loadedDependencies.contains(key)) {
             CompletionRefreshUtil.scheduleRefresh();
@@ -188,7 +170,7 @@ public class VersionCompletionContributor extends CompletionContributor {
         }
     }
 
-    private LookupElement createLookupElement(DependencyVersion version, int count, int total) {
+    private LookupElement createLookupElement(DependencyVersion version, Long count, Long total) {
         String typeText = ((total > 1) ? count + "/" + total + " packages" : "");
         if (version.isLatest()) {
             typeText = ((total > 1) ? "latest for " : "latest") + typeText;
