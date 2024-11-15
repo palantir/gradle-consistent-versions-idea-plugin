@@ -1,6 +1,5 @@
  has.extra.space:bad_token = 1
 BAD_CHARACTER  
-ERROR_ELEMENT  
 VersionPropsTokenType.GROUP_PART has
 VersionPropsTokenType.DOT .
 VersionPropsTokenType.GROUP_PART extra
@@ -12,4 +11,5 @@ WHITE_SPACE
 VersionPropsTokenType.EQUALS =
 WHITE_SPACE  
 VersionPropsTokenType.VERSION 1
+ERROR_ELEMENT 
 FILE  has.extra.space:bad_token = 1
