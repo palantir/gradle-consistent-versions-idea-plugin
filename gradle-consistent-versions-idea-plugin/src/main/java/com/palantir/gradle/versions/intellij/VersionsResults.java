@@ -16,19 +16,20 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.palantir.gradle.versions.intellij.VersionExplorer.AlreadyLoadedVersions;
-import com.palantir.gradle.versions.intellij.VersionExplorer.StillLoadingVersions;
-import com.palantir.gradle.versions.intellij.VersionExplorer.VersionsResult;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public abstract class VersionsResultAggregate {
+public abstract class VersionsResults {
 
-    public abstract List<VersionsResult> results();
+    public abstract List<Set<DependencyVersion>> alreadyLoadedVersions();
+
+    public abstract List<CompletableFuture<Set<DependencyVersion>>> stillLoadingVersions();
 
     public final boolean isAllComplete() {
         return getIncompleteFutures().isEmpty();
@@ -39,29 +40,30 @@ public abstract class VersionsResultAggregate {
     }
 
     public final Map<DependencyVersion, Long> getVersionCounts() {
-        return results().stream()
-                .filter(result -> result instanceof AlreadyLoadedVersions)
-                .flatMap(av -> ((AlreadyLoadedVersions) av).versions().stream())
-                .collect(Collectors.groupingBy(v -> v, Collectors.counting()));
+        return alreadyLoadedVersions().stream()
+                .collect(Collectors.flatMapping(
+                        Set::stream, Collectors.groupingBy(Function.identity(), Collectors.counting())));
     }
 
-    public final void scheduleRefreshOnCompletion(Runnable refreshAction) {
+    public final void scheduleRunnableOnCompletion(Runnable runnable) {
         List<CompletableFuture<?>> pendingFutures = getIncompleteFutures();
         if (!pendingFutures.isEmpty()) {
             CompletableFuture.anyOf(pendingFutures.toArray(new CompletableFuture[0]))
-                    .thenRun(refreshAction);
+                    .thenRun(runnable);
         }
     }
 
     private List<CompletableFuture<?>> getIncompleteFutures() {
-        return results().stream()
-                .filter(result -> result instanceof StillLoadingVersions)
-                .map(sv -> ((StillLoadingVersions) sv).future())
+        return stillLoadingVersions().stream()
                 .filter(future -> !future.isDone())
                 .collect(Collectors.toList());
     }
 
-    public static VersionsResultAggregate of(List<VersionsResult> results) {
-        return ImmutableVersionsResultAggregate.builder().results(results).build();
+    public static VersionsResults of(
+            List<Set<DependencyVersion>> alreadyLoaded, List<CompletableFuture<Set<DependencyVersion>>> stillLoading) {
+        return ImmutableVersionsResults.builder()
+                .alreadyLoadedVersions(alreadyLoaded)
+                .stillLoadingVersions(stillLoading)
+                .build();
     }
 }

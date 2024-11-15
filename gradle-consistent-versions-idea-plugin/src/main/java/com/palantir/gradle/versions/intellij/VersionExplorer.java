@@ -30,12 +30,15 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import one.util.streamex.EntryStream;
+import one.util.streamex.StreamEx;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,24 +58,27 @@ public final class VersionExplorer {
             .maximumSize(10000)
             .buildAsync(this::fetchAndParseFromUrl);
 
-    public VersionsResultAggregate getVersions(List<PackageInRepo> packagesInRepo) {
-        List<VersionsResult> versionsResults =
-                packagesInRepo.stream().map(this::getVersions).collect(Collectors.toList());
-        return VersionsResultAggregate.of(versionsResults);
-    }
+    public VersionsResults getVersions(List<PackageInRepo> packagesInRepo) {
 
-    public VersionsResult getVersions(PackageInRepo packageInRepo) {
-        String urlString = urlFor(packageInRepo);
+        Map<PackageInRepo, Optional<Set<DependencyVersion>>> alreadyInCacheOrNot = StreamEx.of(packagesInRepo)
+                .toMap(packageInRepo -> {
+                    String urlString = urlFor(packageInRepo);
+                    return Optional.ofNullable(
+                            shortLivedVersionCache.synchronous().getIfPresent(urlString));
+                });
 
-        Set<DependencyVersion> cachedVersions =
-                shortLivedVersionCache.synchronous().getIfPresent(urlString);
+        List<CompletableFuture<Set<DependencyVersion>>> futures = EntryStream.of(alreadyInCacheOrNot)
+                .filterValues(Optional::isEmpty)
+                .mapKeyValue((packageInRepo, emptyOpt) -> shortLivedVersionCache.get(urlFor(packageInRepo)))
+                .toList();
 
-        if (cachedVersions != null) {
-            return new AlreadyLoadedVersions(cachedVersions);
-        } else {
-            CompletableFuture<Set<DependencyVersion>> future = shortLivedVersionCache.get(urlString);
-            return new StillLoadingVersions(future);
-        }
+        List<Set<DependencyVersion>> versions = EntryStream.of(alreadyInCacheOrNot)
+                .values()
+                .filter(Optional::isPresent)
+                .flatMap(Optional::stream)
+                .toList();
+
+        return VersionsResults.of(versions, futures);
     }
 
     private Set<DependencyVersion> fetchAndParseFromUrl(String urlString) {
@@ -148,10 +154,4 @@ public final class VersionExplorer {
     private VersionExplorer() {}
 
     public record PackageInRepo(DependencyGroup group, DependencyName dependencyName, RepositoryUrl repositoryUrl) {}
-
-    public sealed interface VersionsResult permits AlreadyLoadedVersions, StillLoadingVersions {}
-
-    record AlreadyLoadedVersions(Set<DependencyVersion> versions) implements VersionsResult {}
-
-    record StillLoadingVersions(CompletableFuture<Set<DependencyVersion>> future) implements VersionsResult {}
 }

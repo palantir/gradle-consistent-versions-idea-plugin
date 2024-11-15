@@ -134,9 +134,9 @@ public class VersionCompletionContributor extends CompletionContributor {
     }
 
     private void addToResults(CompletionResultSet resultSet, List<PackageInRepo> packageInRepo, DependencyInfo key) {
-        VersionsResultAggregate results = versionExplorer.getVersions(packageInRepo);
+        VersionsResults results = versionExplorer.getVersions(packageInRepo);
 
-        results.scheduleRefreshOnCompletion(CompletionRefreshUtil::scheduleRefresh);
+        results.scheduleRunnableOnCompletion(CompletionRefreshUtil::scheduleRefresh);
 
         Map<DependencyVersion, Long> versionCounts = results.getVersionCounts();
 
@@ -161,7 +161,6 @@ public class VersionCompletionContributor extends CompletionContributor {
 
         resultSet.addAllElements(lookupElements);
     }
-
 
     private void addAndRefresh(DependencyInfo key) {
         if (!loadedDependencies.contains(key)) {
