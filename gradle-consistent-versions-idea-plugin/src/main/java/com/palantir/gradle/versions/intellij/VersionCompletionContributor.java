@@ -34,9 +34,12 @@ import com.palantir.gradle.versions.intellij.VersionExplorer.PackageInRepo;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsDependencyVersion;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsProperty;
 import com.palantir.gradle.versions.intellij.psi.VersionPropsTypes;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -116,18 +119,27 @@ public class VersionCompletionContributor extends CompletionContributor {
             Project project, DependencyGroup group, DependencyName dependencyName) {
 
         String dependencyNamePrefix = dependencyName.name().replace("*", "");
-        return StreamEx.of(RepositoryLoader.loadRepositories(project))
-                .flatMap(url -> StreamEx.of(
-                                groupPartOrPackageNameExplorer.getCancelableGroupPartOrPackageName(group, url))
-                        .filter(pkgName -> pkgName.name().startsWith(dependencyNamePrefix))
-                        .map(pkgName -> new SimpleEntry<>(url, pkgName)))
-                .map(entry -> {
-                    RepositoryUrl url = entry.getKey();
-                    GroupPartOrPackageName pkgName = entry.getValue();
-                    DependencyName depName = DependencyName.of(pkgName.name());
-                    return new PackageInRepo(group, depName, url);
-                })
+        Set<RepositoryUrl> urls = RepositoryLoader.loadRepositories(project);
+
+        ExecutorService executorService =
+                Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        List<CompletableFuture<List<PackageInRepo>>> futures = urls.stream()
+                .map(url -> CompletableFuture.supplyAsync(
+                        () -> groupPartOrPackageNameExplorer.getGroupPartOrPackageName(group, url).stream()
+                                .filter(pkgName -> pkgName.name().startsWith(dependencyNamePrefix))
+                                .map(pkgName -> new PackageInRepo(group, DependencyName.of(pkgName.name()), url))
+                                .collect(Collectors.toList()),
+                        executorService))
                 .toList();
+
+        List<PackageInRepo> result = futures.stream()
+                .map(CompletableFuture::join)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        executorService.shutdown();
+        return result;
     }
 
     private void addToResults(CompletionResultSet resultSet, List<PackageInRepo> groupAndDeps) {
