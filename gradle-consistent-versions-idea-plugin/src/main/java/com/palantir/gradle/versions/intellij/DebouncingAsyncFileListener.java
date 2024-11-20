@@ -42,6 +42,7 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener {
                 this::processEvents, debounceDelayMillis, parentDisposable, Alarm.ThreadToUse.POOLED_THREAD);
     }
 
+    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     @Nullable
     @Override
     public ChangeApplier prepareChange(List<? extends VFileEvent> events) {
@@ -51,6 +52,7 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener {
         return null;
     }
 
+    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     private void processEvents() {
         List<VFileEvent> eventsToProcess = new ArrayList<>();
         int drained = bufferedEvents.drainTo(eventsToProcess);
