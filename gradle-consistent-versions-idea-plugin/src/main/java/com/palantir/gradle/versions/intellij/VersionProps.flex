@@ -42,17 +42,18 @@ VERSION=[^= \n\f#]+
 COLON=[:]
 EQUALS=[=]
 DOT=[.]
-IDENTIFIER = [^.:=\ \n\t\f]+
+GROUP_PART = [^.:=\ \n\t\f]+
+NAME_KEY = [^:=\ \n\t\f]+
 COMMENT=("#")[^\r\n]*
 
 %%
 
 <YYINITIAL> {WHITE_SPACE}*{COMMENT}              { return VersionPropsTypes.COMMENT; }
-<YYINITIAL> {IDENTIFIER}                         { return VersionPropsTypes.GROUP_PART; }
+<YYINITIAL> {GROUP_PART}                         { return VersionPropsTypes.GROUP_PART; }
 <YYINITIAL> {DOT}                                { return VersionPropsTypes.DOT; }
 <YYINITIAL> {COLON}                              { yybegin(WAITING_NAME); return VersionPropsTypes.COLON; }
 
-<WAITING_NAME> {IDENTIFIER}                      { yybegin(WAITING_VERSION); return VersionPropsTypes.NAME_KEY; }
+<WAITING_NAME> {NAME_KEY}                        { yybegin(WAITING_VERSION); return VersionPropsTypes.NAME_KEY; }
 
 <WAITING_VERSION> {WHITE_SPACE}+                 { return TokenType.WHITE_SPACE; }
 <WAITING_VERSION> {EQUALS}                       { return VersionPropsTypes.EQUALS; }
