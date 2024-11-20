@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: Allow for . character in package name during lexing
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/87
