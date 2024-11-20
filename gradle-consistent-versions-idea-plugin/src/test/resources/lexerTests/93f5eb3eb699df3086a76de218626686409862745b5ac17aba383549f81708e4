@@ -1,0 +1,19 @@
+this.is.a.test:with.dots.in.the.name = 1
+VersionPropsTokenType.GROUP_PART this
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART is
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART a
+VersionPropsTokenType.DOT .
+VersionPropsTokenType.GROUP_PART test
+DEPENDENCY_GROUP this.is.a.test
+VersionPropsTokenType.COLON :
+VersionPropsTokenType.NAME_KEY with.dots.in.the.name
+DEPENDENCY_NAME with.dots.in.the.name
+WHITE_SPACE  
+VersionPropsTokenType.EQUALS =
+WHITE_SPACE  
+VersionPropsTokenType.VERSION 1
+DEPENDENCY_VERSION 1
+PROPERTY this.is.a.test:with.dots.in.the.name = 1
+FILE this.is.a.test:with.dots.in.the.name = 1

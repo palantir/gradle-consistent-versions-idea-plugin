@@ -68,6 +68,7 @@ public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5
                 "has.spaces.around : colon = 1",
                 "has.no.spaces.around:equals=1",
                 "has.loads.of.spaces:around   =   equals",
+                "this.is.a.test:with.dots.in.the.name = 1",
                 "    # comment after spaces");
 
         JavaCodeInsightTestFixture fixture = getFixture();
