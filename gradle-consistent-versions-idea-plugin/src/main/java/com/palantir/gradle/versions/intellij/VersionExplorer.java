@@ -104,6 +104,7 @@ public final class VersionExplorer {
             return parseVersionsFromContent(metadata);
         } catch (Exception e) {
             log.error("Failed to parse maven-metadata.xml", e);
+            log.error("Full content: \n", content);
         }
         return Collections.emptySet();
     }
