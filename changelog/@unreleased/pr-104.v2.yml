@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: log contents and only require version field
+  links:
+  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/104
