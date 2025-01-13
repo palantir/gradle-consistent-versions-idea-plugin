@@ -32,16 +32,6 @@ import org.immutables.value.Value;
 interface Metadata {
     @Value.Parameter
     @JacksonXmlElementWrapper(useWrapping = false)
-    @JacksonXmlProperty(localName = "groupId")
-    String groupId();
-
-    @Value.Parameter
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JacksonXmlProperty(localName = "artifactId")
-    String artifactId();
-
-    @Value.Parameter
-    @JacksonXmlElementWrapper(useWrapping = false)
     @JacksonXmlProperty(localName = "versioning")
     Versioning versioning();
 

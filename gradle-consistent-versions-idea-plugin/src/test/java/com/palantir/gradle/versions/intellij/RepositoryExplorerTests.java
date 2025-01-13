@@ -33,11 +33,7 @@ public class RepositoryExplorerTests {
                 .lastUpdated("unimportant")
                 .build();
 
-        Metadata metadata = Metadata.builder()
-                .groupId("com.example")
-                .artifactId("example-artifact")
-                .versioning(versioning)
-                .build();
+        Metadata metadata = Metadata.builder().versioning(versioning).build();
 
         Set<DependencyVersion> versions = VersionExplorer.parseVersionsFromContent(metadata);
 
@@ -57,11 +53,7 @@ public class RepositoryExplorerTests {
                 .lastUpdated("unimportant")
                 .build();
 
-        Metadata metadata = Metadata.builder()
-                .groupId("com.example")
-                .artifactId("example-artifact")
-                .versioning(versioning)
-                .build();
+        Metadata metadata = Metadata.builder().versioning(versioning).build();
 
         Set<DependencyVersion> versions = VersionExplorer.parseVersionsFromContent(metadata);
 
@@ -94,11 +86,7 @@ public class RepositoryExplorerTests {
                 .lastUpdated("unimportant")
                 .build();
 
-        Metadata metadata = Metadata.builder()
-                .groupId("com.example")
-                .artifactId("example-artifact")
-                .versioning(versioning)
-                .build();
+        Metadata metadata = Metadata.builder().versioning(versioning).build();
 
         Set<DependencyVersion> versions = VersionExplorer.parseVersionsFromContent(metadata);
 
@@ -118,11 +106,7 @@ public class RepositoryExplorerTests {
                 .lastUpdated("unimportant")
                 .build();
 
-        Metadata metadata = Metadata.builder()
-                .groupId("com.example")
-                .artifactId("example-artifact")
-                .versioning(versioning)
-                .build();
+        Metadata metadata = Metadata.builder().versioning(versioning).build();
 
         Set<DependencyVersion> versions = VersionExplorer.parseVersionsFromContent(metadata);
 
