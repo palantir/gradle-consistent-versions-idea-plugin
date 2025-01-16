@@ -96,6 +96,7 @@ public final class VersionExplorer {
                 + groupAndDep.dependencyPackage().name() + "/maven-metadata.xml";
     }
 
+    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     private Set<DependencyVersion> parseVersionsFromContent(String content) {
         try {
             XmlMapper xmlMapper = new XmlMapper();
