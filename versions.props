@@ -4,7 +4,7 @@ org.assertj:assertj-core = 3.27.2
 org.immutables:value = 2.10.1
 org.junit.jupiter:junit-jupiter = 5.11.4
 org.jetbrains:annotations = 26.0.1
-com.github.ben-manes.caffeine:caffeine = 3.1.8
+com.github.ben-manes.caffeine:caffeine = 3.2.0
 org.awaitility:awaitility = 4.2.2
 
 # Unnecessary once we have lock files
