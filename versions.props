@@ -10,3 +10,4 @@ org.awaitility:awaitility = 4.2.2
 # Unnecessary once we have lock files
 com.google.code.findbugs:jsr305 = 3.0.2
 com.google.errorprone:error_prone_annotations = 2.11.0
+org.junit.platform:* = 1.12.0
