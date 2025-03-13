@@ -1,4 +1,4 @@
-<idea-plugin url="https://github.com/palantir/gradle-consistent-versions-idea-plugin" require-restart="false">
+<idea-plugin url="https://github.com/palantir/gradle-consistent-versions-idea-plugin" require-restart="true">
   <id>gradle-consistent-versions</id>
   <name>gradle-consistent-versions</name>
   <vendor url="https://github.com/palantir/gradle-consistent-versions-idea-plugin">
@@ -43,15 +43,15 @@
     <fileType name="VersionProps File" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsFileType" fieldName="INSTANCE"
               language="VersionProps" fileNames="versions.props"/>
     <lang.parserDefinition language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsParserDefinition"/>
-<!--    <lang.syntaxHighlighterFactory language="VersionProps"-->
-<!--                                   implementationClass="com.palantir.gradle.versions.intellij.VersionPropsSyntaxHighlighterFactory"/>-->
-<!--    <completion.contributor language="VersionProps"-->
-<!--                            implementationClass="com.palantir.gradle.versions.intellij.VersionCompletionContributor" order="last"/>-->
-<!--    <completion.contributor language="VersionProps"-->
-<!--                            implementationClass="com.palantir.gradle.versions.intellij.GroupPartOrPackageNameCompletionContributor"/>-->
-<!--    <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>-->
+    <lang.syntaxHighlighterFactory language="VersionProps"
+                                   implementationClass="com.palantir.gradle.versions.intellij.VersionPropsSyntaxHighlighterFactory"/>
+    <completion.contributor language="VersionProps"
+                            implementationClass="com.palantir.gradle.versions.intellij.VersionCompletionContributor" order="last"/>
+    <completion.contributor language="VersionProps"
+                            implementationClass="com.palantir.gradle.versions.intellij.GroupPartOrPackageNameCompletionContributor"/>
+    <lang.commenter language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsCommenter"/>
     <vfs.asyncListener implementation="com.palantir.gradle.versions.intellij.VersionPropsListenerRegistrar"/>
-<!--    <annotator language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.CommentAnnotator" />-->
+    <annotator language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.CommentAnnotator" />
     <externalSystemTaskNotificationListener implementation="com.palantir.gradle.versions.intellij.LoadCacheOnGradleProjectRefresh" />
     <applicationService serviceImplementation="com.palantir.gradle.versions.intellij.GradleCacheExplorer" />
   </extensions>
