@@ -66,7 +66,7 @@ public final class GroupPartOrPackageNameExplorer {
         return Collections.emptySet();
     }
 
-    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
+    @SuppressWarnings({"for-rollout:RemoveRolloutSuppressions", "for-rollout:Slf4jLogsafeArgs"})
     public Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, RepositoryUrl url) {
         String urlString = url.url() + group.asUrlString();
 
@@ -78,7 +78,7 @@ public final class GroupPartOrPackageNameExplorer {
         }
     }
 
-    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
+    @SuppressWarnings({"for-rollout:RemoveRolloutSuppressions", "for-rollout:Slf4jLogsafeArgs"})
     private Set<GroupPartOrPackageName> fetchAndParseFromUrl(String urlString) {
         ContentResults result = ContentsUtil.fetchPageContents(urlString);
 
