@@ -1,4 +1,4 @@
-<idea-plugin url="https://github.com/palantir/gradle-consistent-versions-idea-plugin" require-restart="false">
+<idea-plugin url="https://github.com/palantir/gradle-consistent-versions-idea-plugin" require-restart="true">
   <id>gradle-consistent-versions</id>
   <name>gradle-consistent-versions</name>
   <vendor url="https://github.com/palantir/gradle-consistent-versions-idea-plugin">
@@ -39,7 +39,7 @@
   <depends>org.jetbrains.plugins.gradle</depends>
 
   <extensions defaultExtensionNs="com.intellij">
-    <projectConfigurable instance="com.palantir.gradle.versions.intellij.VersionPropsSettingsPage" displayName="Gradle Consistent Versions" id="VersionPropsSettingsPage"/>
+    <projectConfigurable instance="com.palantir.gradle.versions.intellij.VersionPropsSettingsPage" displayName="Gradle Consistent Versions" id="VersionPropsSettingsPage" nonDefaultProject="true"/>
     <fileType name="VersionProps File" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsFileType" fieldName="INSTANCE"
               language="VersionProps" fileNames="versions.props"/>
     <lang.parserDefinition language="VersionProps" implementationClass="com.palantir.gradle.versions.intellij.VersionPropsParserDefinition"/>

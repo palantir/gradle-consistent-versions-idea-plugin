@@ -16,20 +16,19 @@
 
 package com.palantir.gradle.versions.intellij;
 
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.vfs.AsyncFileListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
-public final class VersionPropsListenerRegistrar implements AsyncFileListener, Disposable {
+public final class VersionPropsListenerRegistrar implements AsyncFileListener {
 
     private final FilteringAsyncFileListener changeListener;
 
     VersionPropsListenerRegistrar() {
         this.changeListener = new FilteringAsyncFileListener(
-                new DebouncingAsyncFileListener(new VersionPropsFileListener(), 250, this), this::isRelevantFile);
+                new DebouncingAsyncFileListener(new VersionPropsFileListener(), 250), this::isRelevantFile);
     }
 
     private boolean isRelevantFile(VirtualFile virtualFile) {
@@ -42,7 +41,4 @@ public final class VersionPropsListenerRegistrar implements AsyncFileListener, D
     public ChangeApplier prepareChange(List<? extends VFileEvent> events) {
         return changeListener.prepareChange(events);
     }
-
-    @Override
-    public void dispose() {}
 }
