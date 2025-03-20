@@ -56,7 +56,7 @@ public final class VersionExplorer {
 
     public record PackageInRepo(DependencyGroup group, DependencyName dependencyPackage, RepositoryUrl repositoryUrl) {}
 
-    @SuppressWarnings({"for-rollout:FutureReturnValueIgnored", "for-rollout:RemoveRolloutSuppressions"})
+    @SuppressWarnings("for-rollout:FutureReturnValueIgnored")
     public Set<DependencyVersion> getVersions(PackageInRepo groupAndDep, Runnable onLoadMore) {
         String urlString = urlFor(groupAndDep);
 
@@ -74,7 +74,7 @@ public final class VersionExplorer {
         return Collections.emptySet();
     }
 
-    @SuppressWarnings({"for-rollout:RemoveRolloutSuppressions", "for-rollout:Slf4jLogsafeArgs"})
+    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     private Set<DependencyVersion> fetchAndParseFromUrl(String urlString) {
         ContentResults result = ContentsUtil.fetchPageContents(urlString);
 
@@ -96,7 +96,7 @@ public final class VersionExplorer {
                 + groupAndDep.dependencyPackage().name() + "/maven-metadata.xml";
     }
 
-    @SuppressWarnings({"for-rollout:RemoveRolloutSuppressions", "for-rollout:Slf4jLogsafeArgs"})
+    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     private Set<DependencyVersion> parseVersionsFromContent(String content) {
         try {
             XmlMapper xmlMapper = new XmlMapper();
@@ -110,7 +110,7 @@ public final class VersionExplorer {
         return Collections.emptySet();
     }
 
-    @SuppressWarnings({"for-rollout:MixedMutabilityReturnType", "for-rollout:RemoveRolloutSuppressions"})
+    @SuppressWarnings("for-rollout:MixedMutabilityReturnType")
     @VisibleForTesting
     static Set<DependencyVersion> parseVersionsFromContent(Metadata metadata) {
         List<String> allVersions = new ArrayList<>(metadata.versioning().versions());
