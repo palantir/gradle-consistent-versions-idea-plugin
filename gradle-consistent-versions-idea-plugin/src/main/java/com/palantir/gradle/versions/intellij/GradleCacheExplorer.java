@@ -54,7 +54,7 @@ public class GradleCacheExplorer {
         cache.set(extractStrings());
     }
 
-    @SuppressWarnings({"for-rollout:RemoveRolloutSuppressions", "for-rollout:Slf4jLogsafeArgs"})
+    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     public final Set<String> getCompletions(Set<RepositoryUrl> repoUrls, DependencyGroup input, boolean isPackageName) {
         Stopwatch stopWatch = Stopwatch.createStarted();
 
