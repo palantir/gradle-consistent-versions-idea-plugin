@@ -103,15 +103,18 @@ public final class VersionPropsFileListener implements AsyncFileListener {
         return Files.exists(Paths.get(project.getBasePath(), "buildSrc"));
     }
 
+    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     private void runTaskThenRefresh(Project project) {
         log.debug("Running task {} on project {}", TASK_NAME, project.getName());
         TaskCallback callback = new TaskCallback() {
+            @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
             @Override
             public void onSuccess() {
                 log.debug("Task {} successfully executed", TASK_NAME);
                 refreshProject(project);
             }
 
+            @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
             @Override
             public void onFailure() {
                 log.error("Task {} failed", TASK_NAME);
@@ -135,6 +138,7 @@ public final class VersionPropsFileListener implements AsyncFileListener {
         return settings;
     }
 
+    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     private void refreshProjectWithTask(Project project) {
         log.debug("Refreshing project {} with task {}", project.getName(), TASK_NAME);
         refreshProject(project, new ImportSpecBuilder(project, GradleConstants.SYSTEM_ID).withArguments(TASK_NAME));
