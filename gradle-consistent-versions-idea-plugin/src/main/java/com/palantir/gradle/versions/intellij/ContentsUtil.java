@@ -49,6 +49,7 @@ public final class ContentsUtil {
         }
     }
 
+    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     private static Callable<ContentResults> fetchContentTask(URL pageUrl) {
         return () -> {
             HttpURLConnection connection = null;
