@@ -21,13 +21,13 @@ import com.intellij.codeInsight.completion.BaseCompletionService;
 import com.intellij.codeInsight.completion.CompletionProcess;
 import com.intellij.codeInsight.completion.CompletionService;
 import com.intellij.openapi.application.ApplicationManager;
+import com.palantir.logsafe.logger.SafeLogger;
+import com.palantir.logsafe.logger.SafeLoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Supplier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class CompletionRefreshUtil {
-    private static final Logger log = LoggerFactory.getLogger(CompletionRefreshUtil.class);
+    private static final SafeLogger log = SafeLoggerFactory.get(CompletionRefreshUtil.class);
 
     public static Supplier<Void> refreshOnceSupplier() {
         return Suppliers.memoize(() -> {
