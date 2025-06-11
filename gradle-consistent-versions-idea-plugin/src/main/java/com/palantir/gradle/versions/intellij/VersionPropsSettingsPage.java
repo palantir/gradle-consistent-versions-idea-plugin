@@ -54,6 +54,7 @@ public final class VersionPropsSettingsPage implements Configurable {
         return enabledCheckbox.isSelected() != settings.isEnabled();
     }
 
+    @SuppressWarnings("for-rollout:CheckedExceptionNotThrown")
     @Override
     public void apply() throws ConfigurationException {
         settings.setEnabled(enabledCheckbox.isSelected());

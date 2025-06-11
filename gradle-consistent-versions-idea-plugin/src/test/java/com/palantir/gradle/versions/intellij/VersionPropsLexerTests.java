@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 
 public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5 {
 
+    @SuppressWarnings("for-rollout:NonFinalStaticField")
     private static String basePath = "src/test/resources/lexerTests/";
 
     @Override

@@ -24,11 +24,12 @@ public class VersionWeigher extends LookupElementWeigher {
         super("version");
     }
 
+    @SuppressWarnings("for-rollout:UnnecessaryParentheses")
     @Override
     public final Comparable<?> weigh(LookupElement element) {
         Object obj = element.getObject();
-        if (obj instanceof DependencyVersion) {
-            return ((DependencyVersion) obj);
+        if (obj instanceof DependencyVersion dependencyVersion) {
+            return (dependencyVersion);
         } else {
             return null;
         }

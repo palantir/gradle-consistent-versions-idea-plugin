@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 public final class GroupPartOrPackageNameExplorer {
     private static final Logger log = LoggerFactory.getLogger(GroupPartOrPackageNameExplorer.class);
 
+    @SuppressWarnings("for-rollout:PreferJavaTimeOverload")
     private final LoadingCache<String, Set<GroupPartOrPackageName>> groupPartOrPackageNameCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .maximumSize(10000)
@@ -66,7 +67,7 @@ public final class GroupPartOrPackageNameExplorer {
         return Collections.emptySet();
     }
 
-    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
+    @SuppressWarnings({"for-rollout:CatchingUnchecked", "for-rollout:Slf4jLogsafeArgs"})
     public Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, RepositoryUrl url) {
         String urlString = url.url() + group.asUrlString();
 

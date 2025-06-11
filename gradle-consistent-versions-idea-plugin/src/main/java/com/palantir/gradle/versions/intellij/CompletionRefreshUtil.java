@@ -36,6 +36,7 @@ public final class CompletionRefreshUtil {
         });
     }
 
+    @SuppressWarnings("for-rollout:ThrowSpecificExceptions")
     private static void triggerRefresh() {
         ApplicationManager.getApplication().invokeLater(() -> {
             CompletionService completionService = CompletionService.getCompletionService();
