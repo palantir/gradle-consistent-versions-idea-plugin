@@ -18,6 +18,7 @@ package com.palantir.gradle.versions.intellij.psi;
 
 import com.intellij.psi.tree.TokenSet;
 
+@SuppressWarnings("for-rollout:InterfaceWithOnlyStatics")
 public interface VersionPropsTokenSets {
 
     TokenSet IDENTIFIERS = TokenSet.create(VersionPropsTypes.GROUP_PART);

@@ -69,6 +69,7 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener {
         }
 
         log.debug("Processing debounced events: {}", eventsToProcess);
+        @SuppressWarnings("for-rollout:DifferentNameButSame")
         AsyncFileListener.ChangeApplier applier = delegate.prepareChange(eventsToProcess);
         if (applier != null) {
             applier.afterVfsChange();

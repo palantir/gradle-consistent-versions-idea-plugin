@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 public final class ContentsUtil {
     private static final Logger log = LoggerFactory.getLogger(ContentsUtil.class);
 
+    @SuppressWarnings("for-rollout:ThrowSpecificExceptions")
     public static ContentResults fetchPageContents(String urlString) {
         try {
             URL url = new URL(urlString);
