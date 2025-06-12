@@ -51,7 +51,7 @@ public class VersionPropsParserDefinition implements ParserDefinition {
     }
 
     @Override
-    public final PsiParser createParser(@SuppressWarnings("for-rollout:UnnecessaryFinal") final Project project) {
+    public final PsiParser createParser(final Project project) {
         return new VersionPropsParser();
     }
 

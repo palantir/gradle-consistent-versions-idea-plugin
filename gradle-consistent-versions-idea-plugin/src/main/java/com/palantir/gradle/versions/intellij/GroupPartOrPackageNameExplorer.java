@@ -67,7 +67,7 @@ public final class GroupPartOrPackageNameExplorer {
         return Collections.emptySet();
     }
 
-    @SuppressWarnings({"for-rollout:CatchingUnchecked", "for-rollout:Slf4jLogsafeArgs"})
+    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     public Set<GroupPartOrPackageName> getGroupPartOrPackageName(DependencyGroup group, RepositoryUrl url) {
         String urlString = url.url() + group.asUrlString();
 
