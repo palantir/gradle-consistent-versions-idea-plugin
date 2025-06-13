@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 public final class GroupPartOrPackageNameExplorer {
     private static final Logger log = LoggerFactory.getLogger(GroupPartOrPackageNameExplorer.class);
 
-    @SuppressWarnings("for-rollout:PreferJavaTimeOverload")
     private final LoadingCache<String, Set<GroupPartOrPackageName>> groupPartOrPackageNameCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .maximumSize(10000)

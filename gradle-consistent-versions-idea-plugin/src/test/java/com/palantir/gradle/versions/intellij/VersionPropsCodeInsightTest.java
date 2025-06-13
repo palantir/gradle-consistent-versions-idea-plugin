@@ -38,7 +38,6 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
         return "";
     }
 
-    @SuppressWarnings("for-rollout:PreferJavaTimeOverload")
     @Test
     public void test_version_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
@@ -61,7 +60,6 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
                         "0.3.0", "0.2.0", "0.1.0");
     }
 
-    @SuppressWarnings("for-rollout:PreferJavaTimeOverload")
     @Test
     public void test_wild_card_version_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
@@ -85,7 +83,6 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
                         "3.4.0", "3.3.0", "3.2.1", "3.1.0", "3.0.3", "3.0.1", "3.0.0");
     }
 
-    @SuppressWarnings("for-rollout:PreferJavaTimeOverload")
     @Test
     public void test_group_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
@@ -104,7 +101,6 @@ public class VersionPropsCodeInsightTest extends LightJavaCodeInsightFixtureTest
                 lookupElementStrings, "baseline-error-prone", "gradle-baseline-java", "gradle-baseline-java-config");
     }
 
-    @SuppressWarnings("for-rollout:PreferJavaTimeOverload")
     @Test
     public void test_package_completion() {
         JavaCodeInsightTestFixture fixture = getFixture();
