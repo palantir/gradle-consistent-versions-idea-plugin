@@ -29,6 +29,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -157,7 +158,7 @@ public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5
         try (BufferedReader reader = Files.newBufferedReader(getOutputFilePath(fileName), StandardCharsets.UTF_8)) {
             return reader.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -165,7 +166,7 @@ public class VersionPropsLexerTests extends LightJavaCodeInsightFixtureTestCase5
         try (BufferedWriter writer = Files.newBufferedWriter(getOutputFilePath(input), StandardCharsets.UTF_8)) {
             writer.write(input + "\n" + token);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
