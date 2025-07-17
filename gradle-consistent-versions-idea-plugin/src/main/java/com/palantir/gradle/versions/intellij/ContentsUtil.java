@@ -18,6 +18,7 @@ package com.palantir.gradle.versions.intellij;
 
 import com.google.common.io.CharStreams;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -36,7 +37,7 @@ public final class ContentsUtil {
             URL url = new URL(urlString);
             return ContentsUtil.fetchPageContents(url);
         } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
