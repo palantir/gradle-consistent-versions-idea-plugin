@@ -1,7 +1,7 @@
 com.fasterxml.jackson.*:jackson-* = 2.16.0
 com.google.guava:guava = 33.5.0-jre
 org.assertj:assertj-core = 3.27.6
-org.immutables:value = 2.11.4
+org.immutables:value = 2.11.5
 org.junit.jupiter:junit-jupiter = 6.0.0
 org.jetbrains:annotations = 26.0.2
 com.github.ben-manes.caffeine:caffeine = 3.2.2
