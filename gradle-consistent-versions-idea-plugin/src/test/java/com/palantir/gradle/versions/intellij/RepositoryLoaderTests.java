@@ -55,14 +55,12 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
     void loads_repos_for_file() throws IOException {
         Project project = getFixture().getProject();
 
-        createMavenRepositoriesFile(
-                project,
-                """
-                    <repositories>
-                      <repository url="https://repo1.maven.org/maven2/"/>
-                      <repository url="https://repo2.maven.org/maven2/"/>
-                    </repositories>
-                    """);
+        createMavenRepositoriesFile(project, """
+            <repositories>
+              <repository url="https://repo1.maven.org/maven2/"/>
+              <repository url="https://repo2.maven.org/maven2/"/>
+            </repositories>
+            """);
 
         Set<RepositoryUrl> repositories = RepositoryLoader.loadRepositories(project);
         assertThat(repositories)
@@ -76,15 +74,13 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
     void local_host_and_file_paths_ignored() throws IOException {
         Project project = getFixture().getProject();
 
-        createMavenRepositoriesFile(
-                project,
-                """
-                    <repositories>
-                      <repository url="https://repo1.maven.org/maven2/"/>
-                      <repository url="http://localhost:8081/nexus/content/repositories/releases/"/>
-                      <repository url="file:///Users/user/.m2/repository/"/>
-                    </repositories>
-                    """);
+        createMavenRepositoriesFile(project, """
+            <repositories>
+              <repository url="https://repo1.maven.org/maven2/"/>
+              <repository url="http://localhost:8081/nexus/content/repositories/releases/"/>
+              <repository url="file:///Users/user/.m2/repository/"/>
+            </repositories>
+            """);
 
         Set<RepositoryUrl> repositories = RepositoryLoader.loadRepositories(project);
         assertThat(repositories)
@@ -96,21 +92,19 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
     void check_order_is_corrected() throws IOException {
         Project project = getFixture().getProject();
 
-        createMavenRepositoriesFile(
-                project,
-                """
-                    <repositories>
-                      <repository url="dist"/>
-                      <repository url="internal"/>
-                      <repository url="RELEASE-dist"/>
-                      <repository url="internal-dist"/>
-                      <repository url="internal-jar"/>
-                      <repository url="release-JAR"/>
-                      <repository url="release"/>
-                      <repository url="random"/>
-                      <repository url="jar"/>
-                    </repositories>
-                    """);
+        createMavenRepositoriesFile(project, """
+            <repositories>
+              <repository url="dist"/>
+              <repository url="internal"/>
+              <repository url="RELEASE-dist"/>
+              <repository url="internal-dist"/>
+              <repository url="internal-jar"/>
+              <repository url="release-JAR"/>
+              <repository url="release"/>
+              <repository url="random"/>
+              <repository url="jar"/>
+            </repositories>
+            """);
 
         Set<RepositoryUrl> repositories = RepositoryLoader.loadRepositories(project);
         assertThat(repositories)
@@ -131,18 +125,16 @@ public class RepositoryLoaderTests extends LightJavaCodeInsightFixtureTestCase5 
     void repos_not_sorted_maintain_entry_order() throws IOException {
         Project project = getFixture().getProject();
 
-        createMavenRepositoriesFile(
-                project,
-                """
-                    <repositories>
-                      <repository url="test1/internal"/>
-                      <repository url="test1/release"/>
-                      <repository url="random1"/>
-                      <repository url="test2/internal"/>
-                      <repository url="random2"/>
-                      <repository url="test2/release"/>
-                    </repositories>
-                    """);
+        createMavenRepositoriesFile(project, """
+            <repositories>
+              <repository url="test1/internal"/>
+              <repository url="test1/release"/>
+              <repository url="random1"/>
+              <repository url="test2/internal"/>
+              <repository url="random2"/>
+              <repository url="test2/release"/>
+            </repositories>
+            """);
 
         Set<RepositoryUrl> repositories = RepositoryLoader.loadRepositories(project);
         assertThat(repositories)
