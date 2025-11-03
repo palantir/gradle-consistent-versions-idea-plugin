@@ -18,11 +18,11 @@ com.google.j2objc:j2objc-annotations:3.1 (1 constraints: b809f1a0)
 
 com.netflix.nebula:nebula-test:10.6.2 (1 constraints: 9c18268f)
 
-com.palantir.gradle.plugintesting:configuration-cache-spec:0.23.0 (1 constraints: 3705303b)
+com.palantir.gradle.plugintesting:configuration-cache-spec:0.24.0 (1 constraints: 3805333b)
 
-com.palantir.gradle.plugintesting:gradle-plugin-testing-junit:0.23.0 (1 constraints: 3705303b)
+com.palantir.gradle.plugintesting:gradle-plugin-testing-junit:0.24.0 (1 constraints: 3805333b)
 
-com.palantir.gradle.plugintesting:plugin-testing-core:0.23.0 (1 constraints: 3705303b)
+com.palantir.gradle.plugintesting:plugin-testing-core:0.24.0 (1 constraints: 3805333b)
 
 commons-io:commons-io:2.19.0 (1 constraints: db190cdf)
 
