@@ -36,8 +36,7 @@ public class FilteringAsyncFileListener implements AsyncFileListener {
         this.filter = filter;
     }
 
-    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
-    @Nullable
+        @Nullable
     @Override
     public final ChangeApplier prepareChange(List<? extends VFileEvent> events) {
         List<? extends VFileEvent> filteredEvents = events.stream()
