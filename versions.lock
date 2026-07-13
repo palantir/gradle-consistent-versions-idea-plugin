@@ -48,17 +48,17 @@ org.jetbrains:annotations:26.1.0 (2 constraints: 121f928d)
 
 org.jspecify:jspecify:1.0.0 (7 constraints: 5370d26f)
 
-org.junit.jupiter:junit-jupiter:6.1.1 (1 constraints: 49070d70)
+org.junit.jupiter:junit-jupiter:6.1.2 (1 constraints: 4a070f70)
 
-org.junit.jupiter:junit-jupiter-api:6.1.1 (5 constraints: fa5fe194)
+org.junit.jupiter:junit-jupiter-api:6.1.2 (5 constraints: fd5f7195)
 
-org.junit.jupiter:junit-jupiter-engine:6.1.1 (1 constraints: 050ece3b)
+org.junit.jupiter:junit-jupiter-engine:6.1.2 (1 constraints: 060ecf3b)
 
-org.junit.jupiter:junit-jupiter-params:6.1.1 (2 constraints: c32429d7)
+org.junit.jupiter:junit-jupiter-params:6.1.2 (2 constraints: c4242ad7)
 
-org.junit.platform:junit-platform-commons:6.1.2 (2 constraints: d8207f4a)
+org.junit.platform:junit-platform-commons:6.1.2 (2 constraints: d920b14a)
 
-org.junit.platform:junit-platform-engine:6.1.2 (3 constraints: 2530f756)
+org.junit.platform:junit-platform-engine:6.1.2 (3 constraints: 26305157)
 
 org.junit.platform:junit-platform-launcher:6.1.2 (2 constraints: 591ba362)
 
