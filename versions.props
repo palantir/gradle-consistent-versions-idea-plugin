@@ -1,5 +1,5 @@
 com.fasterxml.jackson.*:jackson-* = 2.16.0
-com.google.guava:guava = 33.7.0-jre
+com.google.guava:guava = 33.7.1-jre
 org.assertj:assertj-core = 3.27.7
 org.immutables:value = 2.12.2
 org.junit.jupiter:junit-jupiter = 6.1.3
