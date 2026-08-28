@@ -2,16 +2,21 @@ apply plugin: 'java'
 apply plugin: 'com.palantir.external-publish-intellij'
 apply plugin: 'org.jetbrains.grammarkit'
 
-intellij {
-    pluginName = "gradle-consistent-versions-idea-plugin"
-    updateSinceUntilBuild = true
-    version = "2024.1"
-    plugins = ['java', 'org.jetbrains.plugins.gradle']
+repositories {
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
-patchPluginXml {
-    sinceBuild = '241' // TODO: test against this version of IntelliJ to ensure no regressions
-    untilBuild = ''
+intellijPlatform {
+    projectName = 'gradle-consistent-versions-idea-plugin'
+    pluginConfiguration {
+        name = 'gradle-consistent-versions-idea-plugin'
+        ideaVersion {
+            sinceBuild = '241' // TODO: test against this version of IntelliJ to ensure no regressions
+            untilBuild = ''
+        }
+    }
 }
 
 // Javadoc fails if there are no public classes to javadoc, so make it stop complaining.
@@ -23,6 +28,12 @@ sourceSets.main.java.srcDirs 'build/generated/sources/intellij-parser/main/java'
 sourceSets.main.java.srcDirs 'build/generated/sources/intellij-lexer/main/java'
 
 dependencies {
+    intellijPlatform {
+        intellijIdeaCommunity('2024.1') {
+            useInstaller = false
+        }
+        bundledPlugins('com.intellij.java', 'org.jetbrains.plugins.gradle')
+    }
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-guava'
     implementation 'com.github.ben-manes.caffeine:caffeine'
