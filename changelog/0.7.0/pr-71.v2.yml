@@ -1,5 +1,0 @@
-type: improvement
-improvement:
-  description: Order repositories that are read
-  links:
-  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/71

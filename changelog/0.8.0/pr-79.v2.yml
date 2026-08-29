@@ -1,5 +1,0 @@
-type: fix
-fix:
-  description: Fix plugin verifier issues
-  links:
-  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/79

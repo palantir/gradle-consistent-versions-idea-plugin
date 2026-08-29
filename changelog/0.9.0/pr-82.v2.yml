@@ -1,5 +1,0 @@
-type: fix
-fix:
-  description: Parser correctly recovers on error
-  links:
-  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/82
