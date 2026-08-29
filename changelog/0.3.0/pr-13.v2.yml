@@ -1,5 +1,0 @@
-type: improvement
-improvement:
-  description: add caffeine cache to folders
-  links:
-  - https://github.com/palantir/gradle-consistent-versions-idea-plugin/pull/13
