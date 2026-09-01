@@ -29,6 +29,11 @@ intellijPlatform {
             untilBuild = provider { null }
         }
     }
+    pluginVerification {
+        ides {
+            create('IC', '2024.1')
+        }
+    }
 }
 
 // Javadoc fails if there are no public classes to javadoc, so make it stop complaining.
