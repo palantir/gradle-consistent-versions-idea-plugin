@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FilteringAsyncFileListener implements AsyncFileListener {
+    @SuppressWarnings("for-rollout:PreferSafeLogger")
     private static final Logger log = LoggerFactory.getLogger(FilteringAsyncFileListener.class);
 
     private final AsyncFileListener delegate;

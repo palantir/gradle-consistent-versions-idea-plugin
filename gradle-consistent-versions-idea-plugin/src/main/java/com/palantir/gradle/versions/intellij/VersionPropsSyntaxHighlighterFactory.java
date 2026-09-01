@@ -24,7 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 public class VersionPropsSyntaxHighlighterFactory extends SyntaxHighlighterFactory {
 
     @Override
-    public final SyntaxHighlighter getSyntaxHighlighter(Project project, VirtualFile virtualFile) {
+    public final SyntaxHighlighter getSyntaxHighlighter(Project _project, VirtualFile _virtualFile) {
         return new VersionPropsSyntaxHighlighter();
     }
 }

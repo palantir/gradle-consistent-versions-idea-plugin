@@ -1,17 +1,39 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 apply plugin: 'java'
 apply plugin: 'com.palantir.external-publish-intellij'
 apply plugin: 'org.jetbrains.grammarkit'
 
-intellij {
-    pluginName = "gradle-consistent-versions-idea-plugin"
-    updateSinceUntilBuild = true
-    version = "2024.1"
-    plugins = ['java', 'org.jetbrains.plugins.gradle']
+repositories {
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
-patchPluginXml {
-    sinceBuild = '241' // TODO: test against this version of IntelliJ to ensure no regressions
-    untilBuild = ''
+dependencies {
+    intellijPlatform {
+        intellijIdeaCommunity('2024.1') {
+            useInstaller = false
+        }
+        bundledPlugins('com.intellij.java', 'org.jetbrains.plugins.gradle')
+        testFramework(TestFrameworkType.Platform.INSTANCE)
+        testFramework(TestFrameworkType.Plugin.Java.INSTANCE)
+    }
+}
+
+intellijPlatform {
+    projectName = 'gradle-consistent-versions-idea-plugin'
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = '241' // TODO: test against this version of IntelliJ to ensure no regressions
+            untilBuild = provider { null }
+        }
+    }
+    pluginVerification {
+        ides {
+            create('IC', '2024.1')
+        }
+    }
 }
 
 // Javadoc fails if there are no public classes to javadoc, so make it stop complaining.
@@ -30,6 +52,7 @@ dependencies {
     annotationProcessor 'org.immutables:value'
     compileOnly 'org.immutables:value::annotations'
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'junit:junit'
     testImplementation 'org.assertj:assertj-core'
 }
 

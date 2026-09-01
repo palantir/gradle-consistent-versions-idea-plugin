@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class CompletionRefreshUtil {
+    @SuppressWarnings("for-rollout:PreferSafeLogger")
     private static final Logger log = LoggerFactory.getLogger(CompletionRefreshUtil.class);
 
     public static Supplier<Void> refreshOnceSupplier() {
@@ -36,6 +37,7 @@ public final class CompletionRefreshUtil {
         });
     }
 
+    @SuppressWarnings("for-rollout:PreferSafeLoggableExceptions")
     private static void triggerRefresh() {
         ApplicationManager.getApplication().invokeLater(() -> {
             CompletionService completionService = CompletionService.getCompletionService();
