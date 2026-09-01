@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class RepositoryLoader {
+    @SuppressWarnings("for-rollout:PreferSafeLogger")
     private static final Logger log = LoggerFactory.getLogger(RepositoryLoader.class);
 
     private static final ObjectMapper XML_MAPPER = new XmlMapper().registerModule(new GuavaModule());
