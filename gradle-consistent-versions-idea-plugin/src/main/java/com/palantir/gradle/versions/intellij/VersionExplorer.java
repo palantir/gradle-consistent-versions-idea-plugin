@@ -74,7 +74,6 @@ public final class VersionExplorer {
         return Collections.emptySet();
     }
 
-    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     private Set<DependencyVersion> fetchAndParseFromUrl(String urlString) {
         ContentResults result = ContentsUtil.fetchPageContents(urlString);
 
@@ -96,7 +95,6 @@ public final class VersionExplorer {
                 + groupAndDep.dependencyPackage().name() + "/maven-metadata.xml";
     }
 
-    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     private Set<DependencyVersion> parseVersionsFromContent(String content) {
         try {
             XmlMapper xmlMapper = new XmlMapper();
