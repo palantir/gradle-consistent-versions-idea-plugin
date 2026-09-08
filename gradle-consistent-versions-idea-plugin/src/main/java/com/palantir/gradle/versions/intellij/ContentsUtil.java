@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class ContentsUtil {
+    @SuppressWarnings("for-rollout:PreferSafeLogger")
     private static final Logger log = LoggerFactory.getLogger(ContentsUtil.class);
 
     public static ContentResults fetchPageContents(String urlString) {

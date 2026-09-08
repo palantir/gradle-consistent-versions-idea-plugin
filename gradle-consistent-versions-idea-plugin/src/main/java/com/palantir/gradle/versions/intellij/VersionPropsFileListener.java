@@ -46,7 +46,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class VersionPropsFileListener implements AsyncFileListener {
+    @SuppressWarnings("for-rollout:PreferSafeLogger")
     private static final Logger log = LoggerFactory.getLogger(VersionPropsFileListener.class);
+
     private static final String TASK_NAME = "writeVersionsLock";
 
     @Nullable

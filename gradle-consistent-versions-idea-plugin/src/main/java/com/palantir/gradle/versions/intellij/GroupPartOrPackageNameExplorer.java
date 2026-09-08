@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 @Service(Level.APP)
 public final class GroupPartOrPackageNameExplorer {
+    @SuppressWarnings("for-rollout:PreferSafeLogger")
     private static final Logger log = LoggerFactory.getLogger(GroupPartOrPackageNameExplorer.class);
 
     private final LoadingCache<String, Set<GroupPartOrPackageName>> groupPartOrPackageNameCache = Caffeine.newBuilder()

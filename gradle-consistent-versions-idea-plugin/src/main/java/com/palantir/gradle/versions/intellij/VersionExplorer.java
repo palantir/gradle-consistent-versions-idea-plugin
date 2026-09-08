@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 @Service(Level.APP)
 public final class VersionExplorer {
+    @SuppressWarnings("for-rollout:PreferSafeLogger")
     private static final Logger log = LoggerFactory.getLogger(VersionExplorer.class);
 
     private static final Pattern UNSTABLE_VERSION_PATTERN = Pattern.compile(
@@ -67,7 +68,7 @@ public final class VersionExplorer {
             return cachedVersions.get();
         }
 
-        shortLivedVersionCache.get(urlString).thenAccept(result -> {
+        shortLivedVersionCache.get(urlString).thenAccept(_result -> {
             onLoadMore.run();
         });
 

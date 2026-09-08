@@ -54,7 +54,9 @@ public class VersionCompletionContributor extends CompletionContributor {
                 new CompletionProvider<>() {
                     @Override
                     public void addCompletions(
-                            CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
+                            CompletionParameters parameters,
+                            ProcessingContext _context,
+                            CompletionResultSet resultSet) {
                         DependencyInfo dependencyInfo = getDependencyInfo(parameters);
                         DependencyGroup group = dependencyInfo.group();
                         DependencyName dependencyName = dependencyInfo.dependencyName();
@@ -93,7 +95,7 @@ public class VersionCompletionContributor extends CompletionContributor {
 
     private void addLoadingElement(CompletionResultSet sortedResultSet) {
         LookupElement loadingElement = PrioritizedLookupElement.withPriority(
-                LookupElementBuilder.create("Loading Versions...").withInsertHandler((elementContext, item) -> {
+                LookupElementBuilder.create("Loading Versions...").withInsertHandler((elementContext, _item) -> {
                     // Prevent insertion
                     elementContext
                             .getDocument()
@@ -137,7 +139,7 @@ public class VersionCompletionContributor extends CompletionContributor {
                                 .getVersions(groupAndDep, CompletionRefreshUtil.refreshOnceSupplier()::get)
                                 .stream())
                 .collect(Collectors.toConcurrentMap(
-                        Function.identity(), v -> new AtomicInteger(1), (existingCount, newCount) -> {
+                        Function.identity(), _v -> new AtomicInteger(1), (existingCount, newCount) -> {
                             existingCount.addAndGet(newCount.get());
                             return existingCount;
                         }));
@@ -166,7 +168,7 @@ public class VersionCompletionContributor extends CompletionContributor {
     }
 
     @Override
-    public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
+    public final boolean invokeAutoPopup(PsiElement _position, char _typeChar) {
         return true;
     }
 

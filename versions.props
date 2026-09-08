@@ -6,6 +6,7 @@ org.junit.jupiter:junit-jupiter = 6.1.3
 org.jetbrains:annotations = 26.1.0
 com.github.ben-manes.caffeine:caffeine = 3.2.4
 org.awaitility:awaitility = 4.3.0
+junit:junit = 4.13.2
 
 # Unnecessary once we have lock files
 com.google.code.findbugs:jsr305 = 3.0.2

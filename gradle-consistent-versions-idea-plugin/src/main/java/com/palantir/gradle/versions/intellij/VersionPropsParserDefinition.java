@@ -36,7 +36,7 @@ public class VersionPropsParserDefinition implements ParserDefinition {
     public static final IFileElementType FILE = new IFileElementType(VersionPropsLanguage.INSTANCE);
 
     @Override
-    public final Lexer createLexer(Project project) {
+    public final Lexer createLexer(Project _project) {
         return new VersionPropsLexerAdapter();
     }
 
@@ -51,7 +51,7 @@ public class VersionPropsParserDefinition implements ParserDefinition {
     }
 
     @Override
-    public final PsiParser createParser(final Project project) {
+    public final PsiParser createParser(final Project _project) {
         return new VersionPropsParser();
     }
 

@@ -45,7 +45,7 @@ public class GroupPartOrPackageNameCompletionContributor extends CompletionContr
         extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
             @Override
             protected void addCompletions(
-                    CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
+                    CompletionParameters parameters, ProcessingContext _context, CompletionResultSet resultSet) {
 
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
@@ -64,7 +64,7 @@ public class GroupPartOrPackageNameCompletionContributor extends CompletionContr
         extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
             @Override
             protected void addCompletions(
-                    CompletionParameters parameters, ProcessingContext context, CompletionResultSet resultSet) {
+                    CompletionParameters parameters, ProcessingContext _context, CompletionResultSet resultSet) {
 
                 DependencyGroup group = DependencyGroup.groupFromParameters(parameters);
 
@@ -83,7 +83,7 @@ public class GroupPartOrPackageNameCompletionContributor extends CompletionContr
     }
 
     @Override
-    public final boolean invokeAutoPopup(PsiElement position, char typeChar) {
+    public final boolean invokeAutoPopup(PsiElement _position, char _typeChar) {
         return true;
     }
 }

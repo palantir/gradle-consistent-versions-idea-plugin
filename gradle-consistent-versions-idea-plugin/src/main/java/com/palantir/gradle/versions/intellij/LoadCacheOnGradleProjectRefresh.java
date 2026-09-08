@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LoadCacheOnGradleProjectRefresh implements ExternalSystemTaskNotificationListener {
+    @SuppressWarnings("for-rollout:PreferSafeLogger")
     private static final Logger log = LoggerFactory.getLogger(LoadCacheOnGradleProjectRefresh.class);
 
     @Override
@@ -37,23 +38,23 @@ public class LoadCacheOnGradleProjectRefresh implements ExternalSystemTaskNotifi
     }
 
     @Override
-    public void onStart(ExternalSystemTaskId id, String workingDir) {}
+    public void onStart(ExternalSystemTaskId _id, String _workingDir) {}
 
     @Override
-    public void onFailure(ExternalSystemTaskId id, Exception exception) {}
+    public void onFailure(ExternalSystemTaskId _id, Exception _exception) {}
 
     @Override
-    public void beforeCancel(ExternalSystemTaskId id) {}
+    public void beforeCancel(ExternalSystemTaskId _id) {}
 
     @Override
-    public void onCancel(ExternalSystemTaskId id) {}
+    public void onCancel(ExternalSystemTaskId _id) {}
 
     @Override
-    public void onStatusChange(ExternalSystemTaskNotificationEvent event) {}
+    public void onStatusChange(ExternalSystemTaskNotificationEvent _event) {}
 
     @Override
-    public void onTaskOutput(ExternalSystemTaskId id, String text, boolean stdOut) {}
+    public void onTaskOutput(ExternalSystemTaskId _id, String _text, boolean _stdOut) {}
 
     @Override
-    public void onEnd(ExternalSystemTaskId id) {}
+    public void onEnd(ExternalSystemTaskId _id) {}
 }

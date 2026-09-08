@@ -37,7 +37,9 @@ import org.slf4j.LoggerFactory;
 
 public class GradleCacheExplorer {
 
+    @SuppressWarnings("for-rollout:PreferSafeLogger")
     private static final Logger log = LoggerFactory.getLogger(GradleCacheExplorer.class);
+
     private static final String GRADLE_CACHE_PATH = System.getProperty("user.home") + "/.gradle/caches/modules-2/";
     private final AtomicReference<Set<String>> cache = new AtomicReference<>(Collections.emptySet());
 
