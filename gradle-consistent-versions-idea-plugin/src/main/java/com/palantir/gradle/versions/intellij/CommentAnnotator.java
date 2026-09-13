@@ -31,11 +31,9 @@ import java.util.regex.Pattern;
 
 public class CommentAnnotator implements Annotator {
 
-    @SuppressWarnings("for-rollout:deprecation")
     private static final TextAttributesKey RED_BOLD = TextAttributesKey.createTextAttributesKey(
             "DEPENDENCY_UPGRADER_OFF", new TextAttributes(JBColor.RED, null, null, null, Font.BOLD));
 
-    @SuppressWarnings("for-rollout:deprecation")
     private static final TextAttributesKey GREEN_BOLD = TextAttributesKey.createTextAttributesKey(
             "DEPENDENCY_UPGRADER_ON", new TextAttributes(JBColor.GREEN, null, null, null, Font.BOLD));
 
