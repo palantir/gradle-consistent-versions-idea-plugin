@@ -5,6 +5,7 @@ apply plugin: 'com.palantir.external-publish-intellij'
 apply plugin: 'org.jetbrains.grammarkit'
 
 repositories {
+    mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
     intellijPlatform {
         defaultRepositories()
     }
