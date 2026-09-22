@@ -62,6 +62,7 @@ public class GroupPartOrPackageNameCompletionContributor extends CompletionContr
 
     private void cacheCompletion(IElementType elementType) {
         extend(CompletionType.BASIC, PlatformPatterns.psiElement(elementType), new CompletionProvider<>() {
+            @SuppressWarnings("for-rollout:ReferenceEquality")
             @Override
             protected void addCompletions(
                     CompletionParameters parameters, ProcessingContext _context, CompletionResultSet resultSet) {
