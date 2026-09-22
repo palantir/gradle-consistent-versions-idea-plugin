@@ -44,6 +44,7 @@ public abstract class DependencyGroup {
         return url;
     }
 
+    @SuppressWarnings("for-rollout:ReferenceEquality")
     public static DependencyGroup groupFromParameters(CompletionParameters parameters) {
         PsiElement position = parameters.getPosition();
         PsiElement currentElement = position.getPrevSibling();
