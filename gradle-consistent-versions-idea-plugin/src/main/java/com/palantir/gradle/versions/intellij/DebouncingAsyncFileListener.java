@@ -43,7 +43,6 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener {
         this.debounceDelayMillis = debounceDelayMillis;
     }
 
-    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     @Nullable
     @Override
     public ChangeApplier prepareChange(List<? extends VFileEvent> events) {
@@ -61,7 +60,6 @@ public final class DebouncingAsyncFileListener implements AsyncFileListener {
                 JobScheduler.getScheduler().schedule(this::processEvents, debounceDelayMillis, TimeUnit.MILLISECONDS);
     }
 
-    @SuppressWarnings("for-rollout:Slf4jLogsafeArgs")
     private void processEvents() {
         List<VFileEvent> eventsToProcess = new ArrayList<>();
         int drained = bufferedEvents.drainTo(eventsToProcess);
